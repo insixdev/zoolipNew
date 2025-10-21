@@ -1,15 +1,27 @@
 import type { Request } from "express";
-import { authCookie } from "../cookies";
+import { loginService } from "~/features/auth/authService.js";
 
 export async function handleLogin(req: Request) {
-  const { username, password } = req.body;
+  const { username, password } = req.body as {
+    username?: string;
+    password?: string;
+  };
 
-  if (!username || !password) throw new Error("Missing credentials");
+  if (!username || !password) {
+    throw new Error("Missing credentials");
+  }
 
-  const user = await loginService({ username, password });
-  if (!user) throw new Error("Invalid credentials");
+  try {
+    const user = await loginService({ username, password });
 
-  const cookieHeader = await authCookie.serialize(user.token);
+    if (!user) {
+      throw new Error("Invalid credentials");
+    }
 
-  return { user, cookieHeader };
+    return { user };
+  } catch (err) {
+    console.error("Login error:", err);
+    throw err;
+  }
 }
+

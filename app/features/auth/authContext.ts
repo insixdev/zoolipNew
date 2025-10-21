@@ -1,7 +1,6 @@
 import { createContext } from "react";
-import { RegisterUserResponse, UserAppRegister, UserRequest } from "./authService";
-import { User } from "../../../../server/types/User";
-import { UserResponse } from "../users";
+import type { User } from "../user/User.js";
+import type { RegisterUserResponse, UserAppRegister, UserRequest, UserResponse } from "./authService.js";
 
 /**
  * contrato de que datos
@@ -11,7 +10,7 @@ import { UserResponse } from "../users";
 // 2. Crear el contexto
 
 
-interface AuthContextType {
+export interface AuthContextType {
   user: User | null;
   logout: () => void;
   login: (user: UserRequest) => Promise<UserResponse | null>;

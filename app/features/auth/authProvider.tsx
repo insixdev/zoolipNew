@@ -1,9 +1,5 @@
-
-import React, { useState, ReactNode, useContext } from "react";
-import { AuthContext, AuthContextType } from "./authContext";
-import { loginService, registerService, RegisterUserResponse, UserAppRegister, UserRequest } from "./authService";
-import { User } from "../../../../server/types/User";
-import { UserResponse } from "../users/userType";
+import type { ReactNode } from "react";
+import type { User } from "../user/User.js";
 
 // Props del provider
 interface AuthProviderProps {
