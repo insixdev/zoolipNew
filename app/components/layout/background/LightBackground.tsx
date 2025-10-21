@@ -398,4 +398,5 @@ void main() {
   );
 };
 
-e
+export default LightRays;
+
