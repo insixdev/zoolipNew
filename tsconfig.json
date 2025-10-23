@@ -1,23 +1,27 @@
-
 {
+  "include": [
+    "**/*",
+    "**/.server/**/*",
+    "**/.client/**/*",
+    ".react-router/types/**/*"
+  ],
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "node",
-    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "types": ["node", "vite/client"],
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
     "jsx": "react-jsx",
-    "types": ["@remix-run/node", "@remix-run/react"],
-    "rootDir": "app",
+    "rootDirs": [".", "./.react-router/types"],
     "baseUrl": ".",
     "paths": {
       "~/*": ["./app/*"]
     },
     "esModuleInterop": true,
+    "verbatimModuleSyntax": true,
+    "noEmit": true,
     "resolveJsonModule": true,
     "skipLibCheck": true,
-    "strict": true,
-    "noEmit": true
-  },
-  "include": ["app", "**/*.ts", "**/*.tsx"]
+    "strict": true
+  }
 }
-

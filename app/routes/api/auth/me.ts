@@ -1,6 +1,4 @@
 // app/routes/_layout.tsx o app/root.tsx
-import { json, type LoaderFunctionArgs } from "@remix-run/node";
-import { useLoaderData, Outlet } from "@remix-run/react";
 import { getAuthToken } from "~/server/cookies.js";
 
 export async function loader({ request }: LoaderFunctionArgs) {

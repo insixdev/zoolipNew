@@ -2,6 +2,8 @@
 import { useRef, useEffect, useState } from 'react';
 import { Renderer, Program, Triangle, Mesh } from 'ogl';
 
+
+
 const DEFAULT_COLOR = '#edab7b';
 
 const hexToRgb = hex => {
@@ -31,6 +33,7 @@ const getAnchorAndDir = (origin, w, h) => {
 };
 
 const LightRays = ({
+
   raysOrigin = 'top-center',
   raysColor = DEFAULT_COLOR,
   raysSpeed = 1,
@@ -58,7 +61,7 @@ const LightRays = ({
 
   useEffect(() => {
     if (!containerRef.current) return;
-
+    
     observerRef.current = new IntersectionObserver(
       entries => {
         const entry = entries[0];
@@ -373,7 +376,6 @@ void main() {
     noiseAmount,
     distortion
   ]);
-
   useEffect(() => {
     const handleMouseMove = e => {
       if (!containerRef.current || !rendererRef.current) return;

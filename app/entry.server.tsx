@@ -1,24 +1,44 @@
 
-import { renderToString } from "react-dom/server";
-import { RemixServer } from "@remix-run/react";
-import type { EntryContext } from "@remix-run/node";
+import { PassThrough } from "node:stream";
+import type { EntryContext } from "react-router";
+import { createReadableStreamFromReadable } from "@react-router/node";
+import { ServerRouter } from "react-router";
+import { renderToPipeableStream } from "react-dom/server";
 
 export default function handleRequest(
   request: Request,
-  statusCode: number,
-  headers: Headers,
-  remixContext: EntryContext
+  responseStatusCode: number,
+  responseHeaders: Headers,
+  routerContext: EntryContext
 ) {
-  const markup = renderToString(
-    <RemixServer context={remixContext} url={request.url} />
-  );
+  return new Promise((resolve, reject) => {
+    const { pipe, abort } = renderToPipeableStream(
+      <ServerRouter
+        context={routerContext}
+        url={request.url}
+      />,
+      {
+        onShellReady() {
+          responseHeaders.set("Content-Type", "text/html");
 
-  headers.set("Content-Type", "text/html");
+          const body = new PassThrough();
+          const stream =
+            createReadableStreamFromReadable(body);
 
-  // Usamos la Response global
-  return new Response("<!DOCTYPE html>" + markup, {
-    status: statusCode,
-    headers,
+          resolve(
+            new Response(stream, {
+              headers: responseHeaders,
+              status: responseStatusCode,
+            })
+          );
+
+          pipe(body);
+        },
+        onShellError(error: unknown) {
+          reject(error);
+        },
+      }
+    );
   });
 }
 

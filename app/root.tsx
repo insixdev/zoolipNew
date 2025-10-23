@@ -1,64 +1,75 @@
+import {
+  isRouteErrorResponse,
+  Links,
+  Meta,
+  Outlet,
+  Scripts,
+  ScrollRestoration,
+} from "react-router";
 
-// app/root.tsx
-import type { LinksFunction, MetaFunction } from "@remix-run/node";
-import { Links, LiveReload, Meta, Outlet, Scripts, ScrollRestoration } from "@remix-run/react";
-import stylesUrl from "./app.css";
+import type { Route } from "./+types/root";
+import "./app.css";
 
-// Cargar CSS
-export const links: LinksFunction = () => [
-  { rel: "stylesheet", href: stylesUrl },
+export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
-  { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+  {
+    rel: "preconnect",
+    href: "https://fonts.gstatic.com",
+    crossOrigin: "anonymous",
+  },
   {
     rel: "stylesheet",
     href: "https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap",
   },
 ];
 
-// Metadata
-export const meta: MetaFunction = () => [
-  { charset: "utf-8" },
-  { name: "viewport", content: "width=device-width,initial-scale=1" },
-  { title: "Mi App" },
-];
-
-export default function Root() {
+export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <Meta />
         <Links />
       </head>
       <body>
-        <main className="pt-16 p-4 container mx-auto">
-          <Outlet /> {/* Aquí se renderizan las rutas hijas */}
-        </main>
+        {children}
         <ScrollRestoration />
         <Scripts />
-        <LiveReload /> {/* Solo en dev */}
       </body>
     </html>
   );
 }
 
-// ErrorBoundary específico de Remix
-export function ErrorBoundary({ error }: { error: Error }) {
-  console.error(error);
+export default function App() {
+  return <Outlet />;
+}
+
+export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
+  let message = "Oops!";
+  let details = "An unexpected error occurred.";
+  let stack: string | undefined;
+
+  if (isRouteErrorResponse(error)) {
+    message = error.status === 404 ? "404" : "Error";
+    details =
+      error.status === 404
+        ? "The requested page could not be found."
+        : error.statusText || details;
+  } else if (import.meta.env.DEV && error && error instanceof Error) {
+    details = error.message;
+    stack = error.stack;
+  }
 
   return (
-    <html>
-      <head>
-        <title>¡Error!</title>
-      </head>
-      <body>
-        <main className="pt-16 p-4 container mx-auto">
-          <h1>Oops!</h1>
-          <p>{error.message}</p>
-          <pre>{error.stack}</pre>
-        </main>
-        <Scripts />
-      </body>
-    </html>
+    <main className="pt-16 p-4 container mx-auto">
+      <h1>{message}</h1>
+      <p>{details}</p>
+      {stack && (
+        <pre className="w-full p-4 overflow-x-auto">
+          <code>{stack}</code>
+        </pre>
+      )}
+    </main>
   );
 }
-

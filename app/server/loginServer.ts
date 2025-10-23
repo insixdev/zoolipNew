@@ -1,27 +1,25 @@
-import type { Request } from "express";
 import { loginService } from "~/features/auth/authService.js";
+import type { UserServerRequest } from "~/features/user/User";
 
-export async function handleLogin(req: Request) {
-  const { username, password } = req.body as {
-    username?: string;
-    password?: string;
-  };
+//validaaciones sever ssr
+export async function handleLogin(req: UserServerRequest) {
+  const { username, password } = req;
 
   if (!username || !password) {
-    throw new Error("Missing credentials");
+    throw new Response("Missing credentials", { status: 400 });
   }
 
   try {
     const user = await loginService({ username, password });
 
     if (!user) {
-      throw new Error("Invalid credentials");
+      throw new Response("Invalid credentials", { status: 401 });
     }
 
     return { user };
   } catch (err) {
     console.error("Login error:", err);
-    throw err;
+    throw new Response("Server error", { status: 500 });
   }
 }
 
