@@ -198,26 +198,24 @@ export default function Home() {
 
         
         {/* Tres SpotlightCards con colores combinados */}
-        <section className="mt-32 mb-32 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
+        <section className="mt-24 mb-24 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           <ClientOnly>
             {/* Card 1 - Rescate */}
             <SpotlightCard 
               className="bg-gradient-to-br from-slate-900/40 via-blue-900/20 to-gray-800/30 border-slate-400/20"
               spotlightColor="rgba(148, 163, 184, 0.25)"
             >
-              <div className="h-full flex flex-col justify-between m-4">
+              <div className="h-full flex flex-col justify-between m-2">
                 <div>
-                  <h3 className="text-3xl font-bold text-white mb-6 leading-tight">
+                  <h3 className="text-3xl font-bold text-white mb-4 leading-tight">
                     Rescate con propósito
                   </h3>
-                  <p className="text-xl text-white/80 leading-relaxed mb-4">
+                  <p className="text-lg text-white/80 leading-relaxed mb-3">
                     Cada rescate es una segunda oportunidad. Trabajamos con refugios y rescatistas 
-                    para dar a cada animal el cuidado que merece. Nuestra red de voluntarios 
-                    está comprometida con brindar atención médica, refugio temporal y amor 
-                    incondicional hasta encontrar el hogar perfecto.
+                    para dar a cada animal el cuidado que merece.
                   </p>
                 </div>
-                <Button size="sm" variant="outline" classNameProps="border-white/60 text-white/80 hover:bg-white/10 w-fit mt-6">
+                <Button size="sm" variant="outline" classNameProps="border-white/60 text-white/80 hover:bg-white/10 w-fit mt-4">
                   Ser rescatista
                 </Button>
               </div>

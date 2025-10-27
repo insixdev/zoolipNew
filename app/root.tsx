@@ -5,8 +5,13 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useLoaderData,
+  type LoaderFunctionArgs,
 } from "react-router";
-
+import { AuthProvider } from "./features/auth/authProvider";
+import { getAuthToken } from "./server/cookies";
+import decodeClaims from "./utils/authUtil";
+import type { UserResponse } from "./features/auth/authService";
 import type { Route } from "./+types/root";
 import "./app.css";
 
@@ -41,8 +46,39 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
+export async function loader({ request }: LoaderFunctionArgs) {
+  const token = getAuthToken(request);
+  let user: UserResponse | null = null;
+
+  if (token) {
+    const result = decodeClaims(token);
+    
+    if (result.valid && result.payload.sub) {
+      try {
+        // In a real app, you would fetch the user from your API here
+        // For now, we'll just return the user ID from the token
+        user = {
+          id_usuario: parseInt(result.payload.sub, 10),
+          username: result.payload.username || 'user',
+          rol: result.payload.rol || 'user'
+        };
+      } catch (error) {
+        console.error('Error loading user:', error);
+      }
+    }
+  }
+
+  return Response.json({ user });
+}
+
 export default function App() {
-  return <Outlet />;
+  const { user } = useLoaderData() as { user: UserResponse | null };
+  
+  return (
+    <AuthProvider initialUser={user}>
+      <Outlet />
+    </AuthProvider>
+  );
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {

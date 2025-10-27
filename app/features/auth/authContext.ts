@@ -1,20 +1,20 @@
 import { createContext } from "react";
-import type { User } from "../user/User.js";
-import type { RegisterUserResponse, UserAppRegister, UserRequest, UserResponse } from "./authService.js";
+import type { UserAppRegister, UserRequest, UserResponse } from "./authService";
 
-/**
- * contrato de que datos
- * funciones estaran en toda la applicacion
- * */
-
-// 2. Crear el contexto
-
+export type AuthUser = UserResponse & {
+  id: number;
+  nombre: string;
+};
 
 export interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+  error: string | null;
+  login: (credentials: UserRequest) => Promise<AuthUser | null>;
   logout: () => void;
-  login: (user: UserRequest) => Promise<UserResponse | null>;
-  register: (user: UserAppRegister) => Promise<RegisterUserResponse>;
+  register: (userData: UserAppRegister) => Promise<{ status: string; message: string }>;
+  checkAuth: () => Promise<boolean>;
 }
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);

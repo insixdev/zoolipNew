@@ -1,1 +1,1 @@
-export { default as LightBackground  }from "./LightBackground.js"
+export { default as LightBackground } from "./LightBackground";

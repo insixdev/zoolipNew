@@ -1,7 +1,7 @@
 import { loginService } from "~/features/auth/authService.js";
 import type { UserServerRequest } from "~/features/user/User";
 
-//validaaciones sever ssr
+//validaaciones server ssr
 export async function handleLogin(req: UserServerRequest) {
   const { username, password } = req;
 

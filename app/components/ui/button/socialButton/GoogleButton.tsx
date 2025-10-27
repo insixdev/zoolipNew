@@ -10,7 +10,7 @@ const GoogleButton = () => {
     <div className="flex items-center justify-center min-h-1 ">
       <button
         onClick={handleClick}
-        className="flex w-full items-center justify-center gap-3 bg-white text-gray-700 font-medium px-6 py-3 rounded-lg border border-gray-300 hover:bg-gray-50 hover:shadow-md transition-all duration-200 active:bg-gray-100"
+        className="flex w-full items-center justify-center gap-3 bg-white text-gray-700 font-medium px-6 py-3 rounded-lg border border-gray-300 hover:bg-gray-50 hover:shadow-md transition-all duration-200 active:bg-gray-100 cursor-pointer"
       >
         <svg
           className="w-5 h-5"

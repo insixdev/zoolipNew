@@ -1,39 +1,79 @@
+import type { ActionFunctionArgs } from "react-router";
 
-// app/routes/api/auth/login.ts
+const SPRING_API_URL = process.env.SPRING_API_URL || 'http://localhost:3050/api/auth';
 
-import { error } from "console";
-import { loginService, type UserRequest } from "~/features/auth/authService.js";
-import type { UserServerRequest } from "~/features/user/User";
-import { getAuthToken } from "~/server/cookies.js";
-
-import { handleLogin } from "~/server/loginServer.js";
-
-// 
-export async function loginAction( { request  }: { request: Request})  {
-  const userBody: UserServerRequest =  await request.json();
+export async function action({ request }: ActionFunctionArgs) {
   try {
-    // se ejecuta la logica del server
-    const user = await handleLogin(userBody); 
-    // retornamos al cliente
-    return new Response(JSON.stringify({ user }), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
+    const body = await request.json();
+    
+    // Validar que tenemos los datos necesarios
+    if (!body.username || !body.password) {
+      return Response.json(
+        { status: 'error', message: 'Username y password son requeridos' },
+        { status: 400 }
+      );
+    }
+
+    // Hacer la petición al backend de Spring
+    const response = await fetch(`${SPRING_API_URL}/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(body),
     });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return Response.json(
+        { status: 'error', message: data.message || 'Error en la autenticación' },
+        { status: response.status }
+      );
+    }
+
+    // Obtener el token
+    const token = data.token || response.headers.get('Authorization')?.replace('Bearer ', '');
+    
+    if (!token) {
+      return Response.json(
+        { status: 'error', message: 'No se recibió token de autenticación' },
+        { status: 401 }
+      );
+    }
+
+    // Devolvemos el token en la respuesta y dejamos que el cliente maneje la cookie
+    // ya que en Remix manejamos las cookies a través de las funciones de carga
+    const responseData = { 
+      status: 'success', 
+      message: 'Inicio de sesión exitoso',
+      token,
+      user: data.user // Asumiendo que el backend devuelve los datos del usuario
+    };
+
+    const headers = new Headers();
+    headers.append('Content-Type', 'application/json');
+    headers.append('Set-Cookie', `AUTH_TOKEN=${token}; Path=/; HttpOnly; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`);
+    headers.append('Access-Control-Allow-Credentials', 'true');
+
+    return new Response(JSON.stringify(responseData), {
+      status: 200,
+      headers
+    });
+  } catch (err) {
+    console.error('Error en login:', err);
+    return Response.json(
+      { status: 'error', message: 'Error en el servidor durante el login' },
+      { status: 500 }
+    );
   }
-  catch(err:any){
-    // aca catcheamos los errores que mismo mandamos en el ssr
-    console.error("login error: ", err)
-    return new Response(JSON.stringify(
-      {
-        error: err.message,
-        message: `error from ssr: ${err.message}`, 
-        puta: "hehe"
-      }
-    ),
-      {
-        status: 401,
-        headers: {"Content-Type": "application/json" },
-      } 
-    )
-  }
-};
+}
+
+// Manejar solicitudes GET si es necesario
+export async function loader() {
+  return Response.json(
+    { message: 'Método no permitido' },
+    { status: 405 }
+  );
+}
