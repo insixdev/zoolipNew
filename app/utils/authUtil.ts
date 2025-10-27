@@ -1,9 +1,15 @@
 
-import type { JwtPayload } from "jsonwebtoken";
-import type { verify, JsonWebTokenError, TokenExpiredError, NotBeforeError } from "jsonwebtoken";
+import {  verify, JsonWebTokenError, TokenExpiredError, NotBeforeError } from "jsonwebtoken";
+import type { JwtPayload } from "jsonwebtoken"
+export interface UserTokenPayload extends JwtPayload {
+  id: string;
+  username: string;
+  // Add other custom claims your backend might include
+  [key: string]: any;
+}
 
 export type TokenValidationResult = 
-  | { valid: true; payload: JwtPayload }
+  | { valid: true; payload: UserTokenPayload }
   | { valid: false; error: string; code: string };
 
 /**
@@ -31,7 +37,17 @@ export default function decodeClaims(token: string): TokenValidationResult {
   }
 
   try {
-    const payload = verify(token, secret) as JwtPayload;
+    const payload = verify(token, secret) as UserTokenPayload;
+    
+    // Validate required claims
+    if (!payload.id || !payload.username) {
+      return { 
+        valid: false, 
+        error: 'Missing required token claims',
+        code: 'INVALID_TOKEN_CLAIMS'
+      };
+    }
+    
     return { valid: true, payload };
     
   } catch (error) {
@@ -66,5 +82,38 @@ export default function decodeClaims(token: string): TokenValidationResult {
       code: 'VERIFICATION_ERROR'
     };
   }
+}
+
+/**
+ * Extracts user ID from the token payload
+ * @param payload The decoded JWT payload
+ * @returns The user ID or null if not found
+ */
+export function getUserIdFromToken(payload: UserTokenPayload): string | null {
+  return payload?.id || null;
+}
+
+/**
+ * Extracts username from the token payload
+ * @param payload The decoded JWT payload
+ * @returns The username or null if not found
+ */
+export function getUsernameFromToken(payload: UserTokenPayload): string | null {
+  return payload?.username || null;
+}
+
+/**
+ * Extracts user information from the token payload
+ * @param payload The decoded JWT payload
+ * @returns An object containing user ID and username or null if required fields are missing
+ */
+export function getUserInfoFromToken(payload: UserTokenPayload): { id: string; username: string } | null {
+  if (!payload?.id || !payload?.username) {
+    return null;
+  }
+  return {
+    id: payload.id,
+    username: payload.username
+  };
 }
 

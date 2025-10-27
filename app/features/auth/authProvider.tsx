@@ -123,7 +123,7 @@ export function AuthProvider({ children, initialUser = null }: AuthProviderProps
       
       const token = getAuthToken(mockRequest);
       if (!token) return false;
-      
+      // docodificamos el token para extraer el id nombre
       const result = decodeClaims(token);
       if (!result.valid || !result.payload.sub) return false;
       
@@ -131,7 +131,7 @@ export function AuthProvider({ children, initialUser = null }: AuthProviderProps
       const userId = parseInt(result.payload.sub, 10);
       if (isNaN(userId)) return false;
       
-      const userData = await fetchMe(userId);
+      const userData: UserResponse = await fetchMe(userId);
       if (userData) {
         // Update user state with fresh data
         const authUser: AuthUser = {
@@ -148,6 +148,7 @@ export function AuthProvider({ children, initialUser = null }: AuthProviderProps
       return false;
     }
   };
+
 
   return (
     <AuthContext.Provider 
