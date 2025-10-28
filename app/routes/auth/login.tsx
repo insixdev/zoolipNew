@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router";
 import { Navbar } from "~/components/layout/navbar";
 import GoogleButton from "~/components/ui/button/socialButton/GoogleButton";
 import Button from "~/components/ui/button/Button&Link/Button";
-import { useAuth } from "~/features/auth";
+import { useAuth } from "~/features/auth/authContext";
 
 interface LoginErrors {
   user?: string;
@@ -13,6 +13,7 @@ interface LoginErrors {
 
 export default function Login() {
   const [formData, setFormData] = useState({ user: "", password: "" });
+  // errores para poder mostrar al usuario notice de forma ui/uxwasz
   const [errors, setErrors] = useState<LoginErrors>({});
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
@@ -60,11 +61,11 @@ export default function Login() {
       setIsLoading(false);
     }
   };
-
+  const bg = 'bg-gradient-to-br from-rose-300 via-pink-200 via-indigo-200 to-orange-100 ';
   return (
     <>
       <Navbar signButton={false} variant="light" hideMobile={true} />
-      <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-amber-50 flex items-start justify-center p-4 pt-24">
+      <div className={`min-h-screen ${bg} flex items-start justify-center p-4 pt-24`}>
         <div className="w-full max-w-md">
           <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-100 p-8">
             <div className="text-center mb-8">

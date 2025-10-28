@@ -54,17 +54,14 @@ const rescuedDogs = [
 export default function Home() {
   return (
     <>
-      <Navbar className="absolute z-11" />
-      <div className="relative w-full min-h-screen overflow-visible pt-20">
+      <Navbar floating={true} className="z-50" />
+      <div className="relative w-full min-h-screen overflow-visible pt-28">
         <ClientOnly>
-          <LightBackground
-            lightSpread={1.5}
-            raysColor="#deb597"
-            noiseAmount={0.05}
-            rayLength={4}
-            fadeDistance={1.6}
-            distortion={0.02}
-            className="absolute top-0 left-0 w-full h-full z-0 pointer-events-none"
+            <LightBackground 
+            className="absolute z-0 w-full h-full top-0 shadow-2xl shadow-slate-950 pointer-events-none"
+            rayLength={20}
+            saturation={3}
+            raysSpeed={2}
           />
         </ClientOnly>
         
@@ -81,6 +78,7 @@ export default function Home() {
               delay={150}
               animateBy="words"
               direction="top"
+              
               className="text-7xl font-medium mt-2 text-orange-100"
             />
             
@@ -111,7 +109,7 @@ export default function Home() {
                 duration={1.4}
                 animateOpacity
               >
-                <Button size="lg" variant="outline" classNameProps="z-20 border-orange-200 text-orange-200 hover:bg-orange-200/10">
+                <Button size="lg" variant="especial" classNameProps="z-20 border-orange-200 text-orange-200 hover:bg-orange-200/10">
                   Ser rescatista
                 </Button>
               </AnimatedContent>

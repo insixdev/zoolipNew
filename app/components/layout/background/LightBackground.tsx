@@ -32,6 +32,8 @@ const getAnchorAndDir = (origin, w, h) => {
   }
 };
 
+console.log('Rendering LightBackground component');
+
 const LightRays = ({
 
   raysOrigin = 'top-center',
@@ -60,7 +62,11 @@ const LightRays = ({
   const observerRef = useRef(null);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    console.log('useEffect triggered in LightBackground');
+    if (!containerRef.current) {
+      console.error('Container ref is not set');
+      return;
+    }
     
     observerRef.current = new IntersectionObserver(
       entries => {

@@ -1,9 +1,9 @@
-import { useState, useContext, type ReactNode, useEffect } from "react";
+import { useState, type ReactNode, useEffect, useCallback } from "react";
 import type { UserAppRegister, UserRequest, UserResponse } from "./authService";
 import { loginService, registerService, fetchMe } from "./authService";
 import { AuthContext, type AuthContextType, type AuthUser } from "./authContext";
 import { getAuthToken } from "../../server/cookies";
-import decodeClaims from "../../utils/authUtil";
+import { decodeClaims } from "../../utils/authUtil";
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -15,22 +15,21 @@ export function AuthProvider({ children, initialUser = null }: AuthProviderProps
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Verificar autenticación al cargar
-  useEffect(() => {
-    const checkAuth = async () => {
-      setIsLoading(true);
-      try {
-        // Create a mock request object for the client-side
-        const mockRequest = {
-          headers: new Headers({
-            Cookie: document.cookie
-          })
-        } as unknown as Request;
-        
-        const token = getAuthToken(mockRequest);
-        
-        if (token) {
-          const result = decodeClaims(token);
+  const checkAuth = useCallback(async (): Promise<boolean> => {
+    setIsLoading(true);
+    try {
+      // Create a mock request object for the client-side
+      const mockRequest = {
+        headers: new Headers({
+          Cookie: document.cookie
+        })
+      } as unknown as Request;
+      
+      const token = getAuthToken(mockRequest);
+      
+      if (token) {
+        try {
+          const result = await decodeClaims(token);
           if (result.valid && result.payload.sub) {
             const userId = parseInt(result.payload.sub, 10);
             if (!isNaN(userId)) {
@@ -40,23 +39,36 @@ export function AuthProvider({ children, initialUser = null }: AuthProviderProps
                 const authUser: AuthUser = {
                   ...userData,
                   id: userData.id_usuario,
-                  nombre: userData.username // or any other field that represents the name
+                  nombre: userData.username || ''
                 };
                 setUser(authUser);
+                return true;
               }
             }
           }
+        } catch (error) {
+          console.error('Error decoding token:', error);
+          // If there's an error, treat it as an invalid token
+          setUser(null);
+          return false;
         }
-      } catch (err) {
-        console.error('Auth check failed:', err);
-        setError('Error al verificar la autenticación');
-      } finally {
-        setIsLoading(false);
       }
-    };
-
-    checkAuth();
+      setUser(null);
+      return false;
+    } catch (err) {
+      console.error('Auth check failed:', err);
+      setError('Error al verificar la autenticación');
+      setUser(null);
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
+
+  // Check authentication on mount
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   const login = async (userCredentials: UserRequest): Promise<AuthUser | null> => {
     setIsLoading(true);
@@ -67,7 +79,7 @@ export function AuthProvider({ children, initialUser = null }: AuthProviderProps
       const authUser: AuthUser = {
         ...loggedUser,
         id: loggedUser.id_usuario,
-        nombre: loggedUser.username // or any other field that represents the name
+        nombre: loggedUser.username || ''
       };
       setUser(authUser);
       setIsLoading(false);
@@ -101,68 +113,20 @@ export function AuthProvider({ children, initialUser = null }: AuthProviderProps
       throw error;
     }
   };
-  /**
-   * Verifica si el usuario esta autenticado
-   * 
-   * @returns true si el usuario esta autenticado, false en caso contrario
-   * @throws Error si ocurre un error al verificar la autenticación
-   * @example
-   * ```
-   * const authProvider = new AuthProvider();
-   * const isAuthenticated = await authProvider.checkAuth();
-   * ```
-  */
-  const checkAuth = async (): Promise<boolean> => {
-    try {
-      // Create a mock request object for the client-side
-      const mockRequest = {
-        headers: new Headers({
-          Cookie: document.cookie
-        })
-      } as unknown as Request;
-      
-      const token = getAuthToken(mockRequest);
-      if (!token) return false;
-      // docodificamos el token para extraer el id nombre
-      const result = decodeClaims(token);
-      if (!result.valid || !result.payload.sub) return false;
-      
-      // Verificar con el servidor
-      const userId = parseInt(result.payload.sub, 10);
-      if (isNaN(userId)) return false;
-      
-      const userData: UserResponse = await fetchMe(userId);
-      if (userData) {
-        // Update user state with fresh data
-        const authUser: AuthUser = {
-          ...userData,
-          id: userData.id_usuario,
-          nombre: userData.username
-        };
-        setUser(authUser);
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error('Auth check failed:', error);
-      return false;
-    }
+
+  const contextValue: AuthContextType = {
+    user,
+    isAuthenticated: !!user,
+    isLoading,
+    error,
+    login,
+    logout,
+    register,
+    checkAuth
   };
 
-
   return (
-    <AuthContext.Provider 
-      value={{ 
-        user, 
-        isAuthenticated: !!user,
-        isLoading,
-        error,
-        login, 
-        logout, 
-        register,
-        checkAuth
-      }}
-    >
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

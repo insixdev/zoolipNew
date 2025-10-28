@@ -9,13 +9,15 @@ export type NavbarProps = {
   signButton?: boolean
   variant?: 'dark' | 'light'
   hideMobile?: boolean
+  floating?: boolean
 }
 
 export default function Navbar({ 
   className = "", 
   signButton = true, 
   variant = 'dark',
-  hideMobile = false 
+  hideMobile = false,
+  floating = false
 }: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -23,13 +25,20 @@ export default function Navbar({
     setIsMenuOpen(!isMenuOpen);
   };
   const isDark = variant === 'dark';
-  const isDarkNav = isDark 
-    ? 'bg-white/5 border-white/10' 
-    : 'bg-white border-gray-200'
+  const isDarkNav = isDark
+    ? 'bg-white/5 border border-white/10'
+    : [
+      'bg-pink-200/20 bg-blend-multiply',
+      'shadow-inner-[inset_0_5px_6px_rgba(0,2,2,0)]',
+      'rounded-md',
+      'shadow-xl drop-shadow-sm shadow-pink-300/20',
+      'filter saturate-100 backdrop-filter backdrop-contrast-105',
+      'hover:bg-pink-500-30transition-colors duration-300',
+    ].join(' ');  const floatingStyles = floating ? 'mx-3 mt-1 rounded-2xl bg-white/10 backdrop-blur-md shadow-lg border ' : '';
 
   return (
-    <nav className={`w-full fixed top-0 left-0 right-0 z-50 backdrop-blur-sm ${isDarkNav} ${className}`}>
-      <div className="max-w-7xl mx-auto px-6">
+    <header className={` fixed top-0 left-0 right-0 z-50  transition-all duration-300 ${floatingStyles} ${className} ${isDarkNav}`}>
+      <div className="max-w-8xl mx-auto px-11">
         <div className="flex items-center justify-between h-16">
           {/* Mobile menu button (only visible on mobile) */}
           <div className="md:hidden">
@@ -61,7 +70,7 @@ export default function Navbar({
           <div className="flex-1 flex justify-center md:justify-start md:flex-none">
             <Link 
               to="/" 
-              className={`text-2xl font-bold transition-colors duration-200 ${
+              className={` text-2xl font-bold transition-colors duration-200 ${
                 isDark 
                   ? 'text-white hover:text-orange-200' 
                   : 'text-gray-800 hover:text-orange-500'
@@ -139,6 +148,6 @@ export default function Navbar({
           signButton={signButton} 
         />
       )}
-    </nav>
+    </header>
   )
 }

@@ -10,7 +10,7 @@ import {
 } from "react-router";
 import { AuthProvider } from "./features/auth/authProvider";
 import { getAuthToken } from "./server/cookies";
-import decodeClaims from "./utils/authUtil";
+import { decodeClaims } from "~/utils/authUtil";
 import type { UserResponse } from "./features/auth/authService";
 import type { Route } from "./+types/root";
 import "./app.css";
@@ -51,16 +51,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
   let user: UserResponse | null = null;
 
   if (token) {
-    const result = decodeClaims(token);
+    const result = await decodeClaims(token);
     
-    if (result.valid && result.payload.sub) {
+    if (result.valid && result.payload) {
       try {
-        // In a real app, you would fetch the user from your API here
-        // For now, we'll just return the user ID from the token
+        // Map the token payload to AuthUser type
         user = {
-          id_usuario: parseInt(result.payload.sub, 10),
-          username: result.payload.username || 'user',
-          rol: result.payload.rol || 'user'
+          id: parseInt(result.payload.id || result.payload.sub, 10),
+          nombre: result.payload.username || 'user',
+          // Add other required fields from result.payload if needed
+          ...result.payload
         };
       } catch (error) {
         console.error('Error loading user:', error);

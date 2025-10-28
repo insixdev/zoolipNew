@@ -74,11 +74,12 @@ export async function loginService(user: UserRequest): Promise<UserResponse> {
 }
 
 /** Fetch del usuario logueado según cookie (me) */
-export async function fetchMe(): Promise<UserResponse | null> {
+export async function fetchMe(id: number): Promise<UserResponse | null> {
   try {
     const res = await fetch(`${BASE_AUTH_URL}me`, {
       method: "GET",
-      credentials: "include"
+      credentials: "include",
+      body: "${id}",
     });
 
     if (!res.ok) return null;

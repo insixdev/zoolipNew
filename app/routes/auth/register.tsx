@@ -29,6 +29,7 @@ export default function Register() {
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [generalError, setGeneralError] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -47,6 +48,8 @@ export default function Register() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setGeneralError(null);
+    setErrors({});
     setIsLoading(true);
     
     // Basic validation
@@ -67,10 +70,20 @@ export default function Register() {
     try {
       // Here you would make your API call
       console.log("Registering user:", formData);
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Simulate API call with potential error
+      await new Promise((resolve, reject) => {
+        setTimeout(() => {
+          // Simulate API error for testing
+          // reject(new Error('Error de red')); // Uncomment to test error state
+          resolve(true);
+        }, 1000);
+      });
+      
+      // Redirect to login after successful registration
+      // navigate('/login'); // Uncomment when ready
     } catch (error) {
       console.error("Registration error:", error);
+      setGeneralError("Error al registrar el usuario. Por favor, inténtalo de nuevo.");
     } finally {
       setIsLoading(false);
     }
@@ -79,24 +92,26 @@ export default function Register() {
   return (
     <>
       <Navbar signButton={false} variant="light" hideMobile={true} />
-      <div className="min-h-screen bg-gradient-to-br from-white via-gray-200 to-amber-100 flex items-start justify-center p-4 pt-24">
-        <div className="w-full max-w-xs">
-          {/* Form compacto */}
-          <div className="bg-white/90 backdrop-blur-sm rounded-xl shadow-lg border border-gray-100 p-5">
-            <div className="text-center mb-4">
-              <h2 className="text-xl font-bold text-gray-800">
-                Únete a nuestra comunidad
-              </h2>
-              <p className="text-gray-500 text-xs mt-1">
-                Crea tu cuenta y comienza a salvar vidas
-              </p>
+      <div className="min-h-screen bg-gradient-to-br from-rose-300 via-pink-200 via-indigo-200 to-orange-100 flex items-start justify-center p-4 pt-24">
+        <div className="w-full max-w-md">
+          <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-100 p-8">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold mb-2" style={{ color: '#d67ca0' }}>Crea tu cuenta</h2>
+              <p className="text-gray-600">Únete a nuestra comunidad</p>
             </div>
 
+            {/* Error Message */}
+            {generalError && (
+              <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">
+                {generalError}
+              </div>
+            )}
+
             {/* Registration Form */}
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-5">
             {/* Name Field */}
             <div>
-              <label htmlFor="name" className="block text-xs font-medium text-gray-600 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Nombre completo
               </label>
               <input
@@ -105,7 +120,9 @@ export default function Register() {
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:border-amber-300 focus:ring-1 focus:ring-amber-200/50 outline-none transition-all duration-200 bg-white/95"
+                className={`w-full px-4 py-3 rounded-xl border ${
+                  errors.name ? 'border-red-300' : 'border-gray-200'
+                } focus:border-pink-400 focus:ring-2 focus:ring-pink-100 outline-none transition-all bg-white text-gray-800 placeholder-gray-400`}
                 placeholder="Tu nombre completo"
               />
               {errors.name && (
@@ -115,7 +132,7 @@ export default function Register() {
 
             {/* Email Field */}
             <div>
-              <label htmlFor="email" className="block text-xs font-medium text-gray-600 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Correo electrónico
               </label>
               <input
@@ -124,8 +141,10 @@ export default function Register() {
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:border-amber-300 focus:ring-1 focus:ring-amber-200/50 outline-none transition-all duration-200 bg-white/95"
-                placeholder="tu@email.com"
+                className={`w-full px-4 py-3 rounded-xl border ${
+                  errors.email ? 'border-red-300' : 'border-gray-200'
+                } focus:border-pink-400 focus:ring-2 focus:ring-pink-100 outline-none transition-all bg-white text-gray-800 placeholder-gray-400`}
+                placeholder="Ingresa tu email"
               />
               {errors.email && (
                 <p className="mt-1 text-sm text-red-500">{errors.email}</p>
@@ -134,7 +153,7 @@ export default function Register() {
 
             {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block text-xs font-medium text-gray-600 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Contraseña
               </label>
               <input
@@ -143,8 +162,10 @@ export default function Register() {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:border-amber-300 focus:ring-1 focus:ring-amber-200/50 outline-none transition-all duration-200 bg-white/95"
-                placeholder="Mínimo 8 caracteres"
+                className={`w-full px-4 py-3 rounded-xl border ${
+                  errors.password ? 'border-red-300' : 'border-gray-200'
+                } focus:border-pink-400 focus:ring-2 focus:ring-pink-100 outline-none transition-all bg-white text-gray-800 placeholder-gray-400`}
+                placeholder="Crea una contraseña"
               />
               {errors.password && (
                 <p className="mt-1 text-sm text-red-500">{errors.password}</p>
@@ -153,7 +174,7 @@ export default function Register() {
 
             {/* Confirm Password Field */}
             <div>
-              <label htmlFor="confirmPassword" className="block text-xs font-medium text-gray-600 mb-1">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Confirmar contraseña
               </label>
               <input
@@ -162,8 +183,10 @@ export default function Register() {
                 name="confirmPassword"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className="w-full px-3 py-2 text-sm rounded-lg border border-gray-200 focus:border-amber-300 focus:ring-1 focus:ring-amber-200/50 outline-none transition-all duration-200 bg-white/95"
-                placeholder="Repite tu contraseña"
+                className={`w-full px-4 py-3 rounded-xl border ${
+                  errors.confirmPassword ? 'border-red-300' : 'border-gray-200'
+                } focus:border-pink-400 focus:ring-2 focus:ring-pink-100 outline-none transition-all bg-white text-gray-800 placeholder-gray-400`}
+                placeholder="Confirma tu contraseña"
               />
               {errors.confirmPassword && (
                 <p className="mt-1 text-sm text-red-500">{errors.confirmPassword}</p>
@@ -175,8 +198,11 @@ export default function Register() {
               type="submit"
               size="md"
               variant="especial"
-              className="w-full text-white font-medium py-2 rounded-lg transition-all duration-200 text-sm"
-              style={{backgroundColor: '#d67ca0'}}
+              className="w-full text-white font-medium py-3.5 rounded-xl cursor-pointer hover:opacity-90 transition-all duration-200 mt-2"
+              style={{ 
+                backgroundColor: '#d67ca0',
+                boxShadow: '0 4px 14px rgba(214, 124, 160, 0.3)'
+              }}
               disabled={isLoading}
             >
               {isLoading ? "Creando cuenta..." : "Crear cuenta"}
@@ -184,9 +210,9 @@ export default function Register() {
             </form>
 
             {/* Divider */}
-          <div className="my-4 flex items-center">
+          <div className="my-6 flex items-center">
             <div className="flex-1 border-t border-gray-200"></div>
-            <span className="px-3 text-xs text-gray-400">o continúa con</span>
+            <span className="px-3 text-sm text-gray-400">o continúa con</span>
             <div className="flex-1 border-t border-gray-200"></div>
           </div>
 
@@ -194,28 +220,30 @@ export default function Register() {
           <GoogleButton />
 
           {/* Login Link */}
-          <div className="mt-4 text-center text-xs">
-            <p className="text-gray-500">
-              ¿Ya tienes una cuenta?{' '}
-              <Link to="/login" className="font-medium text-rose-500 hover:text-rose-600">
-                Inicia sesión
+          <div className="mt-8 text-center text-sm text-gray-600">
+            ¿Ya tienes una cuenta?{" "}
+            <Link 
+              to="/login" 
+              className="font-medium hover:underline transition-colors duration-200" 
+              style={{ color: '#d67ca0' }}
+            >
+              Inicia sesión
+            </Link>
+          </div>
+
+          {/* Terms */}
+          <div className="mt-4 text-center">
+            <p className="text-xs text-gray-500">
+              Al crear una cuenta, aceptas nuestros{" "}
+              <Link to="/terms" className="underline hover:text-pink-600 transition-colors duration-200" style={{ color: '#d67ca0' }}>
+                Términos
+              </Link>{" "}
+              y{" "}
+              <Link to="/privacy" className="underline hover:text-pink-600 transition-colors duration-200" style={{ color: '#d67ca0' }}>
+                Política de privacidad
               </Link>
             </p>
           </div>
-
-            {/* Terms */}
-            <div className="mt-4 text-center">
-              <p className="text-[10px] text-gray-400">
-                Al crear una cuenta, aceptas nuestros{" "}
-                <Link to="/terms" className="underline hover:text-gray-600">
-                  Términos
-                </Link>{" "}
-                y{" "}
-                <Link to="/privacy" className="underline hover:text-gray-600">
-                  Privacidad
-                </Link>
-              </p>
-            </div>
           </div>
         </div>
       </div>

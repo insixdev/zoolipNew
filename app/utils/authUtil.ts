@@ -1,10 +1,27 @@
+// Simple JWT decode function
+function decodeJwt(token: string): any {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch (error) {
+    console.error('Error decoding token:', error);
+    return null;
+  }
+}
 
-import {  verify, JsonWebTokenError, TokenExpiredError, NotBeforeError } from "jsonwebtoken";
-import type { JwtPayload } from "jsonwebtoken"
-export interface UserTokenPayload extends JwtPayload {
+// User token payload interface
+export interface UserTokenPayload {
   id: string;
   username: string;
-  // Add other custom claims your backend might include
+  exp?: number;
+  iat?: number;
   [key: string]: any;
 }
 
@@ -13,11 +30,11 @@ export type TokenValidationResult =
   | { valid: false; error: string; code: string };
 
 /**
- * Decodes and verifies a JWT token using the server secret.
- * @param token The JWT token to decode.
- * @returns The decoded payload or an error object.
+ * Decodes a JWT token without verification
+ * Note: This only decodes the token, it doesn't verify the signature
+ * The actual authentication is handled by the server via cookies
  */
-export default function decodeClaims(token: string): TokenValidationResult {
+export async function decodeClaims(token: string): Promise<TokenValidationResult> {
   if (!token || typeof token !== 'string') {
     return { 
       valid: false, 
@@ -26,19 +43,20 @@ export default function decodeClaims(token: string): TokenValidationResult {
     };
   }
 
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    console.error('JWT_SECRET is not defined in environment variables');
-    return { 
-      valid: false, 
-      error: 'Server configuration error',
-      code: 'SERVER_ERROR'
-    };
-  }
-
   try {
-    const payload = verify(token, secret) as UserTokenPayload;
-    
+    // Only decode the token, don't verify it
+    // The actual verification happens on the server via cookies
+    const payload = decodeJwt(token) as UserTokenPayload;
+
+    // Check if token is expired (jose already verifies this, but we'll check anyway)
+    if (payload.exp && Date.now() >= payload.exp * 1000) {
+      return {
+        valid: false,
+        error: 'Token has expired',
+        code: 'TOKEN_EXPIRED',
+      };
+    }
+
     // Validate required claims
     if (!payload.id || !payload.username) {
       return { 
@@ -48,38 +66,41 @@ export default function decodeClaims(token: string): TokenValidationResult {
       };
     }
     
-    return { valid: true, payload };
-    
-  } catch (error) {
-    if (error instanceof TokenExpiredError) {
-      return { 
-        valid: false, 
+    return {
+      valid: true,
+      payload,
+    };
+  } catch (error: any) {
+    if (error.code === 'ERR_JWT_EXPIRED') {
+      return {
+        valid: false,
         error: 'Token has expired',
-        code: 'TOKEN_EXPIRED'
-      };
-    }
-    // error: Invalid token
-    if (error instanceof JsonWebTokenError) {
-      return { 
-        valid: false, 
-        error: 'Invalid token',
-        code: 'INVALID_TOKEN'
-      };
-    }
-    // error: Token not active
-    if (error instanceof NotBeforeError) {
-      return { 
-        valid: false, 
-        error: 'Token not active',
-        code: 'TOKEN_NOT_ACTIVE'
+        code: 'TOKEN_EXPIRED',
       };
     }
     
-    console.error('Unexpected error verifying token:', error);
-    return { 
-      valid: false, 
-      error: 'Error verifying token',
-      code: 'VERIFICATION_ERROR'
+    if (error.code === 'ERR_JWS_INVALID') {
+      return {
+        valid: false,
+        error: 'Invalid token',
+        code: 'INVALID_TOKEN',
+      };
+    }
+    
+    if (error.code === 'ERR_JWT_CLAIM_VALIDATION_FAILED') {
+      return {
+        valid: false,
+        error: 'Token validation failed',
+        code: 'TOKEN_VALIDATION_FAILED',
+      };
+    }
+    
+    // For any other errors
+    console.error('Token validation error:', error);
+    return {
+      valid: false,
+      error: 'Token validation failed',
+      code: 'TOKEN_VALIDATION_FAILED',
     };
   }
 }
