@@ -1,5 +1,5 @@
 import { useAuth } from "@/features";
-import { Navigate } from "react-router-dom";
+import { Navigate } from "react-router";
 
 const PrivateRoute = ({ children }) => {
   const { user } = useAuth();

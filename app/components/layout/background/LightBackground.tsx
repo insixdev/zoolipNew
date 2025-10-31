@@ -32,7 +32,7 @@ const getAnchorAndDir = (origin, w, h) => {
   }
 };
 
-console.log('Rendering LightBackground component');
+
 
 const LightRays = ({
 

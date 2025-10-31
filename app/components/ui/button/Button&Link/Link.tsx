@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router";
+import { useHref, useLinkClickHandler } from "react-router";
 
 type ButtonLinkProps = {
   children: React.ReactNode;
@@ -17,14 +17,18 @@ export default function ButtonLink({
   size = "md",
   ...props
 }: ButtonLinkProps) {
-
+  const href = useHref(to);
+  const handleClick = useLinkClickHandler(to);
+  
   const base = "border-transparent rounded-xl font-semibold px-4 py-2 inline-block text-center cursor-pointer transition-colors duration-200";
-const variants = {
+  
+  const variants = {
     primary: "bg-white/10 text-white border border-transparent hover:bg-brand hover:border-orange-200 hover:bg-white/20",
     especial: "bg-brand-especial text-black hover:bg-white",
     secondary: "bg-black/20 text-white border border-transparent hover:border-violet-500 hover:bg-black/30 transition-all",
     danger: "bg-red-600 text-white hover:bg-red-700",
-};
+  };
+  
   const sizes = {
     sm: "text-sm px-2 py-1",
     md: "text-base",
@@ -33,12 +37,13 @@ const variants = {
   };
 
   return (
-    <Link
-      to={to}
+    <a
+      href={href}
+      onClick={handleClick}
       className={`${base} ${variants[variant]} ${sizes[size]} ${classNameProps} `.trim()}
       {...props}
     >
       {children}
-    </Link>
+    </a>
   );
 }

@@ -1,31 +1,8 @@
+import type { RegisterUserResponse, UserAppRegister, UserRequest, UserResponse } from "../user/User";
 
 /** URL base del backend principal */
 const BASE_AUTH_URL = "http://localhost:3050/api/auth/";
 
-export type UserRequest = {
-  username: string;
-  password: string;
-};
-
-export type RegisterUserResponse = {
-  status: string;
-  message: string;
-};
-
-export type UserAppRegister = {
-  username: string;
-  password: string;
-  rol?: string;
-};
-
-// Response del login
-export type UserResponse = {
-  id_usuario: number;
-  username: string;
-  rol?: string;
-  token?: string;
-  message?: string;
-};
 
 /** Función para registrarse */
 export async function registerService(user: UserAppRegister): Promise<RegisterUserResponse> {
@@ -74,12 +51,11 @@ export async function loginService(user: UserRequest): Promise<UserResponse> {
 }
 
 /** Fetch del usuario logueado según cookie (me) */
-export async function fetchMe(id: number): Promise<UserResponse | null> {
+export async function fetchMe(): Promise<UserResponse | null> {
   try {
     const res = await fetch(`${BASE_AUTH_URL}me`, {
       method: "GET",
       credentials: "include",
-      body: "${id}",
     });
 
     if (!res.ok) return null;

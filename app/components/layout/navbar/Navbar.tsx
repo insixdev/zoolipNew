@@ -10,6 +10,9 @@ export type NavbarProps = {
   variant?: 'dark' | 'light'
   hideMobile?: boolean
   floating?: boolean
+  fill?: boolean
+  hideHome?: boolean
+  linkHoverStyle?: string
 }
 
 export default function Navbar({ 
@@ -17,7 +20,10 @@ export default function Navbar({
   signButton = true, 
   variant = 'dark',
   hideMobile = false,
-  floating = false
+  floating = false,
+  fill = false,
+  hideHome = false,
+  linkHoverStyle = ""
 }: NavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -34,10 +40,11 @@ export default function Navbar({
       'shadow-xl drop-shadow-sm shadow-pink-300/20',
       'filter saturate-100 backdrop-filter backdrop-contrast-105',
       'hover:bg-pink-500-30transition-colors duration-300',
-    ].join(' ');  const floatingStyles = floating ? 'mx-3 mt-1 rounded-2xl bg-white/10 backdrop-blur-md shadow-lg border ' : '';
+    ].join(' ');  const floatingStyles = floating ? 'mx-3 mt-1 rounded-2xl backdrop-blur-md shadow-lg border ' : '';
+  const fillStyle = fill ? 'bg-white' : (variant === 'dark' ? 'bg-transparent' : 'bg-white');
 
   return (
-    <header className={` fixed top-0 left-0 right-0 z-50  transition-all duration-300 ${floatingStyles} ${className} ${isDarkNav}`}>
+    <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${floatingStyles} ${fillStyle} ${className} ${isDarkNav}`}>
       <div className="max-w-8xl mx-auto px-11">
         <div className="flex items-center justify-between h-16">
           {/* Mobile menu button (only visible on mobile) */}
@@ -66,18 +73,22 @@ export default function Navbar({
             </button>
           </div>
           
-          {/* Logo - Centered on mobile, normal on desktop */}
+          {/* Logo/Home (optional) - Centered on mobile, normal on desktop */}
           <div className="flex-1 flex justify-center md:justify-start md:flex-none">
-            <Link 
-              to="/" 
-              className={` text-2xl font-bold transition-colors duration-200 ${
-                isDark 
-                  ? 'text-white hover:text-orange-200' 
-                  : 'text-gray-800 hover:text-orange-500'
-              }`}
-            >
-              Inicio
-            </Link>
+            {!hideHome && (
+              <div className="relative">
+                <Link 
+                  to="/" 
+                  className={`text-2xl font-bold transition-colors duration-200 ${
+                    isDark 
+                      ? 'text-white hover:text-orange-200' 
+                      : 'text-gray-800 hover:text-orange-500'
+                  } ${linkHoverStyle}`}
+                >
+                Zoolip
+                </Link>
+              </div>
+            )}
           </div>
           
           {/* Navigation Links - Centered (Desktop) */}

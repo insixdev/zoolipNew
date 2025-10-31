@@ -20,18 +20,18 @@ export default function Footer() {
             <h4 className="text-white font-semibold mb-4">Adopción</h4>
             <ul className="space-y-2">
               <li>
+                <Link to="/adopcion" className="text-gray-300 hover:text-orange-200 transition-colors text-sm">
+                  Todo sobre adopción
+                </Link>
+              </li>
+              <li>
                 <Link to="/adopt" className="text-gray-300 hover:text-orange-200 transition-colors text-sm">
-                  Adoptar mascota
+                  Ver mascotas disponibles
                 </Link>
               </li>
               <li>
-                <Link to="/process" className="text-gray-300 hover:text-orange-200 transition-colors text-sm">
-                  Proceso de adopción
-                </Link>
-              </li>
-              <li>
-                <Link to="/requirements" className="text-gray-300 hover:text-orange-200 transition-colors text-sm">
-                  Requisitos
+                <Link to="/proceso-adopcion" className="text-gray-300 hover:text-orange-200 transition-colors text-sm">
+                  Cómo adoptar
                 </Link>
               </li>
             </ul>
@@ -47,7 +47,7 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link to="/volunteer" className="text-gray-300 hover:text-orange-200 transition-colors text-sm">
+                <Link to="/login?redirect=/volunteer" className="text-gray-300 hover:text-orange-200 transition-colors text-sm">
                   Ser voluntario
                 </Link>
               </li>

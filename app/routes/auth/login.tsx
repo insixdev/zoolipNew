@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
+import { Link } from "react-router";
 import { Navbar } from "~/components/layout/navbar";
 import GoogleButton from "~/components/ui/button/socialButton/GoogleButton";
 import Button from "~/components/ui/button/Button&Link/Button";
@@ -21,16 +22,16 @@ export default function Login() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name as keyof LoginErrors]) {
-      setErrors(prev => ({ ...prev, [name]: "" }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     const newErrors: LoginErrors = {};
     if (!formData.user.trim()) newErrors.user = "Usuario requerido";
     if (!formData.password) newErrors.password = "Contraseña requerida";
@@ -42,17 +43,17 @@ export default function Login() {
     }
 
     try {
-      const loginResult = await login({ username: formData.user, password: formData.password });
-      
+      const loginResult = await login({
+        username: formData.user,
+        password: formData.password,
+      });
+
       if (loginResult) {
-        if (loginResult.status !== "error") {
-          navigate("/profile");
-          // Consider using a toast notification instead of alert
-        } else {
-          setErrors({ general: loginResult.message || "Error al iniciar sesión" });
-        }
+        // Login exitoso - el usuario está autenticado
+        navigate("/profile");
       } else {
-        setErrors({ general: "Error inesperado al iniciar sesión" });
+        // Login falló - credenciales incorrectas
+        setErrors({ general: "Usuario o contraseña incorrectos" });
       }
     } catch (error) {
       console.error("Login error:", error);
@@ -61,16 +62,32 @@ export default function Login() {
       setIsLoading(false);
     }
   };
-  const bg = 'bg-gradient-to-br from-rose-300 via-pink-200 via-indigo-200 to-orange-100 ';
+  const bg = "bg-gradient-to-br from-orange-100 via-orange-50 to-amber-50";
   return (
     <>
       <Navbar signButton={false} variant="light" hideMobile={true} />
-      <div className={`min-h-screen ${bg} flex items-start justify-center p-4 pt-24`}>
+      <div
+        className={`min-h-screen ${bg} flex items-start justify-center p-4 pt-24`}
+      >
         <div className="w-full max-w-md">
-          <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-100 p-8">
+          <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-orange-100 p-8">
+            {/* Instagram-style Zoolip Title */}
             <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold mb-2" style={{ color: '#d67ca0' }}>Bienvenido</h2>
-              <p className="text-gray-600">Inicia sesión en tu cuenta</p>
+              <h1
+                className="text-5xl font-bold mb-6"
+                style={{
+                  fontFamily: "Pacifico, cursive",
+                  background: "linear-gradient(45deg, #f97316, #fb923c)",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}
+              >
+                Zoolip
+              </h1>
+              <p className="text-gray-600 text-sm">
+                Inicia sesión para conectar con la comunidad
+              </p>
             </div>
 
             {errors.general && (
@@ -81,7 +98,10 @@ export default function Login() {
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-1">
-                <label htmlFor="user" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="user"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Usuario
                 </label>
                 <input
@@ -91,7 +111,7 @@ export default function Login() {
                   value={formData.user}
                   onChange={handleChange}
                   className={`w-full px-4 py-3 rounded-xl border ${
-                    errors.user ? 'border-red-300' : 'border-gray-200'
+                    errors.user ? "border-red-300" : "border-gray-200"
                   } focus:border-pink-400 focus:ring-2 focus:ring-pink-100 outline-none transition-all bg-white text-gray-800 placeholder-gray-400`}
                   placeholder="Ingresa tu usuario"
                   disabled={isLoading}
@@ -103,13 +123,15 @@ export default function Login() {
 
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
-                  <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="password"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Contraseña
                   </label>
-                  <Link 
-                    to="/forgot-password" 
-                    className="text-xs text-gray-500 hover:text-pink-500 transition-colors duration-200"
-                    style={{ color: '#d67ca0' }}
+                  <Link
+                    to="/forgot-password"
+                    className="text-xs text-orange-600 hover:text-orange-700 transition-colors duration-200"
                   >
                     ¿Olvidaste tu contraseña?
                   </Link>
@@ -121,7 +143,7 @@ export default function Login() {
                   value={formData.password}
                   onChange={handleChange}
                   className={`w-full px-4 py-3 rounded-xl border ${
-                    errors.password ? 'border-red-300' : 'border-gray-200'
+                    errors.password ? "border-red-300" : "border-gray-200"
                   } focus:border-pink-400 focus:ring-2 focus:ring-pink-100 outline-none transition-all bg-white text-gray-800 placeholder-gray-400`}
                   placeholder="••••••••"
                   disabled={isLoading}
@@ -134,22 +156,36 @@ export default function Login() {
               <Button
                 type="submit"
                 size="lg"
-                className="w-full text-white font-medium py-3.5 rounded-xl cursor-pointer hover:opacity-90 transition-all duration-200 mt-6"
-                style={{ 
-                  backgroundColor: '#d67ca0',
-                  boxShadow: '0 4px 14px rgba(214, 124, 160, 0.3)'
-                }}
+                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white font-medium py-3.5 rounded-xl cursor-pointer hover:from-orange-600 hover:to-orange-700 transition-all duration-200 mt-6 shadow-lg shadow-orange-300/50"
                 disabled={isLoading}
               >
                 {isLoading ? (
                   <span className="flex items-center justify-center">
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <svg
+                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
                     </svg>
                     Iniciando sesión...
                   </span>
-                ) : 'Iniciar sesión'}
+                ) : (
+                  "Iniciar sesión"
+                )}
               </Button>
             </form>
 
@@ -163,10 +199,9 @@ export default function Login() {
 
             <div className="mt-8 text-center text-sm text-gray-600">
               ¿No tienes una cuenta?{" "}
-              <Link 
-                to="/register" 
-                className="font-medium hover:underline transition-colors duration-200" 
-                style={{ color: '#d67ca0' }}
+              <Link
+                to="/register"
+                className="font-medium text-orange-600 hover:text-orange-700 hover:underline transition-colors duration-200"
               >
                 Regístrate
               </Link>

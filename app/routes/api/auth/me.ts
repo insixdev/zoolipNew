@@ -1,4 +1,4 @@
-import { decodeClaims } from "~/utils";
+import { decodeClaims } from "~/lib/authUtil";
 import type { LoaderFunctionArgs } from "react-router";
 
 const SPRING_API_URL = process.env.SPRING_API_URL || 'http://localhost:3050/api/auth';

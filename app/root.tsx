@@ -5,17 +5,15 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
-  useLoaderData,
-  type LoaderFunctionArgs,
+  useRouteError,
+  Link,
 } from "react-router";
-import { AuthProvider } from "./features/auth/authProvider";
-import { getAuthToken } from "./server/cookies";
-import { decodeClaims } from "~/utils/authUtil";
-import type { UserResponse } from "./features/auth/authService";
-import type { Route } from "./+types/root";
+import type { LinksFunction } from "react-router";
+import { AuthProvider } from "~/features/auth/authProvider";
+
 import "./app.css";
 
-export const links: Route.LinksFunction = () => [
+export const links: LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
   {
     rel: "preconnect",
@@ -46,66 +44,68 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  const token = getAuthToken(request);
-  let user: UserResponse | null = null;
-
-  if (token) {
-    const result = await decodeClaims(token);
-    
-    if (result.valid && result.payload) {
-      try {
-        // Map the token payload to AuthUser type
-        user = {
-          id: parseInt(result.payload.id || result.payload.sub, 10),
-          nombre: result.payload.username || 'user',
-          // Add other required fields from result.payload if needed
-          ...result.payload
-        };
-      } catch (error) {
-        console.error('Error loading user:', error);
-      }
-    }
-  }
-
-  return Response.json({ user });
-}
-
 export default function App() {
-  const { user } = useLoaderData() as { user: UserResponse | null };
-  
   return (
-    <AuthProvider initialUser={user}>
+    <AuthProvider>
       <Outlet />
     </AuthProvider>
   );
 }
 
-export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  let message = "Oops!";
-  let details = "An unexpected error occurred.";
-  let stack: string | undefined;
+// Error boundary component for handling route errors
+export function ErrorBoundary() {
+  const error = useRouteError();
+  console.error("ErrorBoundary caught an error:", error);
 
   if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? "404" : "Error";
-    details =
-      error.status === 404
-        ? "The requested page could not be found."
-        : error.statusText || details;
-  } else if (import.meta.env.DEV && error && error instanceof Error) {
-    details = error.message;
-    stack = error.stack;
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100">
+        <div className="text-center p-8 max-w-md mx-auto bg-white rounded-2xl shadow-xl border border-orange-200">
+          <div className="mb-6">
+            <div className="text-6xl mb-4">🐾</div>
+            <h1 className="text-4xl font-bold text-orange-600 mb-2">
+              {error.status}
+            </h1>
+            <h2 className="text-xl font-semibold text-gray-700 mb-4">
+              {error.statusText}
+            </h2>
+          </div>
+          <p className="text-lg text-gray-600 mb-6">
+            {error.data?.message ||
+              "Parece que esta página no existe o hubo un problema al cargarla."}
+          </p>
+          <Link
+            to="/"
+            className="inline-block bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-medium py-3 px-8 rounded-xl transition-all duration-200 shadow-lg shadow-orange-300/50"
+          >
+            Volver al inicio
+          </Link>
+        </div>
+      </div>
+    );
   }
 
+  // Handle other types of errors
+  const errorMessage =
+    error instanceof Error ? error.message : "Ocurrió un error inesperado";
+
   return (
-    <main className="pt-16 p-4 container mx-auto">
-      <h1>{message}</h1>
-      <p>{details}</p>
-      {stack && (
-        <pre className="w-full p-4 overflow-x-auto">
-          <code>{stack}</code>
-        </pre>
-      )}
-    </main>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 via-amber-50 to-orange-100 p-4">
+      <div className="text-center bg-white p-8 rounded-2xl shadow-xl border border-orange-200 max-w-md">
+        <div className="mb-6">
+          <div className="text-6xl mb-4">😿</div>
+          <h1 className="text-4xl font-bold text-orange-600 mb-4">
+            ¡Ups! Algo salió mal
+          </h1>
+        </div>
+        <p className="text-lg text-gray-600 mb-6">{errorMessage}</p>
+        <Link
+          to="/"
+          className="inline-block bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white font-medium py-3 px-8 rounded-xl transition-all duration-200 shadow-lg shadow-orange-300/50"
+        >
+          Volver al inicio
+        </Link>
+      </div>
+    </div>
   );
 }

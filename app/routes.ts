@@ -1,24 +1,25 @@
-import { type RouteConfig, index, route } from "@react-router/dev/routes";
+import type { RouteConfig } from "@react-router/dev/routes";
+import { index, route } from "@react-router/dev/routes";
 
 export default [
-  // Home page
   index("routes/home.tsx"),
+  route("community", "routes/community.tsx"),
+  route("adopt", "routes/adopt.tsx"),
   
   // Auth routes
   route("login", "routes/auth/login.tsx"),
   route("register", "routes/auth/register.tsx"),
   
-  // Main app routes
-  /* route("adopt", "routes/adopt.tsx"),
-  route("community", "routes/community.tsx"),
-  route("about", "routes/about.tsx"), */
+  // Info routes
+  route("info/about", "routes/info/about.tsx"),
+  route("info/adopt", "routes/info/adopt.tsx"),
+  route("info/cookies", "routes/info/cookies.tsx"),
+  route("info/privacidad", "routes/info/privacidad.tsx"),
+  route("info/proceso-adopcion", "routes/info/proceso-adopcion.tsx"),
+  route("info/terminos", "routes/info/terminos.tsx"),
   
-  // Legal routes
- /*  route("terms", "routes/terms.tsx"),
-  route("privacy", "routes/privacy.tsx"), */
-  
-  // Future routes (commented for now)
-  // route("forgot-password", "routes/auth/forgot-password.tsx"),
-  // route("dashboard", "routes/dashboard.tsx"),
-  // route("profile", "routes/profile.tsx"),
+  // API routes
+  route("api/auth/login", "routes/api/auth/login.ts"),
+  route("api/auth/me", "routes/api/auth/me.ts"),
+  route("api/auth/register", "routes/api/auth/register.ts"),
 ] satisfies RouteConfig;

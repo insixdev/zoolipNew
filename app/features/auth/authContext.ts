@@ -1,7 +1,7 @@
 import { createContext, useContext } from "react";
-import type { UserAppRegister, UserRequest, UserResponse } from "./authService";
+import { UserRequest } from "../user/User";
 
-export type AuthUser = UserResponse & {
+export type AuthUser = UserRequest & {
   id: number;
   nombre: string;
 };
@@ -13,7 +13,7 @@ export interface AuthContextType {
   error: string | null;
   login: (credentials: UserRequest) => Promise<AuthUser | null>;
   logout: () => void;
-  register: (userData: UserAppRegister) => Promise<{ status: string; message: string }>;
+  register: (userData: UserRequest) => Promise<{ status: string; message: string }>;
   checkAuth: () => Promise<boolean>;
 }
 

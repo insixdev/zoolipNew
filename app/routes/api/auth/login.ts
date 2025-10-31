@@ -1,11 +1,16 @@
 import type { ActionFunctionArgs } from "react-router";
+import { UserServerResponseObj, type UserRequest, type UserResponse, type UserServerRequest, type UserServerResponse } from "~/features/user/User";
+import { getAuthToken } from "~/server/cookies";
+import { handleLogin } from "~/server/loginServer";
 
 const SPRING_API_URL = process.env.SPRING_API_URL || 'http://localhost:3050/api/auth';
-
+/*ssr action for login*/
 export async function action({ request }: ActionFunctionArgs) {
   try {
-    const body = await request.json();
-    
+    // Obtenemos el token de autenticación
+    const token = getAuthToken(request)   
+    const body: UserRequest  = await request.json();
+
     // Validar que tenemos los datos necesarios
     if (!body.username || !body.password) {
       return Response.json(
@@ -14,28 +19,15 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    // Hacer la petición al backend de Spring
-    const response = await fetch(`${SPRING_API_URL}/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify(body),
-    });
+    const user: UserResponse = await handleLogin(body as UserServerRequest)
+    const response = {status: user.status, message: user.message}as UserServerResponse
+    const userResponse: UserServerResponseObj = new UserServerResponseObj(response)
 
-    const data = await response.json();
-
-    if (!response.ok) {
+    if (!userResponse.ok) {
       return Response.json(
-        { status: 'error', message: data.message || 'Error en la autenticación' },
-        { status: response.status }
+        { status: 'error', message: response.message || 'Error en la autenticación' },
       );
     }
-
-    // Obtener el token
-    const token = data.token || response.headers.get('Authorization')?.replace('Bearer ', '');
-    
     if (!token) {
       return Response.json(
         { status: 'error', message: 'No se recibió token de autenticación' },
@@ -49,12 +41,12 @@ export async function action({ request }: ActionFunctionArgs) {
       status: 'success', 
       message: 'Inicio de sesión exitoso',
       token,
-      user: data.user // Asumiendo que el backend devuelve los datos del usuario
     };
 
     const headers = new Headers();
     headers.append('Content-Type', 'application/json');
     headers.append('Set-Cookie', `AUTH_TOKEN=${token}; Path=/; HttpOnly; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`);
+
     headers.append('Access-Control-Allow-Credentials', 'true');
 
     return new Response(JSON.stringify(responseData), {

@@ -1,5 +1,5 @@
 
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import './profile.css';
 
 export const Profile = () => {

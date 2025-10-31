@@ -29,9 +29,11 @@ const BlurText = ({
   const ref = useRef(null);
 
   useEffect(() => {
+    console.log("BlurText: useEffect called, ref:", !!ref.current);
     if (!ref.current) return;
     const observer = new IntersectionObserver(
       ([entry]) => {
+        console.log("BlurText: IntersectionObserver triggered, isIntersecting:", entry.isIntersecting);
         if (entry.isIntersecting) {
           setInView(true);
           observer.unobserve(ref.current);

@@ -1,17 +1,33 @@
 import { useState, type ReactNode, useEffect, useCallback } from "react";
-import type { UserAppRegister, UserRequest, UserResponse } from "./authService";
 import { loginService, registerService, fetchMe } from "./authService";
-import { AuthContext, type AuthContextType, type AuthUser } from "./authContext";
+import { AuthContext, type AuthContextType } from "./authContext";
+
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  role?: string;
+  [key: string]: any;
+}
 import { getAuthToken } from "../../server/cookies";
-import { decodeClaims } from "../../utils/authUtil";
+import { decodeClaims } from "../../lib/authUtil";
+import type { UserAppRegister, UserRequest } from "../user/User";
 
 interface AuthProviderProps {
   children: ReactNode;
+  user?: AuthUser | null;
   initialUser?: AuthUser | null;
 }
 
-export function AuthProvider({ children, initialUser = null }: AuthProviderProps) {
-  const [user, setUser] = useState<AuthUser | null>(initialUser);
+export function AuthProvider({ children, user: propUser, initialUser = null }: AuthProviderProps) {
+  const [user, setUser] = useState<AuthUser | null>(propUser || initialUser);
+  
+  // Keep internal state in sync with prop
+  useEffect(() => {
+    if (propUser !== undefined) {
+      setUser(propUser);
+    }
+  }, [propUser]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,7 +49,7 @@ export function AuthProvider({ children, initialUser = null }: AuthProviderProps
           if (result.valid && result.payload.sub) {
             const userId = parseInt(result.payload.sub, 10);
             if (!isNaN(userId)) {
-              const userData = await fetchMe(userId);
+              const userData = await fetchMe();
               if (userData) {
                 // Map UserResponse to AuthUser
                 const authUser: AuthUser = {
@@ -66,8 +82,12 @@ export function AuthProvider({ children, initialUser = null }: AuthProviderProps
   }, []);
 
   // Check authentication on mount
+  // Initialize auth state on mount
   useEffect(() => {
-    checkAuth();
+    checkAuth().catch(error => {
+      console.error('Authentication check failed:', error);
+      setError('Failed to check authentication status');
+    });
   }, [checkAuth]);
 
   const login = async (userCredentials: UserRequest): Promise<AuthUser | null> => {

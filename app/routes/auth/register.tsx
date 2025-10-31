@@ -89,161 +89,167 @@ export default function Register() {
     }
   };
 
+  const bg = 'bg-gradient-to-br from-orange-100 via-orange-50 to-amber-50';
+  
   return (
     <>
       <Navbar signButton={false} variant="light" hideMobile={true} />
-      <div className="min-h-screen bg-gradient-to-br from-rose-300 via-pink-200 via-indigo-200 to-orange-100 flex items-start justify-center p-4 pt-24">
+      <div className={`min-h-screen ${bg} flex items-start justify-center p-4 pt-24`}>
         <div className="w-full max-w-md">
-          <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-gray-100 p-8">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold mb-2" style={{ color: '#d67ca0' }}>Crea tu cuenta</h2>
-              <p className="text-gray-600">Únete a nuestra comunidad</p>
+          <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-orange-100 p-6">
+            {/* Instagram-style Zoolip Title */}
+            <div className="text-center mb-6">
+              <h1 className="text-5xl font-bold mb-4" style={{ 
+                fontFamily: 'Pacifico, cursive',
+                background: 'linear-gradient(45deg, #f97316, #fb923c)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text'
+              }}>
+                Zoolip
+              </h1>
+              <p className="text-gray-600 text-sm">Únete a la comunidad</p>
             </div>
 
-            {/* Error Message */}
             {generalError && (
               <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">
                 {generalError}
               </div>
             )}
 
-            {/* Registration Form */}
-            <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Name Field */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nombre completo
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                className={`w-full px-4 py-3 rounded-xl border ${
-                  errors.name ? 'border-red-300' : 'border-gray-200'
-                } focus:border-pink-400 focus:ring-2 focus:ring-pink-100 outline-none transition-all bg-white text-gray-800 placeholder-gray-400`}
-                placeholder="Tu nombre completo"
-              />
-              {errors.name && (
-                <p className="mt-1 text-sm text-red-500">{errors.name}</p>
-              )}
-            </div>
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <div className="space-y-1">
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                  Nombre completo
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  className={`w-full px-4 py-2.5 rounded-xl border ${
+                    errors.name ? 'border-red-300' : 'border-gray-200'
+                  } focus:border-pink-400 focus:ring-2 focus:ring-pink-100 outline-none transition-all bg-white text-gray-800 placeholder-gray-400`}
+                  placeholder="Tu nombre completo"
+                  disabled={isLoading}
+                />
+                {errors.name && (
+                  <p className="mt-1 text-sm text-red-500">{errors.name}</p>
+                )}
+              </div>
 
-            {/* Email Field */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Correo electrónico
-              </label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                className={`w-full px-4 py-3 rounded-xl border ${
-                  errors.email ? 'border-red-300' : 'border-gray-200'
-                } focus:border-pink-400 focus:ring-2 focus:ring-pink-100 outline-none transition-all bg-white text-gray-800 placeholder-gray-400`}
-                placeholder="Ingresa tu email"
-              />
-              {errors.email && (
-                <p className="mt-1 text-sm text-red-500">{errors.email}</p>
-              )}
-            </div>
+              <div className="space-y-1">
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                  Correo electrónico
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  className={`w-full px-4 py-2.5 rounded-xl border ${
+                    errors.email ? 'border-red-300' : 'border-gray-200'
+                  } focus:border-pink-400 focus:ring-2 focus:ring-pink-100 outline-none transition-all bg-white text-gray-800 placeholder-gray-400`}
+                  placeholder="tu@email.com"
+                  disabled={isLoading}
+                />
+                {errors.email && (
+                  <p className="mt-1 text-sm text-red-500">{errors.email}</p>
+                )}
+              </div>
 
-            {/* Password Field */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Contraseña
-              </label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                className={`w-full px-4 py-3 rounded-xl border ${
-                  errors.password ? 'border-red-300' : 'border-gray-200'
-                } focus:border-pink-400 focus:ring-2 focus:ring-pink-100 outline-none transition-all bg-white text-gray-800 placeholder-gray-400`}
-                placeholder="Crea una contraseña"
-              />
-              {errors.password && (
-                <p className="mt-1 text-sm text-red-500">{errors.password}</p>
-              )}
-            </div>
+              <div className="space-y-1">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+                  Contraseña
+                </label>
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className={`w-full px-4 py-2.5 rounded-xl border ${
+                    errors.password ? 'border-red-300' : 'border-gray-200'
+                  } focus:border-pink-400 focus:ring-2 focus:ring-pink-100 outline-none transition-all bg-white text-gray-800 placeholder-gray-400`}
+                  placeholder="••••••••"
+                  disabled={isLoading}
+                />
+                {errors.password && (
+                  <p className="mt-1 text-sm text-red-500">{errors.password}</p>
+                )}
+              </div>
 
-            {/* Confirm Password Field */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Confirmar contraseña
-              </label>
-              <input
-                type="password"
-                id="confirmPassword"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                className={`w-full px-4 py-3 rounded-xl border ${
-                  errors.confirmPassword ? 'border-red-300' : 'border-gray-200'
-                } focus:border-pink-400 focus:ring-2 focus:ring-pink-100 outline-none transition-all bg-white text-gray-800 placeholder-gray-400`}
-                placeholder="Confirma tu contraseña"
-              />
-              {errors.confirmPassword && (
-                <p className="mt-1 text-sm text-red-500">{errors.confirmPassword}</p>
-              )}
-            </div>
+              <div className="space-y-1">
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
+                  Confirmar contraseña
+                </label>
+                <input
+                  type="password"
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  className={`w-full px-4 py-2.5 rounded-xl border ${
+                    errors.confirmPassword ? 'border-red-300' : 'border-gray-200'
+                  } focus:border-pink-400 focus:ring-2 focus:ring-pink-100 outline-none transition-all bg-white text-gray-800 placeholder-gray-400`}
+                  placeholder="••••••••"
+                  disabled={isLoading}
+                />
+                {errors.confirmPassword && (
+                  <p className="mt-1 text-sm text-red-500">{errors.confirmPassword}</p>
+                )}
+              </div>
 
-            {/* Submit Button */}
-            <Button
-              type="submit"
-              size="md"
-              variant="especial"
-              className="w-full text-white font-medium py-3.5 rounded-xl cursor-pointer hover:opacity-90 transition-all duration-200 mt-2"
-              style={{ 
-                backgroundColor: '#d67ca0',
-                boxShadow: '0 4px 14px rgba(214, 124, 160, 0.3)'
-              }}
-              disabled={isLoading}
-            >
-              {isLoading ? "Creando cuenta..." : "Crear cuenta"}
-            </Button>
+              <Button
+                type="submit"
+                size="lg"
+                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white font-medium py-3 rounded-xl cursor-pointer hover:from-orange-600 hover:to-orange-700 transition-all duration-200 mt-4 shadow-lg shadow-orange-300/50"
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <span className="flex items-center justify-center">
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Creando cuenta...
+                  </span>
+                ) : 'Crear cuenta'}
+              </Button>
             </form>
 
-            {/* Divider */}
-          <div className="my-6 flex items-center">
-            <div className="flex-1 border-t border-gray-200"></div>
-            <span className="px-3 text-sm text-gray-400">o continúa con</span>
-            <div className="flex-1 border-t border-gray-200"></div>
-          </div>
+            <div className="my-5 flex items-center">
+              <div className="flex-1 border-t border-gray-200"></div>
+              <span className="px-3 text-sm text-gray-400">o continúa con</span>
+              <div className="flex-1 border-t border-gray-200"></div>
+            </div>
 
-          {/* Google Button */}
-          <GoogleButton />
+            <GoogleButton />
 
-          {/* Login Link */}
-          <div className="mt-8 text-center text-sm text-gray-600">
-            ¿Ya tienes una cuenta?{" "}
-            <Link 
-              to="/login" 
-              className="font-medium hover:underline transition-colors duration-200" 
-              style={{ color: '#d67ca0' }}
-            >
-              Inicia sesión
-            </Link>
-          </div>
-
-          {/* Terms */}
-          <div className="mt-4 text-center">
-            <p className="text-xs text-gray-500">
-              Al crear una cuenta, aceptas nuestros{" "}
-              <Link to="/terms" className="underline hover:text-pink-600 transition-colors duration-200" style={{ color: '#d67ca0' }}>
-                Términos
-              </Link>{" "}
-              y{" "}
-              <Link to="/privacy" className="underline hover:text-pink-600 transition-colors duration-200" style={{ color: '#d67ca0' }}>
-                Política de privacidad
+            <div className="mt-6 text-center text-sm text-gray-600">
+              ¿Ya tienes una cuenta?{" "}
+              <Link 
+                to="/login" 
+                className="font-medium text-orange-600 hover:text-orange-700 hover:underline transition-colors duration-200"
+              >
+                Inicia sesión
               </Link>
-            </p>
-          </div>
+            </div>
+
+            <div className="mt-4 text-center">
+              <p className="text-xs text-gray-500">
+                Al crear una cuenta, aceptas nuestros{" "}
+                <Link to="/terms" className="underline hover:text-orange-700 transition-colors duration-200 text-orange-600">
+                  Términos
+                </Link>{" "}
+                y{" "}
+                <Link to="/privacy" className="underline hover:text-orange-700 transition-colors duration-200 text-orange-600">
+                  Política de privacidad
+                </Link>
+              </p>
+            </div>
           </div>
         </div>
       </div>

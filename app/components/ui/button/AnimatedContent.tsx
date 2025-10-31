@@ -1,6 +1,6 @@
 
 import { useRef, useEffect } from "react";
-import { safeGsapImport } from "~/utils/generalUtil";
+import { safeGsapImport } from "~/lib/generalUtil";
 
 const AnimatedContent = ({
   children,
@@ -22,15 +22,21 @@ const AnimatedContent = ({
     let isCancelled = false;
 
     async function initAnimation() {
-      if (typeof window === "undefined") return;
+      console.log("AnimatedContent: initAnimation called");
+      if (typeof window === "undefined") {
+        console.log("AnimatedContent: window is undefined, skipping");
+        return;
+      }
 
       const gsap = await safeGsapImport();
+      console.log("AnimatedContent: GSAP loaded:", !!gsap);
       if (!gsap || isCancelled) return;
 
       const { ScrollTrigger } = await import("gsap/ScrollTrigger");
       gsap.registerPlugin(ScrollTrigger);
 
       const el = ref.current;
+      console.log("AnimatedContent: element ref:", !!el);
       if (!el) return;
 
       const axis = direction === "horizontal" ? "x" : "y";
