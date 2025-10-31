@@ -1,10 +1,10 @@
-import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useState, useEffect } from "react";
+import { useNavigate, useFetcher } from "react-router";
 import { Link } from "react-router";
 import { Navbar } from "~/components/layout/navbar";
 import GoogleButton from "~/components/ui/button/socialButton/GoogleButton";
 import Button from "~/components/ui/button/Button&Link/Button";
-import { useAuth } from "~/features/auth/authContext";
+import { useAuth } from "~/features/auth/useAuth";
 
 interface LoginErrors {
   user?: string;
@@ -14,11 +14,13 @@ interface LoginErrors {
 
 export default function Login() {
   const [formData, setFormData] = useState({ user: "", password: "" });
-  // errores para poder mostrar al usuario notice de forma ui/uxwasz
   const [errors, setErrors] = useState<LoginErrors>({});
-  const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const { setUser } = useAuth();
+  const fetcher = useFetcher();
   const navigate = useNavigate();
+
+  const isLoading = fetcher.state === "submitting";
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -28,9 +30,33 @@ export default function Login() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Handle fetcher response only after submission
+  useEffect(() => {
+    if (hasSubmitted && fetcher.state === "idle" && fetcher.data) {
+      if (fetcher.data.success) {
+        // Login exitoso - actualizar el contexto
+        if (fetcher.data.user) {
+          setUser(fetcher.data.user);
+        }
+        navigate("/profile");
+      } else {
+        // Login falló
+        setErrors({
+          general: fetcher.data.error || "Usuario o contraseña incorrectos",
+        });
+      }
+
+      if (fetcher.data?.errors) {
+        setErrors(fetcher.data.errors);
+      }
+
+      // Reset the submission flag
+      setHasSubmitted(false);
+    }
+  }, [hasSubmitted, fetcher.state, fetcher.data, navigate]);
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
 
     const newErrors: LoginErrors = {};
     if (!formData.user.trim()) newErrors.user = "Usuario requerido";
@@ -38,29 +64,26 @@ export default function Login() {
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      setIsLoading(false);
       return;
     }
 
-    try {
-      const loginResult = await login({
+    // Clear previous errors
+    setErrors({});
+
+    // Mark that we've submitted
+    setHasSubmitted(true);
+
+    // Submit using fetcher
+    fetcher.submit(
+      {
         username: formData.user,
         password: formData.password,
-      });
-
-      if (loginResult) {
-        // Login exitoso - el usuario está autenticado
-        navigate("/profile");
-      } else {
-        // Login falló - credenciales incorrectas
-        setErrors({ general: "Usuario o contraseña incorrectos" });
+      },
+      {
+        method: "POST",
+        action: "/api/auth/login",
       }
-    } catch (error) {
-      console.error("Login error:", error);
-      setErrors({ general: "Error al conectar con el servidor" });
-    } finally {
-      setIsLoading(false);
-    }
+    );
   };
   const bg = "bg-gradient-to-br from-orange-100 via-orange-50 to-amber-50";
   return (
