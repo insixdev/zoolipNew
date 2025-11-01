@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import Sidebar from './Sidebar';
+import DynamicSidebar from './DynamicSidebar';
 import MobileSidebar from './MobileSidebar';
 import { Menu } from 'lucide-react';
 
@@ -26,7 +26,7 @@ export default function SidebarContainer({ showSidebar = true, className = '' }:
 
       {/* Desktop Sidebar */}
       <div className={`hidden md:block ${className}`}>
-        <Sidebar />
+        <DynamicSidebar />
       </div>
 
       {/* Mobile Sidebar */}

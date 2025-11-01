@@ -1,5 +1,5 @@
-import React from 'react';
-import { Link } from 'react-router';
+import React from "react";
+import { Link } from "react-router";
 
 export default function Privacidad() {
   return (
@@ -11,7 +11,10 @@ export default function Privacidad() {
             Zoolip
           </Link>
           <nav className="flex gap-6">
-            <Link to="/community" className="text-gray-700 hover:text-rose-600 transition-colors font-medium">
+            <Link
+              to="/community"
+              className="text-gray-700 hover:text-rose-600 transition-colors font-medium"
+            >
               ← Volver a la Comunidad
             </Link>
           </nav>
@@ -21,14 +24,22 @@ export default function Privacidad() {
       {/* Contenido principal */}
       <main className="max-w-4xl mx-auto px-4 py-12">
         <div className="bg-white rounded-xl shadow-sm p-8 md:p-12">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Política de Privacidad</h1>
-          <p className="text-gray-500 mb-8">Última actualización: 29 de octubre de 2025</p>
-          
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Política de Privacidad
+          </h1>
+          <p className="text-gray-500 mb-8">
+            Última actualización: 29 de octubre de 2025
+          </p>
+
           <div className="prose prose-gray max-w-none">
             <section className="mb-10">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">1. Información que Recopilamos</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                1. Información que Recopilamos
+              </h2>
               <p className="text-gray-700 mb-4">
-                Recopilamos información que nos proporcionas directamente, como cuando creas una cuenta, publicas contenido o te comunicas con nosotros. Esto puede incluir:
+                Recopilamos información que nos proporcionas directamente, como
+                cuando creas una cuenta, publicas contenido o te comunicas con
+                nosotros. Esto puede incluir:
               </p>
               <ul className="list-disc pl-5 text-gray-700 space-y-2 mb-4">
                 <li>Información de registro (nombre, correo electrónico)</li>
@@ -39,41 +50,67 @@ export default function Privacidad() {
             </section>
 
             <section className="mb-10">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">2. Cómo Usamos tu Información</h2>
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                2. Cómo Usamos tu Información
+              </h2>
               <p className="text-gray-700 mb-4">
                 Utilizamos la información que recopilamos para:
               </p>
               <ul className="list-disc pl-5 text-gray-700 space-y-2 mb-4">
                 <li>Proporcionar, mantener y mejorar nuestros servicios</li>
                 <li>Personalizar tu experiencia en la plataforma</li>
-                <li>Comunicarnos contigo sobre actualizaciones y notificaciones</li>
-                <li>Proteger contra actividades fraudulentas o no autorizadas</li>
+                <li>
+                  Comunicarnos contigo sobre actualizaciones y notificaciones
+                </li>
+                <li>
+                  Proteger contra actividades fraudulentas o no autorizadas
+                </li>
               </ul>
             </section>
 
             <section className="mb-10">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">3. Compartir Información</h2>
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                3. Compartir Información
+              </h2>
               <p className="text-gray-600 mb-4">
-                No vendemos ni compartimos tu información personal con terceros, excepto en los siguientes casos:
+                No vendemos ni compartimos tu información personal con terceros,
+                excepto en los siguientes casos:
               </p>
               <ul className="list-disc pl-5 text-gray-700 space-y-2 mb-4">
                 <li>Con tu consentimiento explícito</li>
                 <li>Para cumplir con requisitos legales</li>
-                <li>Con proveedores de servicios que nos ayudan a operar la plataforma</li>
+                <li>
+                  Con proveedores de servicios que nos ayudan a operar la
+                  plataforma
+                </li>
               </ul>
             </section>
 
             <section className="mb-10">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">4. Tus Derechos</h2>
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                4. Tus Derechos
+              </h2>
               <p className="text-gray-600 mb-4">
-                Tienes derecho a acceder, corregir o eliminar tu información personal. Puedes gestionar tus preferencias de privacidad en la configuración de tu cuenta o contactándonos directamente.
+                Tienes derecho a acceder, corregir o eliminar tu información
+                personal. Puedes gestionar tus preferencias de privacidad en la
+                configuración de tu cuenta o contactándonos directamente.
               </p>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">5. Contacto</h2>
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                5. Contacto
+              </h2>
               <p className="text-gray-600">
-                Si tienes preguntas sobre esta política de privacidad, contáctanos en <a href="mailto:privacidad@zoolip.com" className="text-rose-600 hover:underline">privacidad@zoolip.com</a>.
+                Si tienes preguntas sobre esta política de privacidad,
+                contáctanos en{" "}
+                <a
+                  href="mailto:privacidad@zoolip.com"
+                  className="text-rose-600 hover:underline"
+                >
+                  privacidad@zoolip.com
+                </a>
+                .
               </p>
             </section>
           </div>
@@ -85,12 +122,29 @@ export default function Privacidad() {
         <div className="max-w-4xl mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="mb-4 md:mb-0">
-              <span className="text-gray-500 text-sm">© 2025 Zoolip. Todos los derechos reservados.</span>
+              <span className="text-gray-500 text-sm">
+                © 2025 Zoolip. Todos los derechos reservados.
+              </span>
             </div>
             <div className="flex gap-6">
-              <Link to="/terminos" className="text-gray-500 hover:text-rose-600 text-sm transition-colors">Términos</Link>
-              <Link to="/privacidad" className="text-rose-600 font-medium text-sm">Privacidad</Link>
-              <Link to="/cookies" className="text-gray-500 hover:text-rose-600 text-sm transition-colors">Cookies</Link>
+              <Link
+                to="/info/terminos"
+                className="text-gray-500 hover:text-rose-600 text-sm transition-colors"
+              >
+                Términos
+              </Link>
+              <Link
+                to="/info/privacidad"
+                className="text-rose-600 font-medium text-sm"
+              >
+                Privacidad
+              </Link>
+              <Link
+                to="/info/cookies"
+                className="text-gray-500 hover:text-rose-600 text-sm transition-colors"
+              >
+                Cookies
+              </Link>
             </div>
           </div>
         </div>

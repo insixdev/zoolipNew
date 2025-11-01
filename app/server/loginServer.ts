@@ -1,4 +1,4 @@
-import { loginService } from "~/features/auth/authService.js";
+import { loginService } from "~/features/auth/authServiceCurrent";
 import {  type UserServerRequest, type UserServerResponse } from "~/features/user/User";
 
 /*validaaciones server ssr para el login */

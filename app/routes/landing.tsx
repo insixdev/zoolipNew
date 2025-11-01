@@ -1,4 +1,4 @@
-import { Navbar } from "~/components/layout/navbar";
+import LandingNavbar from "~/components/layout/navbar/LandingNavbar";
 import Footer from "~/components/layout/footer/footer";
 import Button from "~/components/ui/button/Button&Link/Button";
 import GradientText from "~/components/ui/Texts/GradientText";
@@ -20,7 +20,7 @@ import {
 
 const demoItems: Array<{ link: string; text: string; image: string }> = [
   {
-    link: "/community",
+    link: "/",
     text: "Community",
     image: "https://picsum.photos/600/400?random=1",
   },
@@ -36,10 +36,10 @@ const demoItems: Array<{ link: string; text: string; image: string }> = [
   },
 ];
 
-export default function Home() {
+export default function Landing() {
   return (
     <>
-      <Navbar floating={true} className="z-50" />
+      <LandingNavbar floating={true} className="z-50" />
 
       {/* Hero Section */}
       <div className="relative w-full min-h-screen overflow-visible pt-28">
@@ -319,7 +319,7 @@ export default function Home() {
               Familias felices
             </p>
           </div>
-          <div className="text-center p-8 bg-gradient-to-b from-orange-100/10 to-amber-100/5 rounded-xl border border-orange-200/20 backdrop-blur-sm">
+          <div className="text-center p-8 bg-gradient-to-b from-orange-100/10 to-amber-100/5 rounded-xl border border-amber-200/20 backdrop-blur-sm">
             <h3 className="text-5xl font-bold text-orange-300 mb-3">50+</h3>
             <p className="text-orange-100/90 text-xl font-medium">
               Rescatistas activos

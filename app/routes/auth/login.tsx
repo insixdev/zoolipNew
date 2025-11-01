@@ -69,11 +69,10 @@ export default function Login() {
 
     // Clear previous errors
     setErrors({});
-
-    // Mark that we've submitted
     setHasSubmitted(true);
 
     // Submit using fetcher
+    // to action endpoint of ssr @action
     fetcher.submit(
       {
         username: formData.user,

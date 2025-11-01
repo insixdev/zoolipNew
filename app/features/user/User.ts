@@ -1,18 +1,16 @@
 /**el tipo final que manejara la app para mostrar su info */
 export type User = {
-  id: number, 
-  gmail: string,
-  nombre: string,
-  rol: string,
-  password?: string | null
-}
-
-
+  id: number;
+  gmail: string;
+  nombre: string;
+  rol: string;
+  password?: string | null;
+};
 
 /**user server response es un tipo para hacer response al servidorespecificamente*/
-export interface UserServerResponse extends Request { 
-  status: string,
-  message: string
+export interface UserServerResponse extends Request {
+  status: string;
+  message: string;
 }
 
 /**
@@ -22,23 +20,22 @@ export interface UserServerResponse extends Request {
  * @private usr
  **/
 export class UserServerResponseObj {
-  private usr: UserServerResponse
+  private usr: UserServerResponse;
   constructor(usr: UserServerResponse) {
-    this.usr = usr
+    this.usr = usr;
   }
   ok(): boolean {
-    if(this.usr.status === "ok"){
-      return true
-    } else return false
+    if (this.usr.status === "ok") {
+      return true;
+    } else return false;
   }
 }
 
 /**user server request es un tipo para hacer request al servidorespecificamente*/
-export interface UserServerRequest extends Request { 
-  username: string,
-  password: string,
+export interface UserServerRequest extends Request {
+  username: string;
+  password: string;
 }
-
 
 export type UserRequest = {
   username: string;

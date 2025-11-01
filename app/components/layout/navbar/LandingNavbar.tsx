@@ -3,10 +3,9 @@ import { useLocation } from "react-router";
 import Button from "~/components/ui/button/Button&Link/Button";
 import Link from "~/components/ui/button/Button&Link/Link";
 import { Link as LinkRouter} from "react-router";
-import { MessageCircle, Bell } from "lucide-react";
 import MobileNavbar from "./components/MobileNavbar";
 
-export type NavbarProps = {
+export type LandingNavbarProps = {
   className?: string
   signButton?: boolean
   variant?: 'dark' | 'light'
@@ -17,7 +16,7 @@ export type NavbarProps = {
   linkHoverStyle?: string
 }
 
-export default function Navbar({ 
+export default function LandingNavbar({ 
   className = "", 
   signButton = true, 
   variant = 'dark',
@@ -26,7 +25,7 @@ export default function Navbar({
   fill = false,
   hideHome = false,
   linkHoverStyle = ""
-}: NavbarProps) {
+}: LandingNavbarProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
 
@@ -52,7 +51,7 @@ export default function Navbar({
 
   return (
     <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${floatingStyles} ${fillStyle} ${className} ${isDarkNav}`}>
-      <div className="max-w-9xl mx-auto px-6">
+      <div className="max-w-8xl mx-auto px-11">
         <div className="flex items-center justify-between h-16">
           {/* Mobile menu button (only visible on mobile) */}
           <div className="md:hidden">
@@ -133,33 +132,8 @@ export default function Navbar({
             </LinkRouter>
           </div>
           
-          {/* Right side - Icons and Auth */}
+          {/* Right side - Auth only */}
           <div className="flex items-center space-x-4">
-            {/* Messages and Notifications (when logged in) */}
-            <div className="hidden md:flex items-center space-x-2">
-              {/* Messages */}
-              <button className={`p-2 rounded-full transition-colors duration-200 relative ${
-                isDark 
-                  ? 'text-white/80 hover:text-orange-200 hover:bg-white/10' 
-                  : 'text-gray-600 hover:text-orange-500 hover:bg-gray-100'
-              }`}>
-                <MessageCircle size={20} />
-                {/* Message badge */}
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full"></span>
-              </button>
-              
-              {/* Notifications */}
-              <button className={`p-2 rounded-full transition-colors duration-200 relative ${
-                isDark 
-                  ? 'text-white/80 hover:text-orange-200 hover:bg-white/10' 
-                  : 'text-gray-600 hover:text-orange-500 hover:bg-gray-100'
-              }`}>
-                <Bell size={20} />
-                {/* Notification badge */}
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full"></span>
-              </button>
-            </div>
-
             {/* Auth Buttons */}
             {signButton && (
               <div className="hidden md:flex items-center space-x-3">
