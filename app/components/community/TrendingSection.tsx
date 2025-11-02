@@ -1,7 +1,7 @@
-import React from "react";
 import { Link } from "react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/Avatar";
+import TrendingSidebar from "~/components/community/buscar/TrendingSidebar";
 
 type TrendingItem = {
   tag: string;
@@ -13,7 +13,12 @@ type UserToFollow = {
   user: string;
   avatar: string;
 };
-
+/*
+ * trendingSection commponent
+ * for COMMUNITY page trending section
+ * @returns {JSX.Element}
+ *
+ * */
 export default function TrendingSection() {
   const trendingItems: TrendingItem[] = [
     { tag: "#AdoptaConAmor", posts: "12.5K" },
@@ -22,6 +27,15 @@ export default function TrendingSection() {
     { tag: "#CuidadoAnimal", posts: "3,104" },
     { tag: "#HistoriasFelices", posts: "2,457" },
   ];
+
+  // Convertir datos para el componente TrendingSidebar
+  const trendingTopics = trendingItems.map((item) => ({
+    tag: item.tag,
+    posts:
+      parseInt(item.posts.replace(/[K,]/g, "")) *
+      (item.posts.includes("K") ? 1000 : 1),
+    growth: `+${Math.floor(Math.random() * 20) + 5}%`, // Crecimiento aleatorio para demo
+  }));
 
   const usersToFollow: UserToFollow[] = [
     {
@@ -54,31 +68,7 @@ export default function TrendingSection() {
           </div>
         </div>
 
-        <Card className="bg-transparent border-0 shadow-none">
-          <CardContent className="pt-4 space-y-3 px-2">
-            {trendingItems.map((item) => (
-              <div
-                key={item.tag}
-                className="group flex items-center justify-between py-2.5 px-3 rounded-lg transition-all hover:bg-rose-50/70"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-rose-300"></div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-800 group-hover:text-rose-700 transition-colors">
-                      {item.tag}
-                    </p>
-                    <p className="text-xs text-gray-400 mt-0.5">
-                      {item.posts} publicaciones
-                    </p>
-                  </div>
-                </div>
-                <button className="text-xs font-medium px-2.5 py-0.5 rounded-full bg-white/80 text-rose-600 border border-rose-100 hover:bg-rose-50 transition-all">
-                  Ver
-                </button>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+        <TrendingSidebar trendingTopics={trendingTopics} />
 
         {/* Sección de Usuarios a Seguir */}
         <Card className="bg-white/80 backdrop-blur-sm border border-rose-50 mt-4">

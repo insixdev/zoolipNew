@@ -9,7 +9,7 @@ import {
   CardContent,
   CardFooter,
 } from "~/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/Avatar";
 import React, { useState, useEffect } from "react";
 import {
   Heart,

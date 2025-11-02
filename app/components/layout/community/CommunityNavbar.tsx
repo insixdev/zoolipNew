@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router";
-import { cn } from "~/lib/utils";
 import React, { useState, useEffect, useRef } from "react";
+import { cn } from "~/lib/generalUtil";
 
 // NavItem component for navigation items
 const NavItem = ({

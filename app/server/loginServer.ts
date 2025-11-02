@@ -9,6 +9,7 @@ export async function handleLogin(req: UserServerRequest) {
   if (!username || !password) {
     throw new Response("Missing credentials", { status: 400 });
   }
+
   try {
     const user = await loginService({ username, password });
 

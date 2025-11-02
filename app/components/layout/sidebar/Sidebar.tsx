@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router';
 import { Home, Search, Heart, Info, FileText, MessageCircle, Calendar, Settings, User } from 'lucide-react';
-import { cn } from '~/lib/utils';
+import { cn } from '~/lib/generalUtil';
 
 export type SidebarProps = {
   className?: string;

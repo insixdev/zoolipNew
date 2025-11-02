@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { cn } from '~/lib/utils';
+import { cn } from '~/lib/generalUtil';
 
 const Avatar = React.forwardRef<
   HTMLDivElement,
@@ -15,7 +15,6 @@ const Avatar = React.forwardRef<
   />
 ));
 Avatar.displayName = 'Avatar';
-
 const AvatarImage = React.forwardRef<
   HTMLImageElement,
   React.ImgHTMLAttributes<HTMLImageElement>

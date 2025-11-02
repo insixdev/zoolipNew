@@ -1,6 +1,6 @@
 import { Users, UserPlus, Heart, MessageCircle, Share2, Bookmark, MoreHorizontal, Image as ImageIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardFooter } from '~/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '~/components/ui/Avatar';
 
 export default function CommunityFollowing() {
   const followingPosts = [

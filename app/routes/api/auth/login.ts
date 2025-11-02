@@ -20,7 +20,8 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     const user: UserResponse = await handleLogin(body as UserServerRequest)
-    const response = {status: user.status, message: user.message}as UserServerResponse
+    const response = { status: user.status, message: user.message } as UserServerResponse
+
     const userResponse: UserServerResponseObj = new UserServerResponseObj(response)
 
     if (!userResponse.ok) {
@@ -44,6 +45,7 @@ export async function action({ request }: ActionFunctionArgs) {
     };
 
     const headers = new Headers();
+
     headers.append('Content-Type', 'application/json');
     headers.append('Set-Cookie', `AUTH_TOKEN=${token}; Path=/; HttpOnly; SameSite=Lax${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`);
 

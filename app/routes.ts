@@ -13,9 +13,9 @@ export default [
     route("consultas", "routes/community/consultas.tsx"), // /community/consultas
     route("crear", "routes/community/crear.tsx"), // /community/crear
     route("refugios", "routes/community/refugios.tsx"), // /community/refugios
-    route("trending", "routes/community/trending.tsx"), // /community/trending
     route("following", "routes/community/following.tsx"), // /community/following
     route("chatCommunity", "routes/community/chatCommunity.tsx"), // /community/chatCommunity
+    route("hashtag/:hashtag", "routes/community/communityTrendingView.tsx"), // /community/hashtag/AdopcionResponsable
   ]),
 
   // Adopt nested routes

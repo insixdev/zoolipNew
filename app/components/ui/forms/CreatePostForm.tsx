@@ -8,7 +8,7 @@ import {
   Smile,
   Hash,
 } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/Avatar";
 
 type CreatePostFormProps = {
   onSubmit?: (data: {
