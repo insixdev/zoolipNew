@@ -1,3 +1,6 @@
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
 /**for gsap safe client rendering*/
 
 export async function safeGsapImport() {
@@ -11,4 +14,8 @@ export async function safeGsapImport() {
     return null;
   }
 }
-
+// esta funcion sirve para dar estilos a los componentes
+// resuelve conflictos de estilos entre componentes
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
