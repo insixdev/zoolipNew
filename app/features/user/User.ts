@@ -5,6 +5,55 @@ export type User = {
   username: string;
   role: string;
 };
+
+
+
+export type UserErrorResponse = {
+  status: string;
+  message: string;
+  error: string;
+}
+
+/**user server response es un tipo para hacer response al servidorespecificamente*/
+export interface UserServerResponse extends Request {
+  status: string;
+  message: string;
+}
+
+/**
+ * @description
+ * user server UserServerResponseObj tener metodos para saber si la peticion fue exitosa
+ * ademas de tener la peticion
+ * @private usr
+ **/
+export class UserServerResponseObj {
+  private usr: UserServerResponse;
+  constructor(usr: UserServerResponse) {
+    this.usr = usr;
+  }
+  ok(): boolean {
+    if (this.usr.status === "succes") {
+      return true;
+    } else return false;
+  }
+}
+
+/**user server request es un tipo para hacer request al servidorespecificamente*/
+export interface UserServerRequest extends Request {
+  username: string;
+  password: string;
+}
+
+export type UserRequest = {
+  username: string;
+  password: string;
+};
+
+export type UserResponse= {
+  status: string;
+  message: string;
+};
+// userRequest para register
 export type UserAppRegister = {
   username: string;
   password: string;
