@@ -1,11 +1,5 @@
 import { useState } from "react";
-import {
-  Link,
-  Form,
-  useActionData,
-  useNavigation,
-  redirect,
-} from "react-router";
+import { Link, Form, useActionData, useNavigation } from "react-router";
 import GoogleButton from "~/components/ui/button/socialButton/GoogleButton";
 import Button from "~/components/ui/button/Button&Link/Button";
 import Navbar from "~/components/layout/navbar/Navbar";
@@ -22,22 +16,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
 
-  const userData = {
+  const userData: UserAppRegister = {
     username: formData.get("name") as string,
     email: formData.get("email") as string,
     password: formData.get("password") as string,
-    rol: "USER",
+    role: "USER",
   };
 
   console.log("Data:", userData);
 
   try {
     const res = await registerService(userData);
-    // Redirigir al login después del registro exitoso
-    return redirect("/login?registered=true");
+    return { success: true, data: res };
   } catch (error) {
     console.error("Registration error:", error);
-    return { success: false, error: "Error al registrar el usuario: " + error };
+    return { success: false, error: "Error al registrar el usuario:"+ error };
   }
 }
 
@@ -63,10 +56,9 @@ export default function Register() {
     password: "",
     confirmPassword: "",
   });
+
   const [errors, setErrors] = useState<FormErrors>({});
-
   const actionData = useActionData<typeof action>();
-
   const navigation = useNavigation();
   const isLoading = navigation.state === "submitting";
 

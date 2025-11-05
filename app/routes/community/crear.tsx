@@ -1,6 +1,14 @@
 import { Video, MapPin, Smile, Image as ImageIcon } from "lucide-react";
 import { PageHeader } from "~/components/ui/layout";
 import { CreatePostForm } from "~/components/ui/forms";
+import type { LoaderFunctionArgs } from "react-router";
+import { requireAuth } from "~/lib/authGuard";
+
+// Loader para verificar autenticación
+export async function loader({ request }: LoaderFunctionArgs) {
+  await requireAuth(request);
+  return null;
+}
 
 export default function CrearPublicacion() {
   const handlePublish = (data: {

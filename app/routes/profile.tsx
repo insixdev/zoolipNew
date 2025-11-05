@@ -1,24 +1,79 @@
-import { type LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate } from "react-router";
+import { useActionData, type LoaderFunctionArgs } from "react-router";
+import { useLoaderData, useNavigate, useFetcher } from "react-router";
 import { useAuth } from "~/features/auth/useAuth";
 import { Link } from "react-router";
 import CommunityNavbar from "~/components/layout/community/CommunityNavbar";
 import SidebarContainer from "~/components/layout/sidebar/SidebarContainer";
 import { Settings, Grid, Bookmark, UserPlus } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { requireAuth } from "~/lib/authGuard";
 
+import { logoutService } from "~/features/auth/authServiceCurrent";
+import { getHeaderCookie } from "~/server/cookies";
+
+export async function action({ request }: LoaderFunctionArgs) {
+  const formData = await request.formData();
+  const intent = formData.get("intent");
+
+  if (intent === "logout") {
+    const navCookie = getHeaderCookie(request);
+    if (!navCookie) {
+      return Response.json(
+        {
+          status: "error",
+          message: "No hay sesión activa",
+        },
+        { status: 400 }
+      );
+    }
+
+    try {
+      const logoutResponse = await logoutService(navCookie);
+      console.log("🚪 Logout response:", logoutResponse);
+
+      // Limpiar caché del servidor
+      const { clearUserCache } = await import("~/server/me");
+      clearUserCache();
+
+      // Limpiar la cookie del navegador
+      return Response.json(
+        { status: "success", message: "Logout exitoso" },
+        {
+          status: 200,
+          headers: {
+            "Set-Cookie":
+              "AUTH_TOKEN=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly",
+          },
+        }
+      );
+    } catch (error) {
+      console.error("Error en logout:", error);
+      return Response.json(
+        {
+          status: "error",
+          message: "Error al cerrar sesión",
+        },
+        { status: 500 }
+      );
+    }
+  }
+
+  return null;
+}
 // Loader para obtener datos del perfil
 export async function loader({ request }: LoaderFunctionArgs) {
-  // Aquí puedes hacer fetch a tu API para obtener datos del usuario
-  // Por ahora, datos de ejemplo
+  // Verificar autenticación (redirige automáticamente si no está autenticado)
+  const userResponse = await requireAuth(request);
+
   const user = {
-    id: "123",
-    username: "usuario_ejemplo",
-    email: "usuario@ejemplo.com",
-    nombre: "Usuario Ejemplo",
+    id: userResponse.user.id,
+    username: userResponse.user.username,
+    email: userResponse.user.email,
+    nombre: userResponse.user.username,
     fechaRegistro: "2024-01-15",
-    mascotas: 2,
-    publicaciones: 15,
+    mascotas: 2, // Datos de ejemplo
+    publicaciones: 15, // Datos de ejemplo
+    role: userResponse.user.role,
   };
 
   return { user };
@@ -26,15 +81,35 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function Profile() {
   const { user } = useLoaderData<typeof loader>();
-  const { setUser } = useAuth();
+  const { logout, setIsLoading } = useAuth();
   const navigate = useNavigate();
+  const fetcher = useFetcher<{ status: string; message: string }>();
   const [activeTab, setActiveTab] = useState<"posts" | "saved" | "tagged">(
     "posts"
   );
 
+  const isLoggingOut = fetcher.state === "submitting";
+
+  // Manejar respuesta del logout
+  useEffect(() => {
+    if (fetcher.data) {
+      if (fetcher.data.status === "success") {
+        console.log("✅ Logout exitoso, limpiando estado");
+        logout(); // Limpiar estado del AuthProvider
+        navigate("/"); // Redirigir a home
+      } else if (fetcher.data.status === "error") {
+        console.error("❌ Error en logout:", fetcher.data.message);
+        // Mostrar error al usuario si es necesario
+      }
+    }
+  }, [fetcher.data, logout, navigate]);
+
   const handleLogout = () => {
-    setUser(null); // limpia el user del contexto
-    navigate("/"); // redirige a la root
+    console.log("🚪 Iniciando logout...");
+    setIsLoading(true);
+
+    // Usar fetcher para hacer logout
+    fetcher.submit({ intent: "logout" }, { method: "post" });
   };
 
   return (
@@ -42,10 +117,10 @@ export default function Profile() {
       <CommunityNavbar />
       <SidebarContainer showSidebar={true} className="z-80" />
 
-      <div className="mx-auto max-w-4xl px-4 pt-20 pb-10">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+      <div className="mx-auto max-w-4xl md:pl-64 px-4 pt-20 pb-10">
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100">
           {/* Header del perfil - estilo Instagram */}
-          <div className="p-8 border-b border-gray-200">
+          <div className="p-8 border-b border-gray-100">
             <div className="flex items-start gap-8">
               {/* Avatar principal */}
               <div className="flex-shrink-0">
@@ -66,12 +141,12 @@ export default function Profile() {
                   <h1 className="text-2xl font-light text-gray-900">
                     {user.username}
                   </h1>
-                  <button className="px-4 py-1.5 bg-gray-100 text-gray-900 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors">
+                  <button className="px-6 py-2 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-900 text-sm font-medium rounded-xl hover:from-gray-200 hover:to-gray-300 transition-all shadow-sm hover:shadow-md">
                     Editar perfil
                   </button>
                   <Link
                     to="/settings"
-                    className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-2 hover:bg-gray-100 rounded-xl transition-all hover:shadow-sm"
                   >
                     <Settings size={20} className="text-gray-600" />
                   </Link>
@@ -117,7 +192,7 @@ export default function Profile() {
           </div>
 
           {/* Navegación de tabs */}
-          <div className="border-b border-gray-200">
+          <div className="border-b border-gray-100">
             <div className="flex justify-center">
               <div className="flex gap-16">
                 <button
@@ -226,13 +301,36 @@ export default function Profile() {
             )}
           </div>
 
-          {/* Botón de logout (temporal para desarrollo) */}
-          <div className="p-6 border-t border-gray-200">
+          {/* Botón de logout */}
+          <div className="p-6 border-t border-gray-100">
             <button
               onClick={handleLogout}
-              className="px-4 py-2 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition-colors"
+              disabled={isLoggingOut}
+              className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white text-sm font-medium rounded-xl hover:from-red-600 hover:to-red-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Cerrar Sesión
+              {isLoggingOut ? (
+                <span className="flex items-center gap-2">
+                  <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                      fill="none"
+                    />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                  Cerrando sesión...
+                </span>
+              ) : (
+                "Cerrar Sesión"
+              )}
             </button>
           </div>
         </div>

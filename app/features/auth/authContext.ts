@@ -1,15 +1,21 @@
 import { createContext } from "react";
+import { User } from "../user/User";
 
-export interface AuthUser {
-  id: string;
-  username: string;
-  email?: string;
-  [key: string]: any;
+export interface AuthError {
+  message: string;
+  status: string;
 }
 
 export interface AuthContextType {
-  user: AuthUser | null;
-  setUser: (user: AuthUser | null) => void;
+  user: User | null;
+  setUser: (user: User | null) => void;
+  authError: AuthError | null;
+  setAuthError: (error: AuthError | null) => void;
+  isLoading: boolean;
+  setIsLoading: (loading: boolean) => void;
+  logout: () => void;
 }
 
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(
+  undefined
+);

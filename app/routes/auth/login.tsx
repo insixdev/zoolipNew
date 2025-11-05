@@ -1,89 +1,103 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useFetcher } from "react-router";
-import { Link } from "react-router";
+import { useNavigate, useFetcher, Link, useSearchParams } from "react-router";
 import { Navbar } from "~/components/layout/navbar";
 import GoogleButton from "~/components/ui/button/socialButton/GoogleButton";
-import Button from "~/components/ui/button/Button&Link/Button";
 import { useAuth } from "~/features/auth/useAuth";
+import type { LoaderFunctionArgs } from "react-router";
+import { redirectIfAuthenticated } from "~/lib/authGuard";
+
+// Loader para redirigir usuarios autenticados
+export async function loader({ request }: LoaderFunctionArgs) {
+  await redirectIfAuthenticated(request, "/profile");
+  return null;
+}
 
 interface LoginErrors {
-  user?: string;
+  username?: string;
   password?: string;
   general?: string;
 }
 
 export default function Login() {
-  const [formData, setFormData] = useState({ user: "", password: "" });
   const [errors, setErrors] = useState<LoginErrors>({});
-  const [hasSubmitted, setHasSubmitted] = useState(false);
-  const { setUser } = useAuth();
-  const fetcher = useFetcher();
   const navigate = useNavigate();
+  const fetcher = useFetcher<{ status: string; message: string }>();
+  const { authError, setAuthError } = useAuth();
+  const [searchParams] = useSearchParams();
 
   const isLoading = fetcher.state === "submitting";
+  const redirectTo = searchParams.get("redirectTo") || "/profile";
+  const isRegistered = searchParams.get("registered") === "true";
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name as keyof LoginErrors]) {
-      setErrors((prev) => ({ ...prev, [name]: "" }));
+  // Clear field-specific errors when user starts typing
+  const handleInputChange = (fieldName: keyof LoginErrors) => {
+    if (errors[fieldName]) {
+      setErrors((prev) => ({ ...prev, [fieldName]: undefined }));
     }
   };
 
-  // Handle fetcher response only after submission
+  // Handle auth error from context (from root loader)
   useEffect(() => {
-    if (hasSubmitted && fetcher.state === "idle" && fetcher.data) {
-      if (fetcher.data.success) {
-        // Login exitoso - actualizar el contexto
-        if (fetcher.data.user) {
-          setUser(fetcher.data.user);
-        }
-        navigate("/profile");
-      } else {
-        // Login falló
+    if (authError) {
+      setErrors({
+        general: authError.message || "Error de autenticación",
+      });
+      // Clear the auth error after showing it
+      setAuthError(null);
+    }
+  }, [authError, setAuthError]);
+
+  // Handle fetcher response
+  useEffect(() => {
+    if (fetcher.data) {
+      console.log("Fetcher data received:", fetcher.data);
+      if (fetcher.data.status === "success") {
+        // Clear any existing errors on success
+        setErrors({});
+        console.log("Login exitoso, redirigiendo a:", redirectTo);
+        navigate(redirectTo);
+      } else if (fetcher.data.status === "error") {
         setErrors({
-          general: fetcher.data.error || "Usuario o contraseña incorrectos",
+          general: fetcher.data.message || "Usuario o contraseña incorrectos",
         });
       }
-
-      if (fetcher.data?.errors) {
-        setErrors(fetcher.data.errors);
-      }
-
-      // Reset the submission flag
-      setHasSubmitted(false);
     }
-  }, [hasSubmitted, fetcher.state, fetcher.data, navigate]);
+  }, [fetcher.data, navigate, redirectTo]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  // Client-side validation
+  const validateForm = (formData: FormData): LoginErrors => {
+    const errors: LoginErrors = {};
+    const username = formData.get("username") as string;
+    const password = formData.get("password") as string;
 
-    const newErrors: LoginErrors = {};
-    if (!formData.user.trim()) newErrors.user = "Usuario requerido";
-    if (!formData.password) newErrors.password = "Contraseña requerida";
+    if (!username?.trim()) {
+      errors.username = "Usuario requerido";
+    }
+    if (!password) {
+      errors.password = "Contraseña requerida";
+    }
 
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
+    return errors;
+  };
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    console.log("Form submit triggered");
+
+    const formData = new FormData(e.currentTarget);
+    const validationErrors = validateForm(formData);
+
+    if (Object.keys(validationErrors).length > 0) {
+      e.preventDefault();
+      setErrors(validationErrors);
+      console.log("Validation errors:", validationErrors);
       return;
     }
 
-    // Clear previous errors
+    // Clear errors and let React Router handle the submission
     setErrors({});
-    setHasSubmitted(true);
-
-    // Submit using fetcher
-    // to action endpoint of ssr @action
-    fetcher.submit(
-      {
-        username: formData.user,
-        password: formData.password,
-      },
-      {
-        method: "POST",
-        action: "/api/auth/login",
-      }
-    );
+    console.log("Form submitting to action");
   };
+
   const bg = "bg-gradient-to-br from-orange-100 via-orange-50 to-amber-50";
   return (
     <>
@@ -93,7 +107,6 @@ export default function Login() {
       >
         <div className="w-full max-w-md">
           <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-xl border border-orange-100 p-8">
-            {/* Instagram-style Zoolip Title */}
             <div className="text-center mb-8">
               <h1
                 className="text-5xl font-bold mb-6"
@@ -108,9 +121,17 @@ export default function Login() {
                 Zoolip
               </h1>
               <p className="text-gray-600 text-sm">
-                Inicia sesión para conectar con la comunidad
+                {searchParams.get("redirectTo")
+                  ? "Inicia sesión para continuar"
+                  : "Inicia sesión para conectar con la comunidad"}
               </p>
             </div>
+
+            {isRegistered && (
+              <div className="mb-4 p-3 bg-green-50 text-green-600 text-sm rounded-lg border border-green-100">
+                ¡Cuenta creada exitosamente! Ahora puedes iniciar sesión.
+              </div>
+            )}
 
             {errors.general && (
               <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">
@@ -118,28 +139,33 @@ export default function Login() {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <fetcher.Form
+              action="/api/auth/login"
+              method="post"
+              onSubmit={handleSubmit}
+              className="space-y-5"
+            >
               <div className="space-y-1">
                 <label
-                  htmlFor="user"
+                  htmlFor="username"
                   className="block text-sm font-medium text-gray-700 mb-1"
                 >
                   Usuario
                 </label>
                 <input
-                  id="user"
+                  id="username"
                   type="text"
-                  name="user"
-                  value={formData.user}
-                  onChange={handleChange}
-                  className={`w-full px-4 py-3 rounded-xl border ${
-                    errors.user ? "border-red-300" : "border-gray-200"
+                  name="username"
+                  onChange={() => handleInputChange("username")}
+                  className={`w-full px-4 py-3 text-black rounded-xl border ${
+                    errors.username ? "border-red-300" : "border-gray-200"
                   } focus:border-pink-400 focus:ring-2 focus:ring-pink-100 outline-none transition-all bg-white text-gray-800 placeholder-gray-400`}
                   placeholder="Ingresa tu usuario"
                   disabled={isLoading}
+                  required
                 />
-                {errors.user && (
-                  <p className="mt-1 text-sm text-red-500">{errors.user}</p>
+                {errors.username && (
+                  <p className="mt-1 text-sm text-red-500">{errors.username}</p>
                 )}
               </div>
 
@@ -162,23 +188,22 @@ export default function Login() {
                   id="password"
                   type="password"
                   name="password"
-                  value={formData.password}
-                  onChange={handleChange}
+                  onChange={() => handleInputChange("password")}
                   className={`w-full px-4 py-3 rounded-xl border ${
                     errors.password ? "border-red-300" : "border-gray-200"
                   } focus:border-pink-400 focus:ring-2 focus:ring-pink-100 outline-none transition-all bg-white text-gray-800 placeholder-gray-400`}
                   placeholder="••••••••"
                   disabled={isLoading}
+                  required
                 />
                 {errors.password && (
                   <p className="mt-1 text-sm text-red-500">{errors.password}</p>
                 )}
               </div>
 
-              <Button
+              <button
                 type="submit"
-                size="lg"
-                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white font-medium py-3.5 rounded-xl cursor-pointer hover:from-orange-600 hover:to-orange-700 transition-all duration-200 mt-6 shadow-lg shadow-orange-300/50"
+                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white font-medium py-3.5 rounded-xl cursor-pointer hover:from-orange-600 hover:to-orange-700 transition-all duration-200 mt-6 shadow-lg shadow-orange-300/50 disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -208,8 +233,8 @@ export default function Login() {
                 ) : (
                   "Iniciar sesión"
                 )}
-              </Button>
-            </form>
+              </button>
+            </fetcher.Form>
 
             <div className="my-6 flex items-center">
               <div className="flex-1 border-t border-gray-200"></div>

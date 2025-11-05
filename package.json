@@ -16,6 +16,7 @@
     "@react-router/node": "^7.9.5",
     "@react-router/serve": "^7.9.5",
     "framer-motion": "^10.16.4",
+    "lucide-react": "^0.263.1",
     "gsap": "^3.12.2",
     "isbot": "^4.1.0",
     "jose": "^4.14.4",

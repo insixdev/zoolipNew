@@ -34,7 +34,6 @@ export default function TrendingSection() {
     posts:
       parseInt(item.posts.replace(/[K,]/g, "")) *
       (item.posts.includes("K") ? 1000 : 1),
-    growth: `+${Math.floor(Math.random() * 20) + 5}%`, // Crecimiento aleatorio para demo
   }));
 
   const usersToFollow: UserToFollow[] = [

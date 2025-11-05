@@ -47,7 +47,6 @@ export default [
 
   // API routes
   route("api/auth/login", "routes/api/auth/login.ts"),
-  route("api/auth/me", "routes/api/auth/me.ts"),
   route("api/auth/register", "routes/api/auth/register.ts"),
   // route("api/auth/logout")
 ] satisfies RouteConfig;

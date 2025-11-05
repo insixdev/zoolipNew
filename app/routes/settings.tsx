@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useLoaderData } from "react-router";
+import { type LoaderFunctionArgs } from "react-router";
 import { ArrowLeft } from "lucide-react";
 import {
   ProfileSettings,
@@ -8,8 +9,16 @@ import {
   AccountSettings,
   SettingsNavigation,
 } from "~/components/settings";
+import { requireAuth } from "~/lib/authGuard";
+
+// Loader para proteger la ruta de settings
+export async function loader({ request }: LoaderFunctionArgs) {
+  const userResponse = await requireAuth(request);
+  return { user: userResponse.user };
+}
 
 export default function Settings() {
+  const { user } = useLoaderData<typeof loader>();
   const [activeTab, setActiveTab] = useState("profile");
 
   return (
