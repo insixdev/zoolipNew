@@ -4,7 +4,7 @@ import type {
   UserErrorResponse,
   UserRequest,
   UserResponse,
-} from "../user/User";
+} from "../entities/User";
 
 /** URL base del backend principal */
 const BASE_AUTH_URL =

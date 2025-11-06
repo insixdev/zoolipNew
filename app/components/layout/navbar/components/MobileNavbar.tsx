@@ -1,7 +1,7 @@
 import Link from "~/components/ui/button/Button&Link/Link";
 import Button from "~/components/ui/button/Button&Link/Button";
 import type { NavbarProps } from "../Navbar";
-import { User } from "~/features/user/User";
+import { User } from "~/features/entities/User";
 
 interface MobileNavbarProps extends NavbarProps {
   isOpen: boolean;

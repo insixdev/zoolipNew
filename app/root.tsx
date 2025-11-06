@@ -18,7 +18,7 @@ import { AuthProvider } from "~/features/auth/authProvider";
 import { SmartAuthWrapper } from "~/components/auth/SmartAuthWrapper";
 import "./app.css";
 import { getUserFromRequest } from "./server/me";
-import { isErrorUser, User, UserResponseHandler } from "./features/user/User";
+import { isErrorUser, User, UserResponseHandler } from "./features/entities/User";
 
 export const links: LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },

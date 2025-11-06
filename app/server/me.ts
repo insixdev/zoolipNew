@@ -9,7 +9,7 @@ import {
   UserErrorHandler,
   UserResponseHandler,
   User,
-} from "~/features/user/User";
+} from "~/features/entities/User";
 
 // Cache simple en memoria para evitar múltiples llamadas
 const userCache = new Map<
@@ -30,7 +30,7 @@ const DUPLICATE_CALL_THRESHOLD = 1000; // 1 segundo
 export function clearUserCache() {
   userCache.clear();
   recentCalls.clear();
-  console.log("🗑️ CACHE LIMPIADO");
+  console.log("CACHE LIMPIADO");
 }
 
 // Limpiar llamadas recientes antiguas periódicamente
@@ -70,7 +70,7 @@ export async function getUserFromRequest(
 
   if (lastCall && now - lastCall < DUPLICATE_CALL_THRESHOLD) {
     console.log(
-      "⚡ LLAMADA DUPLICADA DETECTADA - Usando caché aunque esté expirado"
+      "LLAMADA DUPLICADA DETECTADA - Usando caché aunque esté expirado"
     );
     if (cached) {
       return cached.data;
@@ -130,10 +130,9 @@ export async function getUserFromRequest(
   console.log("JWT PAYLOAD", jwtPayload);
 
   try {
-    console.log("COKIE HEADERR ", cookieHeader);
-    console.log("🌐 LLAMANDO A fetchMe (servidor Spring Boot)");
+    console.log("LLAMANDO A fetchMe (servidor Spring Boot)");
     const response = await fetchMe(cookieHeader);
-    console.log("✅ response de me", response);
+    console.log(" response de me", response);
     // por si es UserErrorResponse
     if ("message" in response && "status" in response) {
       const res = {
@@ -164,7 +163,7 @@ export async function getUserFromRequest(
           data: result,
           timestamp: Date.now(),
         });
-        console.log("💾 GUARDADO EN CACHE");
+        console.log("GUARDADO EN CACHE para authProvider");
       }
 
       return result;
@@ -183,12 +182,6 @@ export async function getUserFromRequest(
       message: "SSR Error in /me endpoint, error: " + err,
     };
   }
-
-  return {
-    succes: false,
-    status: "error",
-    message: "User not found on ",
-  } as UserErrorHandler;
 }
 
 // jwtPayload.payload.error.jwtPayload.code, { status: 200 });

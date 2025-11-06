@@ -7,7 +7,7 @@ import {
   type UserResponse,
   type UserServerRequest,
   type UserServerResponse,
-} from "~/features/user/User";
+} from "~/features/entities/User";
 import { getHeaderCookie, verifyTokenFromCookie } from "~/server/cookies";
 
 /* tipo especial que contiene los headers y la response*/

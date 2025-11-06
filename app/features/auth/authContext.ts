@@ -1,5 +1,5 @@
 import { createContext } from "react";
-import { User } from "../user/User";
+import { User } from "../entities/User";
 
 export interface AuthError {
   message: string;

@@ -1,6 +1,6 @@
 import { redirect } from "react-router";
 import { getUserFromRequest } from "~/server/me";
-import { UserErrorHandler, UserResponseHandler } from "~/features/user/User";
+import { UserErrorHandler, UserResponseHandler } from "~/features/entities/User";
 import { getHeaderCookie, verifyTokenFromCookie } from "~/server/cookies";
 import { verifyToken } from "~/lib/authUtil";
 

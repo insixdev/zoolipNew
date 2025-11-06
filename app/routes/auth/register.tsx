@@ -12,7 +12,7 @@ import Navbar from "~/components/layout/navbar/Navbar";
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
 import { redirectIfAuthenticated } from "~/lib/authGuard";
 import { registerService } from "~/features/auth/authServiceCurrent";
-import { UserAppRegister } from "~/features/user/User";
+import { UserAppRegister } from "~/features/entities/User";
 
 // Loader para redirigir usuarios autenticados
 export async function loader({ request }: LoaderFunctionArgs) {
