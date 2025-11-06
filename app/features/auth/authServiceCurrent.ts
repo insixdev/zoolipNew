@@ -1,16 +1,22 @@
-import type {  User, UserAppRegister, UserErrorResponse, UserRequest, UserResponse } from "../user/User";
+import type {
+  User,
+  UserAppRegister,
+  UserErrorResponse,
+  UserRequest,
+  UserResponse,
+} from "../user/User";
 
 /** URL base del backend principal */
-const BASE_AUTH_URL = "http://localhost:3050/api/auth/";
-
+const BASE_AUTH_URL =
+  process.env.BASE_AUTH_URL || "http://localhost:3050/api/auth/";
 
 /** Función para registrarse */
 export async function registerService(user): Promise<UserResponse> {
   try {
-    const res = await fetch(`${BASE_AUTH_URL}register`, { 
+    const res = await fetch(`${BASE_AUTH_URL}register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(user)
+      body: JSON.stringify(user),
     });
 
     const data = await res.json();
@@ -27,17 +33,16 @@ export async function registerService(user): Promise<UserResponse> {
 }
 
 /** Función para hacer login */
-export async function loginService(user: UserRequest){
+export async function loginService(user: UserRequest) {
   try {
     const res = await fetch(`${BASE_AUTH_URL}login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
-      body: JSON.stringify(user)
+      body: JSON.stringify(user),
     });
 
     return res;
-
   } catch (err) {
     console.error("Login error:", err);
     throw err;
@@ -45,36 +50,40 @@ export async function loginService(user: UserRequest){
 }
 
 /** Fetch del usuario logueado según cookie (me) */
-export async function fetchMe(cookie: string): Promise<User | UserErrorResponse > {
+export async function fetchMe(
+  cookie: string
+): Promise<User | UserErrorResponse> {
   try {
     const hd = new Headers();
     hd.append("Content-Type", "application/json");
     hd.append("Cookie", cookie);
-    console.log("hd", Object.fromEntries(hd.entries()), hd)
+    console.log("hd", Object.fromEntries(hd.entries()), hd);
 
     const res = await fetch(`${BASE_AUTH_URL}me`, {
       method: "GET",
-      headers:  hd,
+      headers: hd,
     });
 
-    if (!res.ok){
+    if (!res.ok) {
       const data = await res.json();
       const err = {
         status: data.status,
         message: data.message,
-        error: data.error, 
-      } as UserErrorResponse
+        error: data.error,
+      } as UserErrorResponse;
 
       return err;
-    }else{
+    } else {
       const user = await res.json();
       return user;
-
-    } 
-
+    }
   } catch (err) {
     console.error("Fetch me error:", err);
-    return { status: "error", message: "unespecified srr error", error: "Error fetching user" };
+    return {
+      status: "error",
+      message: "unespecified srr error",
+      error: "Error fetching user",
+    };
   }
 }
 
@@ -83,12 +92,11 @@ export async function logoutService(cookie: string): Promise<void> {
   const hd = new Headers();
   hd.append("Content-Type", "application/json");
   hd.append("Cookie", cookie);
-  
+
   try {
     await fetch(`${BASE_AUTH_URL}logout`, {
       method: "POST",
-      headers:  hd,
-
+      headers: hd,
     });
   } catch (err) {
     console.error("Logout error:", err);

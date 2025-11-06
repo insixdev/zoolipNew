@@ -33,6 +33,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
   try {
     const res = await registerService(userData);
+    console.log("REGISTER Response:", res);
+    
     // Redirigir al login después del registro exitoso
     return redirect("/login?registered=true");
   } catch (error) {

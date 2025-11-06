@@ -1,0 +1,24 @@
+version: "3.8"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5173:5173"
+    volumes:
+      # Montar el código fuente para hot reload
+      - .:/app
+      # Excluir node_modules para evitar conflictos
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - CHOKIDAR_USEPOLLING=true # Para hot reload en algunos sistemas
+    env_file:
+      - .env # Cargar variables del archivo .env si existe (opcional)
+    # Permitir conexión al backend local
+    network_mode: "host"
+    stdin_open: true
+    tty: true
+    restart: unless-stopped

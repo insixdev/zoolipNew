@@ -1,0 +1,22 @@
+FROM node:20-alpine
+
+# Instalar dependencias del sistema necesarias
+RUN apk add --no-cache git
+
+# Crear directorio de trabajo
+WORKDIR /app
+
+# Copiar archivos de dependencias
+COPY package.json package-lock.json ./
+
+# Instalar todas las dependencias (incluyendo devDependencies)
+RUN npm ci
+
+# Copiar el resto del código
+COPY . .
+
+# Exponer el puerto para desarrollo
+EXPOSE 5173
+
+# Comando para desarrollo con hot reload
+CMD ["npm", "run", "dev"]

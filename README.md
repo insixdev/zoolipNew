@@ -26,13 +26,34 @@ npm install
 
 ### Development
 
-Start the development server with HMR:
+**1. Configure environment variables:**
+
+```bash
+# Copy the example file
+cp .env.example .env
+
+# Edit .env and set your JWT_SECRET
+# Change: JWT_SECRET=your-super-secure-jwt-secret-here
+# To: JWT_SECRET=YourSecureSecretHere2024
+```
+
+**2. Start the development server:**
 
 ```bash
 npm run dev
 ```
 
 Your application will be available at `http://localhost:5173`.
+
+**3. Docker Development (Alternative):**
+
+```bash
+# With Docker Compose
+./dev.sh
+
+# Or with Make
+make dev
+```
 
 ## Building for Production
 
@@ -52,7 +73,7 @@ To build and run using Docker:
 docker build -t my-app .
 
 # Run the container
-docker run -p 3000:3000 my-app
+docker run -p 5173:5173 my-app
 ```
 
 The containerized application can be deployed to any platform that supports Docker, including:

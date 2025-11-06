@@ -5,6 +5,7 @@ import { JWT_SECRET } from "./constants";
  * con la secret key del servidor principal
  */
 export function verifyToken(token: string): boolean {
+  console.log("JWT SECRET : " + JWT_SECRET);
   try {
     jwt.verify(token, JWT_SECRET);
     return true;
