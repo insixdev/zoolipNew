@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@emotion/babel-plugin": "^11.11.0",
+    "crypto": "^0.12.7",
     "@emotion/react": "^11.11.0",
     "@emotion/styled": "^11.11.0",
     "@react-router/dev": "^7.9.5",

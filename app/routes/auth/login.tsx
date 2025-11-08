@@ -22,6 +22,7 @@ export default function Login() {
   const [errors, setErrors] = useState<LoginErrors>({});
   const navigate = useNavigate();
   const fetcher = useFetcher<{ status: string; message: string }>();
+
   const { authError, setAuthError } = useAuth();
   const [searchParams] = useSearchParams();
 

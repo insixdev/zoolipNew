@@ -1,8 +1,8 @@
 import { redirect, useLoaderData } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { optionalAuth } from "~/lib/authGuard";
-import { getDashboardRouteByRole } from "~/lib/client-constants";
 import { UserResponseHandler } from "~/features/entities/User";
+import { getDashboardRouteByRole } from "~/lib/routeUtils";
 
 // Loader que redirige automáticamente según el rol del usuario
 export async function loader({ request }: LoaderFunctionArgs) {

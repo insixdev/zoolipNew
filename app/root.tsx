@@ -128,7 +128,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   const user = await getUserFromRequest(request); // obtiene
 
   if (user instanceof UserResponseHandler) {
-    console.log("enroot: user:", user);
+    console.log("enroot: user:", user, "error:", user.message+" statusjos:" + user.status);
     return new Response(JSON.stringify({ user: user.user, authError: null }), {
       headers: { "Content-Type": "application/json" },
     });
@@ -138,7 +138,7 @@ export const loader: LoaderFunction = async ({ request }) => {
     console.log("Usuario no autenticado en root loader:", user.message);
     return new Response(
       JSON.stringify({
-        user: null,
+        user: user,
         authError: null, // No pasar el error al contexto
       }),
       { headers: { "Content-Type": "application/json" } }
@@ -160,8 +160,74 @@ export default function App() {
   );
 }
 // error bundary
+
 export function ErrorBoundary() {
   const error = useRouteError();
-  console.error("ErrorBoundary:", error);
-  return <div>Ha ocurrido un error: {JSON.stringify(error)}</div>;
+  console.error("Error capturó:", error);
+
+  // Caso 1: error lanzado como `throw new Response(...)`
+  if (isRouteErrorResponse(error)) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center text-center p-8">
+        <h1 className="text-4xl font-bold mb-4 text-red-600">
+          {error.status} {error.statusText}
+        </h1>
+        <p className="text-gray-600 mb-6">
+          {error.data || "Ocurrió un error mientras se cargaban los datos."}
+        </p>
+        <a
+          href="/"
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+        >
+          Volver al inicio
+        </a>
+      </div>
+    );
+  }
+  // Caso 2: error normal (excepción JS)
+  if (error instanceof Error) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center text-center p-8">
+        <h1 className="text-4xl font-bold mb-4 text-red-600">
+          Error inesperado
+        </h1>
+        <p className="text-gray-700 mb-2">{error.message}</p>
+
+        <details className="bg-gray-100 text-left p-4 rounded mt-4 w-full max-w-lg">
+          <summary className="cursor-pointer font-semibold">
+            Detalles técnicos
+          </summary>
+          <pre className="mt-2 text-sm text-gray-600 whitespace-pre-wrap">
+            {error.stack}
+          </pre>
+        </details>
+
+        <a
+          href="/"
+          className="mt-6 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+        >
+          Volver al inicio
+        </a>
+      </div>
+    );
+  }
+
+  // Caso 3: fallback final (por si el error no tiene forma conocida)
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center text-center p-8">
+      <h1 className="text-4xl font-bold mb-4 text-red-600">
+        Error desconocido
+      </h1>
+      <pre className="text-gray-700">
+        {JSON.stringify(error, null, 2)}
+      </pre>
+      <a
+        href="/"
+        className="mt-6 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+      >
+        Volver al inicio
+      </a>
+    </div>
+  );
 }
+

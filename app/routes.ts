@@ -5,6 +5,12 @@ export default [
   // Index route is now community (social feed)
   index("routes/_index.tsx"),
 
+  route("admin-register/invite/:token", "routes/admin/adminRegister.tsx"),
+
+  route("admin", "routes/admin/_admin.tsx",[
+    route("_index", "routes/admin/_index.tsx"),
+    
+  ]),
   // Community nested routes
   route("community", "routes/community/_layout.tsx", [
     index("routes/community/_index.tsx"), // /community
@@ -28,6 +34,7 @@ export default [
     //route(":petId", "routes/adopt/[petId].tsx"), // /adopt/max, /adopt/luna, etc.
   ]),
 
+
   // Other main routes
   route("landing", "routes/landing.tsx"),
   route("profile", "routes/profile.tsx"),
@@ -49,4 +56,5 @@ export default [
   route("api/auth/login", "routes/api/auth/login.ts"),
   route("api/auth/register", "routes/api/auth/register.ts"),
   route("api/auth/logout", "routes/api/auth/logout.ts"),
+  route("api/auth/has-access", "routes/api/auth/has-access.ts"),
 ] satisfies RouteConfig;

@@ -58,10 +58,13 @@ export function AuthRoleComponent({
 }: AuthRoleComponentProps) {
 
     const { user, isLoading } = useSmartAuth();
+    console.log("USUARIO:" + user);
 
     const fetcher = useFetcher();
+
     useEffect(() => {
       if(!user) return;
+
       fetcher.submit(
         { allowedRoles: JSON.stringify(allowedRoles),
           user: JSON.stringify(user) 

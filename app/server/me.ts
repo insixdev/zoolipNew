@@ -10,6 +10,7 @@ import {
   UserResponseHandler,
   User,
 } from "~/features/entities/User";
+import { w } from "public/build/_shared/chunk-O7IRWV66";
 
 // Cache simple en memoria para evitar múltiples llamadas
 const userCache = new Map<
@@ -60,7 +61,8 @@ export async function getUserFromRequest(
   const cached = userCache.get(cacheKey);
 
   if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-    console.log("💾 USANDO CACHE - No llamada al servidor");
+    console.log("💾 USANDO CACHE - No llamada al servidor, data:" + JSON.stringify(cached.data));
+    
     return cached.data;
   }
 
