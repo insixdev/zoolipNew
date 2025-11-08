@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import { JWT_SECRET } from "./constants";
+import { JWT_SECRET } from "./server-constants";
 /**
  * Funcion para verificar el token y que no haya caducado
  * con la secret key del servidor principal
@@ -92,7 +92,12 @@ export function decodeClaims(token: string): TokenValidationResult {
     }
 
     // Validate required claims
-    if (!payload.id_usuario || !payload.sub || !payload.email || !payload.role) {
+    if (
+      !payload.id_usuario ||
+      !payload.sub ||
+      !payload.email ||
+      !payload.role
+    ) {
       return {
         valid: false,
         error: "Missing required token claims (id, username, email, role)",

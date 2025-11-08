@@ -21,7 +21,7 @@ export default function Footer() {
             <ul className="space-y-2">
               <li>
                 <Link
-                  to="/adopcion"
+                  to="/info/adopt"
                   className="text-gray-300 hover:text-orange-200 transition-colors text-sm"
                 >
                   Todo sobre adopción
@@ -37,7 +37,7 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  to="/proceso-adopcion"
+                  to="/info/proceso-adopcion"
                   className="text-gray-300 hover:text-orange-200 transition-colors text-sm"
                 >
                   Cómo adoptar
@@ -60,18 +60,18 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  to="/login?redirect=/volunteer"
+                  to="/community/refugios"
                   className="text-gray-300 hover:text-orange-200 transition-colors text-sm"
                 >
-                  Ser voluntario
+                  Refugios
                 </Link>
               </li>
               <li>
                 <Link
-                  to="/stories"
+                  to="/community/consultas"
                   className="text-gray-300 hover:text-orange-200 transition-colors text-sm"
                 >
-                  Historias de éxito
+                  Consultas
                 </Link>
               </li>
             </ul>
@@ -79,11 +79,11 @@ export default function Footer() {
 
           {/* Soporte */}
           <div>
-            <h4 className="text-white font-semibold mb-4">Soporte</h4>
+            <h4 className="text-white font-semibold mb-4">Información</h4>
             <ul className="space-y-2">
               <li>
                 <Link
-                  to="/about"
+                  to="/info/about"
                   className="text-gray-300 hover:text-orange-200 transition-colors text-sm"
                 >
                   Acerca de nosotros
@@ -91,18 +91,18 @@ export default function Footer() {
               </li>
               <li>
                 <Link
-                  to="/contact"
+                  to="/landing"
                   className="text-gray-300 hover:text-orange-200 transition-colors text-sm"
                 >
-                  Contacto
+                  Inicio
                 </Link>
               </li>
               <li>
                 <Link
-                  to="/help"
+                  to="/register"
                   className="text-gray-300 hover:text-orange-200 transition-colors text-sm"
                 >
-                  Centro de ayuda
+                  Registrarse
                 </Link>
               </li>
             </ul>
@@ -113,7 +113,7 @@ export default function Footer() {
         <div className="border-t border-gray-800 mt-12 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-400 text-sm">
-              © 2024 Zoolip. Todos los derechos reservados.
+              © 2025 Zoolip. Todos los derechos reservados.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
               <Link

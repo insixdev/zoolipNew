@@ -21,7 +21,7 @@ export function AuthProvider({
   const [authError, setAuthError] = useState<AuthError | null>(initialError);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Función mejorada para actualizar usuario
+  // función mejorada para actualizar usuario
   const updateUser = (newUser: User | null) => {
     console.log(
       "AuthProvider: Actualizando usuario",
@@ -33,7 +33,7 @@ export function AuthProvider({
 
   // Función para manejar logout temporal
   const logout = () => {
-    console.log("🚪 AuthProvider: Logout ejecutado");
+    console.log(" AuthProvider: Logout ejecutado");
     setUser(null);
     setAuthError(null);
     setIsLoading(false);

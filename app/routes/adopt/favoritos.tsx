@@ -1,15 +1,9 @@
-import {
-  Heart,
-  MapPin,
-  Calendar,
-  Share2,
-  MessageCircle,
-  Trash2,
-  Filter,
-} from "lucide-react";
-import { Link } from "react-router";
 import type { LoaderFunctionArgs } from "react-router";
 import { requireAuth } from "~/lib/authGuard";
+import { FavoritoCard } from "~/components/adopt/favoritos/FavoritoCard";
+import { EstadisticasFavoritos } from "~/components/adopt/favoritos/EstadisticasFavoritos";
+import { EmptyFavoritosState } from "~/components/adopt/favoritos/EmptyFavoritosState";
+import { ConsejosFavoritos } from "~/components/adopt/favoritos/ConsejosFavoritos";
 
 // Loader para verificar autenticación
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -81,42 +75,6 @@ export default function AdoptFavoritos() {
     },
   ];
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "available":
-        return (
-          <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">
-            Disponible
-          </span>
-        );
-      case "adopted":
-        return (
-          <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs font-medium rounded-full">
-            Adoptado
-          </span>
-        );
-      case "pending":
-        return (
-          <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">
-            En proceso
-          </span>
-        );
-      default:
-        return null;
-    }
-  };
-
-  const getUrgencyBadge = (urgency: string) => {
-    if (urgency === "high") {
-      return (
-        <span className="px-2 py-1 bg-red-100 text-red-800 text-xs font-medium rounded-full">
-          Urgente
-        </span>
-      );
-    }
-    return null;
-  };
-
   return (
     <div className="ml-64 px-8 py-4 pb-10">
       <div className="max-w-6xl mx-auto">
@@ -125,201 +83,21 @@ export default function AdoptFavoritos() {
         </div>
 
         {/* Filtros y estadísticas */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div className="flex items-center gap-6">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600">
-                  {favoritePets.length}
-                </div>
-                <div className="text-sm text-gray-600">Total</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">
-                  {
-                    favoritePets.filter((pet) => pet.status === "available")
-                      .length
-                  }
-                </div>
-                <div className="text-sm text-gray-600">Disponibles</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-red-600">
-                  {favoritePets.filter((pet) => pet.urgency === "high").length}
-                </div>
-                <div className="text-sm text-gray-600">Urgentes</div>
-              </div>
-            </div>
-
-            <div className="flex gap-3">
-              <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                <Filter size={16} />
-                Filtrar
-              </button>
-              <select className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none">
-                <option>Ordenar por fecha</option>
-                <option>Ordenar por nombre</option>
-                <option>Ordenar por ubicación</option>
-                <option>Mostrar urgentes primero</option>
-              </select>
-            </div>
-          </div>
-        </div>
+        <EstadisticasFavoritos pets={favoritePets} />
 
         {/* Grid de mascotas favoritas */}
         {favoritePets.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {favoritePets.map((pet) => (
-              <div
-                key={pet.id}
-                className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow duration-200"
-              >
-                <div className="relative">
-                  <img
-                    src={pet.image}
-                    alt={pet.name}
-                    className="w-full h-48 object-cover"
-                  />
-                  <div className="absolute top-3 left-3 flex gap-2">
-                    {getStatusBadge(pet.status)}
-                    {getUrgencyBadge(pet.urgency)}
-                  </div>
-                  <div className="absolute top-3 right-3 flex gap-2">
-                    <button className="p-2 bg-white/90 rounded-full hover:bg-white transition-colors">
-                      <Heart size={18} className="text-red-500 fill-red-500" />
-                    </button>
-                    <button className="p-2 bg-white/90 rounded-full hover:bg-white transition-colors">
-                      <Trash2
-                        size={18}
-                        className="text-gray-600 hover:text-red-500"
-                      />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="p-4">
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="text-xl font-semibold text-gray-900">
-                      {pet.name}
-                    </h3>
-                    <span
-                      className={`px-2 py-1 text-xs font-medium rounded-full ${
-                        pet.gender === "Macho"
-                          ? "bg-blue-100 text-blue-800"
-                          : "bg-pink-100 text-pink-800"
-                      }`}
-                    >
-                      {pet.gender}
-                    </span>
-                  </div>
-
-                  <div className="space-y-2 mb-4">
-                    <p className="text-gray-600 text-sm">
-                      <span className="font-medium">Edad:</span> {pet.age}
-                    </p>
-                    <p className="text-gray-600 text-sm">
-                      <span className="font-medium">Raza:</span> {pet.breed}
-                    </p>
-                    <p className="text-gray-600 text-sm flex items-center gap-1">
-                      <MapPin size={14} />
-                      {pet.location}
-                    </p>
-                    <p className="text-gray-600 text-sm">
-                      <span className="font-medium">Refugio:</span>{" "}
-                      {pet.refugio}
-                    </p>
-                    <p className="text-gray-600 text-sm line-clamp-2">
-                      {pet.description}
-                    </p>
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
-                    <div className="flex items-center gap-1">
-                      <Calendar size={12} />
-                      <span>
-                        Guardado:{" "}
-                        {new Date(pet.dateAdded).toLocaleDateString("es-ES")}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-2">
-                    <Link
-                      to={`/adopt/${pet.id}`}
-                      className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 px-4 rounded-lg text-center transition-colors text-sm"
-                    >
-                      Ver detalles
-                    </Link>
-                    <button className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                      <MessageCircle size={16} />
-                    </button>
-                    <button className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                      <Share2 size={16} />
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <FavoritoCard key={pet.id} {...pet} />
             ))}
           </div>
         ) : (
-          // Estado vacío
-          <div className="text-center py-16">
-            <Heart className="mx-auto text-gray-400 mb-4" size={64} />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              No tienes mascotas favoritas aún
-            </h3>
-            <p className="text-gray-600 mb-6">
-              Cuando encuentres mascotas que te interesen, puedes guardarlas
-              aquí para verlas más tarde.
-            </p>
-            <Link
-              to="/adopt"
-              className="inline-block px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-            >
-              Explorar mascotas
-            </Link>
-          </div>
+          <EmptyFavoritosState />
         )}
 
         {/* Consejos */}
-        {favoritePets.length > 0 && (
-          <div className="mt-12 bg-gradient-to-br from-orange-50 to-yellow-50 border border-orange-200 rounded-lg p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              💡 Consejos para tus favoritos
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700">
-              <div>
-                <p className="font-medium mb-1">
-                  Actúa rápido con los urgentes
-                </p>
-                <p>
-                  Las mascotas marcadas como urgentes necesitan hogar
-                  inmediatamente.
-                </p>
-              </div>
-              <div>
-                <p className="font-medium mb-1">Contacta directamente</p>
-                <p>
-                  Usa el chat para hacer preguntas específicas sobre cada
-                  mascota.
-                </p>
-              </div>
-              <div>
-                <p className="font-medium mb-1">Visita antes de decidir</p>
-                <p>
-                  Programa una visita para conocer mejor a tu futura mascota.
-                </p>
-              </div>
-              <div>
-                <p className="font-medium mb-1">Comparte con amigos</p>
-                <p>
-                  Ayuda a encontrar hogar compartiendo mascotas que no puedas
-                  adoptar.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
+        {favoritePets.length > 0 && <ConsejosFavoritos />}
       </div>
     </div>
   );

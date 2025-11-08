@@ -5,7 +5,7 @@
  * Uso: node generate-jwt-secret.js
  */
 console.log("JWT Secret generado:");
-import {JWT_SECRET as secret} from "./constants";
+import { JWT_SECRET as secret } from "./app/lib/server-constants.js";
 console.log("");
 console.log(`JWT_SECRET=${secret}`);
 console.log("");

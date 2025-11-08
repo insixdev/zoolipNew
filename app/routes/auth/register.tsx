@@ -34,7 +34,7 @@ export async function action({ request }: ActionFunctionArgs) {
   try {
     const res = await registerService(userData);
     console.log("REGISTER Response:", res);
-    
+
     // Redirigir al login después del registro exitoso
     return redirect("/login?registered=true");
   } catch (error) {
@@ -112,7 +112,12 @@ export default function Register() {
 
   return (
     <>
-      <Navbar signButton={false} variant="light" hideMobile={true} />
+      <Navbar
+        signButton={true}
+        variant="light"
+        hideMobile={true}
+        hideNotifications={true}
+      />
       <div
         className={`min-h-screen ${bg} flex items-start justify-center p-4 pt-24`}
       >

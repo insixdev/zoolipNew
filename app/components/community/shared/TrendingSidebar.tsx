@@ -3,7 +3,7 @@ import { Link } from "react-router";
 
 interface TrendingTopic {
   tag: string;
-  posts: number;
+  posts: string | number;
   growth?: string;
 }
 
@@ -12,7 +12,7 @@ interface TrendingSidebarProps {
   onTopicClick?: (topic: TrendingTopic) => void;
 }
 
-export default function TrendingSidebar({
+export function TrendingSidebar({
   trendingTopics,
   onTopicClick,
 }: TrendingSidebarProps) {

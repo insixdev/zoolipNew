@@ -105,7 +105,7 @@ export default function LandingNavbar({
             {!hideHome && (
               <div className="relative">
                 <Link
-                  to="/"
+                  to="/landing"
                   className={`text-2xl font-bold transition-colors duration-200 ${
                     isDark
                       ? "text-white hover:text-orange-200"
@@ -136,9 +136,9 @@ export default function LandingNavbar({
             </LinkRouter>
 
             <LinkRouter
-              to="/"
+              to="/community"
               className={`transition-colors duration-200 font-medium ${
-                isActive("/")
+                isActive("/community")
                   ? isDark
                     ? "text-orange-200 font-semibold"
                     : "text-orange-600 font-semibold"
@@ -150,9 +150,9 @@ export default function LandingNavbar({
               Comunidad
             </LinkRouter>
             <LinkRouter
-              to="/landing"
+              to="/info/about"
               className={`transition-colors duration-200 font-medium ${
-                isActive("/landing")
+                isActive("/info/about")
                   ? isDark
                     ? "text-orange-200 font-semibold"
                     : "text-orange-600 font-semibold"

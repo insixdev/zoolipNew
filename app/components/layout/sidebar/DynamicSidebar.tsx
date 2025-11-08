@@ -17,5 +17,7 @@ export default function DynamicSidebar({ className = '' }: DynamicSidebarProps) 
   }
   
   // Por defecto, mostrar la sidebar de comunidad
-  return <Sidebar className={className} />;
+  return (
+    <Sidebar className={className} />
+  );
 }

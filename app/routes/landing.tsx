@@ -20,17 +20,17 @@ import {
 
 const demoItems: Array<{ link: string; text: string; image: string }> = [
   {
-    link: "/",
+    link: "/community",
     text: "Community",
     image: "https://picsum.photos/600/400?random=1",
   },
   {
-    link: "/adopt",
+    link: "/community",
     text: "Adopt Now",
     image: "https://picsum.photos/600/400?random=2",
   },
   {
-    link: "/about",
+    link: "/community",
     text: "About Us",
     image: "https://picsum.photos/600/400?random=3",
   },
@@ -89,6 +89,7 @@ export default function Landing() {
                   size="lg"
                   variant="especial"
                   classNameProps="z-20 bg-orange-200 hover:bg-orange-300 text-black font-semibold"
+                  onClick={() => (window.location.href = "/adopt")}
                 >
                   Adoptar ahora
                 </Button>
@@ -107,6 +108,7 @@ export default function Landing() {
                   size="lg"
                   variant="especial"
                   classNameProps="z-20 border-orange-200 text-orange-200 hover:bg-orange-200/10"
+                  onClick={() => (window.location.href = "/community")}
                 >
                   Ser rescatista
                 </Button>
@@ -166,6 +168,7 @@ export default function Landing() {
                     variant="especial"
                     classNameProps="text-white font-bold px-12 py-4 text-lg"
                     style={{ backgroundColor: "#d67ca0" }}
+                    onClick={() => (window.location.href = "/adopt")}
                   >
                     Encontrar mi compañero
                   </Button>
@@ -228,80 +231,86 @@ export default function Landing() {
         </div>
 
         {/* SpotlightCards */}
-        <section className="mt-24 mb-24 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <section className="mt-24 mb-24">
           <ClientOnly>
-            <SpotlightCard
-              className="bg-gradient-to-br from-slate-900/40 via-blue-900/20 to-gray-800/30 border-slate-400/20"
-              spotlightColor="rgba(148, 163, 184, 0.25)"
-            >
-              <div className="h-full flex flex-col justify-between m-2">
-                <div>
-                  <h3 className="text-3xl font-bold text-white mb-4 leading-tight">
-                    Rescate con propósito
-                  </h3>
-                  <p className="text-lg text-white/80 leading-relaxed mb-3">
-                    Cada rescate es una segunda oportunidad. Trabajamos con
-                    refugios y rescatistas para dar a cada animal el cuidado que
-                    merece.
-                  </p>
+            <div className="grid grid-cols-3 gap-8">
+              <SpotlightCard
+                className="bg-gradient-to-br from-slate-900/40 via-blue-900/20 to-gray-800/30 border-slate-400/20"
+                spotlightColor="rgba(148, 163, 184, 0.25)"
+              >
+                <div className="h-full flex flex-col justify-between p-6 min-h-[320px]">
+                  <div>
+                    <h3 className="text-2xl font-bold text-white mb-4 leading-tight">
+                      Rescate con propósito
+                    </h3>
+                    <p className="text-base text-white/80 leading-relaxed">
+                      Cada rescate es una segunda oportunidad. Trabajamos con
+                      refugios y rescatistas para dar a cada animal el cuidado
+                      que merece.
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    classNameProps="border-white/60 text-white/80 hover:bg-white/10 w-fit mt-4"
+                    onClick={() => (window.location.href = "/register")}
+                  >
+                    Ser rescatista
+                  </Button>
                 </div>
-                <Button
-                  size="sm"
-                  variant="primary"
-                  classNameProps="border-white/60 text-white/80 hover:bg-white/10 w-fit mt-4"
-                >
-                  Ser rescatista
-                </Button>
-              </div>
-            </SpotlightCard>
+              </SpotlightCard>
 
-            <SpotlightCard
-              className="bg-gradient-to-br from-amber-900/40 via-slate-800/20 to-orange-900/30 border-amber-400/20"
-              spotlightColor="rgba(245, 158, 11, 0.25)"
-            >
-              <div className="h-full flex flex-col justify-between">
-                <div>
-                  <h3 className="text-3xl font-bold text-white mb-6 leading-tight">
-                    Comunidad unida
-                  </h3>
-                  <p className="text-xl text-white/80 leading-relaxed">
-                    Una red de personas comprometidas. Veterinarios, voluntarios
-                    y familias trabajando juntos por un futuro mejor.
-                  </p>
+              <SpotlightCard
+                className="bg-gradient-to-br from-amber-900/40 via-slate-800/20 to-orange-900/30 border-amber-400/20"
+                spotlightColor="rgba(245, 158, 11, 0.25)"
+              >
+                <div className="h-full flex flex-col justify-between p-6 min-h-[320px]">
+                  <div>
+                    <h3 className="text-2xl font-bold text-white mb-4 leading-tight">
+                      Comunidad unida
+                    </h3>
+                    <p className="text-base text-white/80 leading-relaxed">
+                      Una red de personas comprometidas. Veterinarios,
+                      voluntarios y familias trabajando juntos por un futuro
+                      mejor.
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    classNameProps="border-white/60 text-white/80 hover:bg-white/10 w-fit mt-4"
+                    onClick={() => (window.location.href = "/community")}
+                  >
+                    Únete a nosotros
+                  </Button>
                 </div>
-                <Button
-                  size="sm"
-                  variant="primary"
-                  classNameProps="border-white/60 text-white/80 hover:bg-white/10 w-fit mt-6"
-                >
-                  Únete a nosotros
-                </Button>
-              </div>
-            </SpotlightCard>
+              </SpotlightCard>
 
-            <SpotlightCard
-              className="bg-gradient-to-br from-rose-900/40 via-slate-800/20 to-pink-900/30 border-rose-400/20"
-              spotlightColor="rgba(214, 124, 160, 0.25)"
-            >
-              <div className="h-full flex flex-col justify-between">
-                <div>
-                  <h3 className="text-3xl font-bold text-white mb-6 leading-tight">
-                    Adopción responsable
-                  </h3>
-                  <p className="text-xl text-white/80 leading-relaxed">
-                    Conectamos familias con su compañero perfecto. Un proceso
-                    cuidadoso que garantiza hogares llenos de amor.
-                  </p>
+              <SpotlightCard
+                className="bg-gradient-to-br from-rose-900/40 via-slate-800/20 to-pink-900/30 border-rose-400/20"
+                spotlightColor="rgba(214, 124, 160, 0.25)"
+              >
+                <div className="h-full flex flex-col justify-between p-6 min-h-[320px]">
+                  <div>
+                    <h3 className="text-2xl font-bold text-white mb-4 leading-tight">
+                      Adopción responsable
+                    </h3>
+                    <p className="text-base text-white/80 leading-relaxed">
+                      Conectamos familias con su compañero perfecto. Un proceso
+                      cuidadoso que garantiza hogares llenos de amor.
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    classNameProps="border-white/60 text-white/80 hover:bg-white/10 w-fit mt-4"
+                    onClick={() => (window.location.href = "/adopt")}
+                  >
+                    Adoptar ahora
+                  </Button>
                 </div>
-                <Button
-                  size="sm"
-                  variant="primary"
-                  classNameProps="border-white/60 text-white/80 hover:bg-white/10 w-fit mt-6"
-                >
-                  Adoptar ahora
-                </Button>
-              </div>
-            </SpotlightCard>
+              </SpotlightCard>
+            </div>
           </ClientOnly>
         </section>
 
@@ -447,6 +456,7 @@ export default function Landing() {
               variant="especial"
               classNameProps="text-white font-semibold rounded-full"
               style={{ backgroundColor: "#d67ca0" }}
+              onClick={() => (window.location.href = "/adopt")}
             >
               Comencemos
             </Button>

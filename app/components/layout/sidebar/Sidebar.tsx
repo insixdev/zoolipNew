@@ -9,7 +9,7 @@ export type SidebarProps = {
 const menuItems = [
   {
     label: 'Home',
-    path: '/',
+    path: '/community',
     icon: Home,
   },
   {

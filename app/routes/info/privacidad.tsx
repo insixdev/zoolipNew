@@ -7,7 +7,7 @@ export default function Privacidad() {
       {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/community" className="text-rose-600 font-semibold text-lg">
+          <Link to="/landing" className="text-rose-600 font-semibold text-lg">
             Zoolip
           </Link>
           <nav className="flex gap-6">

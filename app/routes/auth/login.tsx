@@ -6,9 +6,9 @@ import { useAuth } from "~/features/auth/useAuth";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirectIfAuthenticated } from "~/lib/authGuard";
 
-// Loader para redirigir usuarios autenticados
+// Loader para redirigir usuarios autenticados al dashboard correspondiente
 export async function loader({ request }: LoaderFunctionArgs) {
-  await redirectIfAuthenticated(request, "/profile");
+  await redirectIfAuthenticated(request);
   return null;
 }
 
@@ -54,8 +54,11 @@ export default function Login() {
       if (fetcher.data.status === "success") {
         // Clear any existing errors on success
         setErrors({});
-        console.log("Login exitoso, redirigiendo a:", redirectTo);
-        navigate(redirectTo);
+        console.log("Login exitoso, redirigiendo...");
+
+        // Recargar la página para que el loader del root detecte el nuevo usuario
+        // y redirija al dashboard correcto según el rol
+        window.location.href = redirectTo.startsWith("/") ? redirectTo : "/";
       } else if (fetcher.data.status === "error") {
         setErrors({
           general: fetcher.data.message || "Usuario o contraseña incorrectos",
@@ -101,7 +104,12 @@ export default function Login() {
   const bg = "bg-gradient-to-br from-orange-100 via-orange-50 to-amber-50";
   return (
     <>
-      <Navbar signButton={false} variant="light" hideMobile={true} />
+      <Navbar
+        signButton={true}
+        variant="light"
+        hideMobile={true}
+        hideNotifications={true}
+      />
       <div
         className={`min-h-screen ${bg} flex items-start justify-center p-4 pt-24`}
       >

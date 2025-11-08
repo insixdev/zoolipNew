@@ -202,16 +202,16 @@ export default function CommunityIndex() {
             {(activeTab) => (
               <>
                 {activeTab === "forYou" ? (
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     {posts.map((post) => (
                       <div
                         key={post.id}
                         className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow"
                       >
-                        <div className="p-6 pb-4">
-                          <div className="flex items-center justify-between mb-4">
+                        <div className="p-5 pb-3">
+                          <div className="flex items-center justify-between mb-3">
                             <div className="flex items-center gap-3">
-                              <Avatar className="w-11 h-11">
+                              <Avatar className="w-10 h-10">
                                 <AvatarImage
                                   src={post.author.avatar}
                                   alt={post.author.name}
@@ -221,23 +221,23 @@ export default function CommunityIndex() {
                                 </AvatarFallback>
                               </Avatar>
                               <div>
-                                <p className="font-semibold text-gray-900">
+                                <p className="font-semibold text-gray-900 text-sm">
                                   {post.author.name}
                                 </p>
-                                <p className="text-sm text-gray-500">
+                                <p className="text-xs text-gray-500">
                                   {post.author.username} · {post.timestamp}
                                 </p>
                               </div>
                             </div>
                             <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
                               <MoreHorizontal
-                                size={20}
+                                size={18}
                                 className="text-gray-600"
                               />
                             </button>
                           </div>
 
-                          <p className="text-gray-800 whitespace-pre-wrap mb-4">
+                          <p className="text-gray-800 text-sm whitespace-pre-wrap mb-3 line-clamp-4">
                             {post.content}
                           </p>
                         </div>
@@ -247,38 +247,38 @@ export default function CommunityIndex() {
                             <img
                               src={post.image}
                               alt="Post"
-                              className="w-full h-80 object-cover"
+                              className="w-full h-64 object-cover"
                             />
                           </div>
                         )}
 
-                        <div className="p-6 pt-4">
+                        <div className="p-5 pt-3">
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-6">
+                            <div className="flex items-center gap-5">
                               <button className="flex items-center gap-2 text-gray-600 hover:text-rose-600 transition-colors">
                                 <Heart
-                                  size={20}
+                                  size={18}
                                   className={
                                     post.isLiked
                                       ? "fill-red-500 text-red-500"
                                       : ""
                                   }
                                 />
-                                <span className="font-medium">
+                                <span className="font-medium text-sm">
                                   {post.likes}
                                 </span>
                               </button>
 
                               <button className="flex items-center gap-2 text-gray-600 hover:text-rose-600 transition-colors">
-                                <MessageCircle size={20} />
-                                <span className="font-medium">
+                                <MessageCircle size={18} />
+                                <span className="font-medium text-sm">
                                   {post.comments}
                                 </span>
                               </button>
 
                               <button className="flex items-center gap-2 text-gray-600 hover:text-rose-600 transition-colors">
-                                <Share2 size={20} />
-                                <span className="font-medium">
+                                <Share2 size={18} />
+                                <span className="font-medium text-sm">
                                   {post.shares}
                                 </span>
                               </button>
@@ -286,7 +286,7 @@ export default function CommunityIndex() {
 
                             <button className="text-gray-600 hover:text-rose-600 transition-colors">
                               <Bookmark
-                                size={20}
+                                size={18}
                                 className={
                                   post.isSaved
                                     ? "fill-rose-500 text-rose-500"

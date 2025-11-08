@@ -1,7 +1,11 @@
 import { useState } from "react";
-import { Search, Filter, MapPin, Heart } from "lucide-react";
+import { Heart } from "lucide-react";
 import { PageHeader } from "~/components/ui/layout";
 import { RefugioCard, type Refugio } from "~/components/ui/community";
+import { FiltrosRefugios } from "~/components/community/refugios/FiltrosRefugios";
+import { EstadisticasRefugios } from "~/components/community/refugios/EstadisticasRefugios";
+import { EmptyRefugiosState } from "~/components/community/refugios/EmptyRefugiosState";
+import { RegistrarRefugioCTA } from "~/components/community/refugios/RegistrarRefugioCTA";
 
 export default function CommunityRefugios() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -376,84 +380,17 @@ export default function CommunityRefugios() {
       />
 
       {/* Filtros */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Búsqueda */}
-          <div className="relative">
-            <Search
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-              size={20}
-            />
-            <input
-              type="text"
-              placeholder="Buscar refugios..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none text-gray-900"
-            />
-          </div>
-
-          {/* Ubicación */}
-          <select
-            value={selectedLocation}
-            onChange={(e) => setSelectedLocation(e.target.value)}
-            className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none text-gray-900"
-          >
-            <option value="all">Todas las ubicaciones</option>
-            <option value="Ciudad de México">Ciudad de México</option>
-            <option value="Guadalajara">Guadalajara</option>
-            <option value="Monterrey">Monterrey</option>
-            <option value="Puebla">Puebla</option>
-            <option value="Tijuana">Tijuana</option>
-          </select>
-
-          {/* Especialidad */}
-          <select
-            value={selectedSpecialty}
-            onChange={(e) => setSelectedSpecialty(e.target.value)}
-            className="px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-rose-500 outline-none text-gray-900"
-          >
-            <option value="all">Todas las especialidades</option>
-            <option value="perros">Perros</option>
-            <option value="gatos">Gatos</option>
-            <option value="cachorros">Cachorros</option>
-            <option value="rehabilitación">Rehabilitación</option>
-            <option value="necesidades especiales">
-              Necesidades especiales
-            </option>
-          </select>
-        </div>
-      </div>
+      <FiltrosRefugios
+        searchTerm={searchTerm}
+        selectedLocation={selectedLocation}
+        selectedSpecialty={selectedSpecialty}
+        onSearchChange={setSearchTerm}
+        onLocationChange={setSelectedLocation}
+        onSpecialtyChange={setSelectedSpecialty}
+      />
 
       {/* Estadísticas generales */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="bg-gradient-to-br from-rose-500 to-pink-600 text-white rounded-xl p-6 text-center">
-          <div className="text-3xl font-bold mb-2">
-            {refugios
-              .reduce((sum, r) => sum + r.animalsRescued, 0)
-              .toLocaleString()}
-          </div>
-          <div className="text-rose-100">Animales Rescatados</div>
-        </div>
-        <div className="bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-xl p-6 text-center">
-          <div className="text-3xl font-bold mb-2">
-            {refugios
-              .reduce((sum, r) => sum + r.adoptionsCompleted, 0)
-              .toLocaleString()}
-          </div>
-          <div className="text-green-100">Adopciones Exitosas</div>
-        </div>
-        <div className="bg-gradient-to-br from-blue-500 to-cyan-600 text-white rounded-xl p-6 text-center">
-          <div className="text-3xl font-bold mb-2">
-            {refugios.reduce((sum, r) => sum + r.currentAnimals, 0)}
-          </div>
-          <div className="text-blue-100">Esperando Hogar</div>
-        </div>
-        <div className="bg-gradient-to-br from-purple-500 to-indigo-600 text-white rounded-xl p-6 text-center">
-          <div className="text-3xl font-bold mb-2">{refugios.length}</div>
-          <div className="text-purple-100">Refugios Activos</div>
-        </div>
-      </div>
+      <EstadisticasRefugios refugios={refugios} />
 
       {/* Lista de refugios */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -468,33 +405,10 @@ export default function CommunityRefugios() {
       </div>
 
       {/* Mensaje si no hay resultados */}
-      {filteredRefugios.length === 0 && (
-        <div className="text-center py-12">
-          <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Search size={32} className="text-gray-400" />
-          </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">
-            No se encontraron refugios
-          </h3>
-          <p className="text-gray-600">
-            Intenta ajustar tus filtros de búsqueda
-          </p>
-        </div>
-      )}
+      {filteredRefugios.length === 0 && <EmptyRefugiosState />}
 
       {/* Call to action */}
-      <div className="mt-12 bg-gradient-to-br from-orange-50 to-rose-50 rounded-2xl p-8 text-center border border-orange-100">
-        <h3 className="text-2xl font-bold text-gray-900 mb-4">
-          ¿Tienes un refugio?
-        </h3>
-        <p className="text-gray-600 mb-6 max-w-2xl mx-auto">
-          Únete a nuestra red de refugios y organizaciones. Ayuda a más animales
-          a encontrar un hogar amoroso.
-        </p>
-        <button className="bg-gradient-to-r from-rose-500 to-pink-600 text-white px-8 py-3 rounded-lg hover:from-rose-600 hover:to-pink-700 transition-all font-semibold shadow-lg hover:shadow-xl">
-          Registrar mi refugio
-        </button>
-      </div>
+      <RegistrarRefugioCTA />
     </div>
   );
 }

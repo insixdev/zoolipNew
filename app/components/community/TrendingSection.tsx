@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/Avatar";
-import TrendingSidebar from "~/components/community/buscar/TrendingSidebar";
+import { TrendingSidebar } from "~/components/community/shared/TrendingSidebar";
 
 type TrendingItem = {
   tag: string;
