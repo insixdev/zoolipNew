@@ -4,6 +4,7 @@ import { cn } from "~/lib/generalUtil";
 import { TuPerfil } from "~/components/layout/shared/TuPerfil";
 import { AuthRoleComponent } from "~/components/auth/AuthRoleComponent";
 import { USER_ROLES } from "~/lib/constants";
+import { FaUserShield } from "react-icons/fa";
 
 // NavItem component for navigation items
 const NavItem = ({
@@ -83,7 +84,7 @@ export default function CommunityNavbar({
   return (
     <nav
       className={cn(
-        "fixed top-0 left-20 right-0 z-50",
+        "fixed top-0 left-0 right-0 z-20",
         "bg-white border-b border-rose-100",
         "transition-all duration-200 h-20", // Altura fija
         className
@@ -92,6 +93,18 @@ export default function CommunityNavbar({
       <div className="w-full max-w-8xl mx-auto pr-8 pl-24 h-20 flex items-center">
         {/* Navegación central */}
         <div className="flex-1 flex items-center justify-center space-x-10">
+          {/* Admin Link - Only visible to admins */}
+          <AuthRoleComponent allowedRoles={[USER_ROLES.ADMIN]}>
+            <NavItem
+              to="/admin"
+              icon={
+                <FaUserShield className="h-5 w-5" />
+              }
+              label="Admin"
+              isActive={isActive('/admin')}
+            />
+          </AuthRoleComponent>
+          
           <NavItem
             to="/adopt"
             icon={

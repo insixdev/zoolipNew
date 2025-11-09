@@ -94,11 +94,11 @@ export default function Profile() {
   useEffect(() => {
     if (fetcher.data) {
       if (fetcher.data.status === "success") {
-        console.log("✅ Logout exitoso, limpiando estado");
+        console.log(" Logout exitoso, limpiando estado");
         logout(); // Limpiar estado del AuthProvider
         navigate("/"); // Redirigir a home
       } else if (fetcher.data.status === "error") {
-        console.error("❌ Error en logout:", fetcher.data.message);
+        console.error(" Error en logout:", fetcher.data.message);
         // Mostrar error al usuario si es necesario
       }
     }

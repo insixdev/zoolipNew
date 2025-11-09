@@ -1,5 +1,5 @@
 /** ID de institución asociada al veterinario */
-type InstitutionId = {
+export type InstitutionId = {
   id_institucion: number;
 };
 

@@ -6,7 +6,7 @@ export enum InstitutionType {
 }
 
 /** ID de usuario asociado a la institución */
-type UserId = {
+export type UserId = {
   id: number;
 };
 

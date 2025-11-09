@@ -1,101 +1,127 @@
-import { useEffect } from "react";
-import { useNavigate } from "react-router";
+import { Link } from "react-router";
+import {
+  FaPaw,
+  FaUsers,
+  FaClinicMedical,
+  FaDog,
+  FaCalendarAlt,
+  FaChartLine,
+  FaUserMd,
+  FaHeart,
+} from "react-icons/fa";
 import { useSmartAuth } from "~/features/auth/useSmartAuth";
 import { ADMIN_ROLES, type AdminRole } from "~/lib/constants";
 
-export default function AdminIndex() {
-  const { user, isLoading } = useSmartAuth();
-  const navigate = useNavigate();
+export default function AdminDashboard() {
+  const { user } = useSmartAuth();
+  const adminRole = user?.tipo as AdminRole;
 
-  useEffect(() => {
-    if (isLoading || !user) return;
+  // Estadísticas según el rol
+  const getStats = () => {
+    const baseStats = [
+      {
+        title: "Mascotas en adopción",
+        value: "24",
+        icon: <FaPaw className="text-blue-500 text-2xl" />,
+        link: "/admin/mascotas",
+      },
+      {
+        title: "Donaciones recibidas",
+        value: "$2,450",
+        icon: <FaHeart className="text-rose-500 text-2xl" />,
+        link: "/admin/donaciones",
+      },
+    ];
 
-    const adminRole = user.role as AdminRole;
-
-    // Redirección inteligente según el rol
-    switch (adminRole) {
-      case ADMIN_ROLES.ADMINISTRADOR:
-        navigate("/admin/system", { replace: true });
-        break;
-
-      case ADMIN_ROLES.VETERINARIO:
-      case ADMIN_ROLES.PROTECTORA:
-      case ADMIN_ROLES.REFUGIO:
-        navigate("/admin/dashboard", { replace: true });
-        break;
-
-      default:
-        // Si no tiene un rol válido, redirigir al home
-        navigate("/", { replace: true });
+    if (adminRole === ADMIN_ROLES.VETERINARIO) {
+      return [
+        ...baseStats,
+        {
+          title: "Citas programadas",
+          value: "8",
+          icon: <FaCalendarAlt className="text-yellow-500 text-2xl" />,
+          link: "/admin/atencion",
+        },
+        {
+          title: "Atenciones del mes",
+          value: "45",
+          icon: <FaUserMd className="text-purple-500 text-2xl" />,
+          link: "/admin/atencion",
+        },
+      ];
     }
-  }, [user, isLoading, navigate]);
 
-  // Mostrar loading mientras se redirige
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-rose-600 mx-auto mb-4"></div>
-        <p className="text-gray-600">Cargando...</p>
-      </div>
-    </div>
-  );
-}
+    return [
+      ...baseStats,
+      {
+        title: "Solicitudes pendientes",
+        value: "12",
+        icon: <FaUsers className="text-green-500 text-2xl" />,
+        link: "/admin/solicitudes",
+      },
+      {
+        title: "Adopciones del mes",
+        value: "7",
+        icon: <FaDog className="text-purple-500 text-2xl" />,
+        link: "/admin/solicitudes",
+      },
+    ];
+  };
 
-function AdminDashboardOld() {
-  // Datos de ejemplo - reemplazar con datos reales de tu aplicación
-  const stats = [
-    {
-      title: "Mascotas en adopción",
-      value: "24",
-      icon: <FaPaw className="text-blue-500 text-2xl" />,
-      link: "/adopt",
-    },
-    {
-      title: "Solicitudes pendientes",
-      value: "12",
-      icon: <FaUsers className="text-green-500 text-2xl" />,
-      link: "/admin/solicitudes",
-    },
-    {
-      title: "Citas programadas",
-      value: "8",
-      icon: <FaCalendarAlt className="text-yellow-500 text-2xl" />,
-      link: "/admin/citas",
-    },
-    {
-      title: "Total de usuarios",
-      value: "156",
-      icon: <FaUsers className="text-purple-500 text-2xl" />,
-      link: "/admin/usuarios",
-    },
-  ];
+  // Acciones rápidas según el rol
+  const getQuickActions = () => {
+    const baseActions = [
+      {
+        title: "Agregar mascota",
+        icon: <FaDog />,
+        link: "/admin/crearMascota",
+        color: "bg-blue-100 text-blue-600",
+      },
+      {
+        title: "Ver donaciones",
+        icon: <FaHeart />,
+        link: "/admin/donaciones",
+        color: "bg-rose-100 text-rose-600",
+      },
+    ];
 
-  const quickActions = [
-    {
-      title: "Agregar mascota",
-      icon: <FaDog />,
-      link: "/admin/mascotas/nueva",
-      color: "bg-blue-100 text-blue-600",
-    },
-    {
-      title: "Programar cita",
-      icon: <FaCalendarAlt />,
-      link: "/admin/citas/nueva",
-      color: "bg-green-100 text-green-600",
-    },
-    {
-      title: "Registrar veterinario",
-      icon: <FaUserMd />,
-      link: "/admin/veterinarios/nuevo",
-      color: "bg-purple-100 text-purple-600",
-    },
-    {
-      title: "Ver reportes",
-      icon: <FaChartLine />,
-      link: "/admin/reportes",
-      color: "bg-yellow-100 text-yellow-600",
-    },
-  ];
+    if (adminRole === ADMIN_ROLES.VETERINARIO) {
+      return [
+        ...baseActions,
+        {
+          title: "Atención médica",
+          icon: <FaUserMd />,
+          link: "/admin/atencion",
+          color: "bg-purple-100 text-purple-600",
+        },
+        {
+          title: "Ver reportes",
+          icon: <FaChartLine />,
+          link: "/admin/reportes",
+          color: "bg-yellow-100 text-yellow-600",
+        },
+      ];
+    }
+
+    return [
+      ...baseActions,
+      {
+        title: "Ver solicitudes",
+        icon: <FaUsers />,
+        link: "/admin/solicitudes",
+        color: "bg-green-100 text-green-600",
+      },
+      {
+        title: "Ver reportes",
+        icon: <FaChartLine />,
+        link: "/admin/reportes",
+        color: "bg-yellow-100 text-yellow-600",
+      },
+    ];
+  };
+
+  const stats = getStats();
+  const quickActions = getQuickActions();
 
   const recentActivity = [
     {
@@ -121,10 +147,23 @@ function AdminDashboardOld() {
     },
   ];
 
+  const getRoleTitle = () => {
+    switch (adminRole) {
+      case ADMIN_ROLES.VETERINARIO:
+        return "Panel de Veterinaria";
+      case ADMIN_ROLES.PROTECTORA:
+        return "Panel de Protectora";
+      case ADMIN_ROLES.REFUGIO:
+        return "Panel de Refugio";
+      default:
+        return "Panel de Administración";
+    }
+  };
+
   return (
     <div className="p-6">
       <h1 className="text-3xl font-bold text-gray-800 mb-6">
-        Panel de Administración
+        {getRoleTitle()}
       </h1>
 
       {/* Estadísticas principales */}
@@ -213,7 +252,7 @@ function AdminDashboardOld() {
           <h2 className="text-xl font-semibold">Mascotas recientes</h2>
           <Link
             to="/admin/mascotas"
-            className="text-blue-600 hover:underline text-sm"
+            className="text-rose-600 hover:underline text-sm"
           >
             Ver todas
           </Link>
@@ -229,12 +268,18 @@ function AdminDashboardOld() {
               </div>
               <div className="p-3">
                 <h3 className="font-medium">Mascota {pet}</h3>
-                <p className="text-sm text-gray-500">Refugio Patitas</p>
+                <p className="text-sm text-gray-500">
+                  {adminRole === ADMIN_ROLES.VETERINARIO
+                    ? "En tratamiento"
+                    : "En adopción"}
+                </p>
                 <div className="mt-2 flex justify-between items-center">
                   <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
-                    En adopción
+                    {adminRole === ADMIN_ROLES.VETERINARIO
+                      ? "Activo"
+                      : "Disponible"}
                   </span>
-                  <button className="text-xs text-blue-600 hover:underline">
+                  <button className="text-xs text-rose-600 hover:underline">
                     Ver más
                   </button>
                 </div>

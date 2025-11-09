@@ -75,7 +75,7 @@ export function TuPerfil() {
           {getUserInitials()}
         </div>
         <span className="hidden lg:inline text-sm font-medium text-gray-700 group-hover:text-rose-600">
-          {user?.username || "Tu perfil perra"}
+          {user?.username || "Perfil"}
         </span>
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -127,7 +127,7 @@ export function TuPerfil() {
                 d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
               />
             </svg>
-            Ver perfil
+            {user ? "Mi perfil" : "Iniciar sesión"}
           </Link>
           <Link
             to="/settings"
@@ -157,7 +157,11 @@ export function TuPerfil() {
             Configuración
           </Link>
           <div className="border-t border-rose-100 my-1"></div>
-          <button
+          <div>
+          {!user ? (<p>no tenes cuenta perra</p>): (
+
+
+             <button
             onClick={handleLogout}
             disabled={fetcher.state !== "idle"}
             className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-rose-50 hover:text-rose-600 transition-colors disabled:opacity-50"
@@ -178,7 +182,12 @@ export function TuPerfil() {
             </svg>
             {fetcher.state !== "idle" ? "Cerrando sesión..." : "Cerrar sesión"}
           </button>
+
+          )}
+          </div>
+
         </div>
+
       )}
     </div>
   );
