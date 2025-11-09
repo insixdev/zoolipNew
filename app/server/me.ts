@@ -61,7 +61,7 @@ export async function getUserFromRequest(
   const cached = userCache.get(cacheKey);
 
   if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-    console.log("💾 USANDO CACHE - No llamada al servidor, data:" + JSON.stringify(cached.data));
+    console.log("USANDO CACHE - No llamada al servidor, data:" + JSON.stringify(cached.data));
     
     return cached.data;
   }
@@ -148,13 +148,20 @@ export async function getUserFromRequest(
     if (jwtPayload.valid) {
       // en caso de que sea valido el token
       const user = {
-        id: jwtPayload.payload.id,
+        id: jwtPayload.payload.id_usuario.toString(),
         email: jwtPayload.payload.email,
-        username: jwtPayload.payload.username,
+        username: jwtPayload.payload.sub,
         role: jwtPayload.payload.role,
-      };
+      } as User;
+
+      console.log("result que se guardara en cahek", user);
       const result = {
-        user: user,
+        user: {
+          id: jwtPayload.payload.id_usuario.toString(),
+          email: jwtPayload.payload.email,
+          username: jwtPayload.payload.sub,
+          role: jwtPayload.payload.role,
+        },
         status: "ok",
         message: "User found on SSR",
       } as UserResponseHandler;

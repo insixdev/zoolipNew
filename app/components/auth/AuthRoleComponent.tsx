@@ -1,5 +1,6 @@
 import { ReactNode, useEffect } from "react";
 import { useFetcher, useLoaderData } from "react-router";
+import { useAuth } from "~/features/auth/useAuth";
 import { useSmartAuth } from "~/features/auth/useSmartAuth";
 import { USER_ROLES, type UserRole } from "~/lib/constants";
 import { canAccessRoute } from "~/lib/roleGuards";
@@ -58,7 +59,7 @@ export function AuthRoleComponent({
 }: AuthRoleComponentProps) {
 
     const { user, isLoading } = useSmartAuth();
-    console.log("USUARIO:" + user);
+    console.log("USUARIO:" + JSON.stringify(user) );
 
     const fetcher = useFetcher();
 
@@ -72,11 +73,13 @@ export function AuthRoleComponent({
         { method: "post", 
           action: "/api/auth/has-access" 
         }
+
       )
-    }, [user, allowedRoles]);
+    }, []);
     // Mientras está cargando el front
     if (isLoading) {
-      return showWhileLoading ? <>{children}</> : null;
+      return <>ERES UN PUTITO</>
+     // return showWhileLoading ? <>{children}</> : null;
     }
     // Si no hay usuario autenticado
     if (!user) {
@@ -92,12 +95,15 @@ export function AuthRoleComponent({
     // obtenemos la response
     const  hasAccess: boolean = fetcher.data.hasAccess;
 
+    console.log("tenia acceso el rol?: " + hasAccess);
+
     // Verificar si el usuario tiene uno de los roles permitidos
     if (hasAccess) {
       return <>{children}</>;
     }
     // No tiene acceso, mostrar fallback
     return <>{fallback}</>;
+
   }
 
 /**

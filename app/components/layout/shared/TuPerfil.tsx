@@ -6,7 +6,9 @@ export function TuPerfil() {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const fetcher = useFetcher();
+
   const { user, logout: clientLogout } = useSmartAuth();
+
 
   // Cerrar menú cuando se hace click fuera
   useEffect(() => {
@@ -73,7 +75,7 @@ export function TuPerfil() {
           {getUserInitials()}
         </div>
         <span className="hidden lg:inline text-sm font-medium text-gray-700 group-hover:text-rose-600">
-          {user?.username || "Tu perfil"}
+          {user?.username || "Tu perfil perra"}
         </span>
         <svg
           xmlns="http://www.w3.org/2000/svg"

@@ -8,9 +8,6 @@ export async function action({ request })  {
     const allowedRoles = JSON.parse(formData.get('allowedRoles') as string);
     const user = JSON.parse(formData.get('user') as string);
 
-
-    console.log("has access:" + user , allowedRoles);
-
     // error de entrada de datos
   if (!user || !allowedRoles || !Array.isArray(allowedRoles)) {
       return Response.json(

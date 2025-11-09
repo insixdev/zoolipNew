@@ -127,6 +127,7 @@ export const loader: LoaderFunction = async ({ request }) => {
 
   const user = await getUserFromRequest(request); // obtiene
 
+
   if (user instanceof UserResponseHandler) {
     console.log("enroot: user:", user, "error:", user.message+" statusjos:" + user.status);
     return new Response(JSON.stringify({ user: user.user, authError: null }), {
@@ -135,10 +136,20 @@ export const loader: LoaderFunction = async ({ request }) => {
   } else {
     // No pasar errores de autenticación al contexto
     // Los errores del loader de root no deben mostrarse al usuario
-    console.log("Usuario no autenticado en root loader:", user.message);
+    // TODO: HACERLO MEJOR
+    console.log("Usuario se encontro en cache o gubo error :", JSON.stringify(user));
+    let frontUser;
+    try{
+      frontUser = user?.user;
+      
+    }catch (error) {
+      console.error("Error al obtener el usuario:", error);
+      frontUser = null;
+    }
+
     return new Response(
       JSON.stringify({
-        user: user,
+        user: user.user,
         authError: null, // No pasar el error al contexto
       }),
       { headers: { "Content-Type": "application/json" } }
