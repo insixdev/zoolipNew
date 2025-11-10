@@ -11,6 +11,7 @@ import {
   User,
 } from "lucide-react";
 import { cn } from "~/lib/generalUtil";
+import { p } from "public/build/_shared/chunk-O7IRWV66";
 
 export type SidebarProps = {
   className?: string;
@@ -33,21 +34,22 @@ const menuItems = [
     path: "/community/consultas",
     icon: FileText,
   },
-  {
-    label: "Crear",
-    path: "/community/crear",
-    icon: User,
-  },
+
   {
     label: "Refugios",
     path: "/community/refugios",
     icon: Heart,
   },
+  {
+    label: "Crear",
+    path: "/community/crear",
+    icon: User,
+  },
 ];
 
 export default function Sidebar({
   className = "",
-  onlyForUsers = false,
+  onlyForUsers,
 }: SidebarProps) {
   const location = useLocation();
 
@@ -72,11 +74,20 @@ export default function Sidebar({
 
       <nav className="flex-1 p-4 overflow-y-auto">
         <ul className="space-y-1">
+
           {menuItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
 
-            return (
+            const shouldShow = (onlyForUsers && item.path === "/community/crear" )
+
+            return shouldShow ? (
+              /////
+              <p>bitch</p>
+                
+              ) : (
+                
+              
               <li key={item.path}>
                 <Link
                   to={item.path}

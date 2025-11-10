@@ -10,7 +10,7 @@ import {
   Settings,
   X,
 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export type MobileSidebarProps = {
   isOpen: boolean;
@@ -36,24 +36,15 @@ const menuItems = [
   },
   {
     label: "Sobre Nosotros",
-    path: "/about",
+    path: "/info/about",
     icon: Info,
   },
   {
-    label: "Blog",
-    path: "/blog",
-    icon: FileText,
-  },
-  {
-    label: "Contacto",
-    path: "/contact",
+    label: "Chat",
+    path: "/community/chatCommunity",
     icon: MessageCircle,
   },
-  {
-    label: "Eventos",
-    path: "/events",
-    icon: Calendar,
-  },
+
 ];
 
 export default function MobileSidebar({
@@ -62,16 +53,17 @@ export default function MobileSidebar({
   onlyForUsers = false,
 }: MobileSidebarProps) {
   const location = useLocation();
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   // Close sidebar when route changes
   useEffect(() => {
     onClose();
-  }, [location.pathname, onClose]);
+  }, [location.pathname ]);
 
   // Prevent body scroll when sidebar is open
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = "hidden";
+      document.body.style.overflow = "unset";
     } else {
       document.body.style.overflow = "unset";
     }
@@ -107,7 +99,7 @@ export default function MobileSidebar({
             </div>
             <button
               onClick={onClose}
-              className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              className="p-2 rounded-lg hover:bg-gray-400 transition-colors"
               aria-label="Cerrar menú"
             >
               <X size={24} className="text-gray-600" />
@@ -121,7 +113,7 @@ export default function MobileSidebar({
                 const Icon = item.icon;
                 const active = isActive(item.path);
                 // If this is the adopt entry and onlyForUsers is true, render disabled
-                if (item.path === "/adopt" && onlyForUsers) {
+                if (item.path === "/adopt" || onlyForUsers) {
                   return (
                     <li key={item.path}>
                       <div

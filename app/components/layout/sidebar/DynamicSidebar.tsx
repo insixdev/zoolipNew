@@ -9,7 +9,7 @@ export type DynamicSidebarProps = {
 
 export default function DynamicSidebar({
   className = "",
-  onlyForUsers = false,
+  onlyForUsers = true,
 }: DynamicSidebarProps) {
   const location = useLocation();
 

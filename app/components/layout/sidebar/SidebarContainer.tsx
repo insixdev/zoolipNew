@@ -10,9 +10,9 @@ export type SidebarContainerProps = {
 };
 
 export default function SidebarContainer({
-  showSidebar = true,
+  showSidebar,
   className = "",
-  onlyForUsers = false,
+  onlyForUsers,
 }: SidebarContainerProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 

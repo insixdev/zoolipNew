@@ -44,7 +44,7 @@ const menuItems = [
 
 export default function AdoptSidebar({
   className = "",
-  onlyForUsers = false,
+  onlyForUsers = true,
 }: AdoptSidebarProps) {
   const location = useLocation();
 
@@ -80,7 +80,7 @@ export default function AdoptSidebar({
               "/adopt/solicitudes",
             ].includes(item.path);
 
-            if (requiresAuth || onlyForUsers) {
+            if (requiresAuth && onlyForUsers) {
               return (
                 <li key={item.path}>
                   <div

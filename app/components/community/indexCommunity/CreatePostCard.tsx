@@ -2,6 +2,8 @@ import { useState } from "react";
 import { useFetcher } from "react-router";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/Avatar";
 import { ImageIcon, Loader2 } from "lucide-react";
+import { AuthRoleComponent } from "~/components/auth/AuthRoleComponent";
+import { USER_ROLES } from "~/lib/constants";
 
 type CreatePostCardProps = {
   onPostCreated?: () => void;
@@ -12,6 +14,7 @@ type CreatePostCardProps = {
 export default function CreatePostCard({ onPostCreated }: CreatePostCardProps) {
   const [content, setContent] = useState("");
   const [topico, setTopico] = useState("");
+  const [onFocusCrear, setFocusCrear] = useState<boolean>(false);
   const fetcher = useFetcher();
 
   const isSubmitting = fetcher.state === "submitting";
@@ -58,6 +61,15 @@ export default function CreatePostCard({ onPostCreated }: CreatePostCardProps) {
         </div>
       )}
 
+      <AuthRoleComponent allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.ADOPTANTE, USER_ROLES.USER]} fallback= {
+        <div  onMouseEnter={() => setFocusCrear(true)} onMouseLeave={() => setFocusCrear(false)}>
+        {onFocusCrear ? (
+          <p className="mb-4 p-3 bg-pink-50 text-gray-600 text-sm rounded-lg border border-red-200 ">Para crear una publicación debes iniciar sesión</p>
+        ) : (
+          <p>p</p>
+        )}
+        </div>
+      }>
       <form onSubmit={handleSubmit}>
         <div className="flex items-start gap-4">
           <Avatar className="w-12 h-12">
@@ -106,7 +118,9 @@ export default function CreatePostCard({ onPostCreated }: CreatePostCardProps) {
             </div>
           </div>
         </div>
+
       </form>
+      </AuthRoleComponent>
     </div>
   );
 }

@@ -14,7 +14,8 @@ import type { Post } from "~/components/community/indexCommunity/PostCard";
 import type { Comment } from "~/components/community/comentarios/CommentItem";
 import { getAllPublicationsService } from "~/features/post/postService";
 import { postParseResponse } from "~/features/post/postResponseParse";
-
+import { AuthRoleComponent } from "~/components/auth/AuthRoleComponent";
+import { USER_ROLES } from "~/lib/constants";
 const POSTS_PER_PAGE = 5; // Número de posts a mostrar por página
 
 // loader para cargar las post inciciales
@@ -230,7 +231,9 @@ export default function CommunityIndex() {
         {/* Feed principal */}
         <div className="xl:col-span-3 space-y-6 max-w-2xl">
           {/* Create Post Card */}
+          Auth
           <CreatePostCard onPostCreated={handlePostCreated} />
+
 
           {/* Feed Tabs */}
           <FeedTabs>
