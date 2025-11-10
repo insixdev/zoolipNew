@@ -62,13 +62,24 @@ export default function CreatePostCard({ onPostCreated }: CreatePostCardProps) {
       )}
 
       <AuthRoleComponent allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.ADOPTANTE, USER_ROLES.USER]} fallback= {
-        <div  onMouseEnter={() => setFocusCrear(true)} onMouseLeave={() => setFocusCrear(false)}>
-        {onFocusCrear ? (
-          <p className="mb-4 p-3 bg-pink-50 text-gray-600 text-sm rounded-lg border border-red-200 ">Para crear una publicación debes iniciar sesión</p>
-        ) : (
-          <p>p</p>
-        )}
-        </div>
+<div
+onMouseEnter={() => setFocusCrear(true)}
+onMouseLeave={() => setFocusCrear(false)}
+className="relative"
+>
+<p
+  className={`
+    mb-4 p-3 text-sm rounded-lg border transition-all duration-300 ease-out
+    ${onFocusCrear
+      ? "opacity-100 translate-y-0 bg-pink-50 border-red-200 text-gray-600"
+      : "opacity-0 -translate-y-2 pointer-events-none"
+    }
+  `}
+>
+  Para crear una publicación debes iniciar sesión
+</p>
+</div>
+
       }>
       <form onSubmit={handleSubmit}>
         <div className="flex items-start gap-4">
