@@ -23,6 +23,7 @@ import {
   User,
   UserResponseHandler,
 } from "./features/entities/User";
+import Landing from "./routes/landing";
 
 export const links: LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -99,6 +100,19 @@ export const loader: LoaderFunction = async ({ request }) => {
   // de routes
   console.log(" ROOT LOADER EJECUTADO - URL:", url.pathname);
 
+  // Estrategia adicional: verificar si es una navegación que realmente necesita datos del usuario
+  const publicRoutes = ["/landing", "/info/", "/adopt/_index", "/community/_index" ]; const isPublicRoute = publicRoutes.some((route) => url.pathname.includes(route));
+
+  if (isPublicRoute) {
+    console.log(
+      "Ruta pública detectada, retornando usuario null sin llamada al servidor"
+    );
+    return new Response(JSON.stringify({ user: null, authError: null }), {
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
+
   // Verificar si el cliente indica que ya tiene datos de usuario
   const skipUserFetch = request.headers.get("X-Skip-User-Fetch");
   if (skipUserFetch === "true") {
@@ -113,17 +127,6 @@ export const loader: LoaderFunction = async ({ request }) => {
   console.log("Cookie header:", request.headers.get("Cookie"));
 
 
-  // Estrategia adicional: verificar si es una navegación que realmente necesita datos del usuario
-  const publicRoutes = ["/landing", "/info/", "/adopt/_index", "/community/_index" ]; const isPublicRoute = publicRoutes.some((route) => url.pathname.includes(route));
-
-  if (isPublicRoute) {
-    console.log(
-      "Ruta pública detectada, retornando usuario null sin llamada al servidor"
-    );
-    return new Response(JSON.stringify({ user: null, authError: null }), {
-      headers: { "Content-Type": "application/json" },
-    });
-  }
 
   const user = await getUserFromRequest(request); // obtiene
 
@@ -136,11 +139,18 @@ export const loader: LoaderFunction = async ({ request }) => {
   } else {
     // No pasar errores de autenticación al contexto
     // Los errores del loader de root no deben mostrarse al usuario
+    //
     // TODO: HACERLO MEJOR
     console.log("Usuario se encontro en cache o gubo error :", JSON.stringify(user));
-    let frontUser;
+    let frontUser: User | null  | unknown= null;  // esta mal pero ahora esta mejor
     try{
-      frontUser = user?.user;
+      if(user instanceof UserResponseHandler){
+        
+      frontUser = user.user;
+        
+      }else if(user && typeof user === "object" && "user" in user){
+        frontUser = user?.user;
+      }
       
     }catch (error) {
       console.error("Error al obtener el usuario:", error);
@@ -149,7 +159,7 @@ export const loader: LoaderFunction = async ({ request }) => {
 
     return new Response(
       JSON.stringify({
-        user: user.user,
+        user: frontUser,
         authError: null, // No pasar el error al contexto
       }),
       { headers: { "Content-Type": "application/json" } }
@@ -158,10 +168,14 @@ export const loader: LoaderFunction = async ({ request }) => {
 };
 
 export default function App() {
+  // para mejor optimizacion hacemos un chekeo rapido en el frontend acerca de si tiene cookie
+  //
+  
   const { user: initialUser, authError } = useLoaderData<{
     user: User | null;
     authError: { message: string; status: string } | null;
   }>();
+
   return (
     <AuthProvider initialUser={initialUser} initialError={authError}>
       <SmartAuthWrapper>

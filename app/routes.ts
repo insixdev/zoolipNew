@@ -65,4 +65,28 @@ export default [
   route("api/auth/has-admin-access", "routes/api/auth/has-admin-access.ts"),
   route("api/admin/invitation", "routes/api/admin/invitation.ts"),
 
+  // Post API routes
+  route("api/post/crear", "routes/api/post/crearPost.ts"),
+  route("api/post/actualizar", "routes/api/post/actualizarPost.ts"),
+  route("api/post/eliminar", "routes/api/post/eliminarPost.ts"),
+  route("api/post/obtenerTodas", "routes/api/post/obtenerTodas.ts"),
+
+  // Pets API routes
+  route("api/pets/crear", "routes/api/pets/CrearPet.ts"),
+  route("api/pets/actualizar", "routes/api/pets/ActualizarPet.ts"),
+  route("api/pets/eliminar", "routes/api/pets/EliminarPet.ts"),
+
+  // Comments API routes
+  route("api/comments/crear", "routes/api/comments/crear.ts"),
+  route("api/comments/actualizar", "routes/api/comments/actualizar.ts"),
+  route("api/comments/eliminar", "routes/api/comments/eliminar.ts"),
+  route(
+    "api/comments/obtenerPorPublicacion",
+    "routes/api/comments/obtenerPorPublicacion.ts"
+  ),
+
+  // Donations API routes
+  route("api/donations/crear", "routes/api/donations/crear.ts"),
+  route("api/donations/actualizar", "routes/api/donations/actualizar.ts"),
+  route("api/donations/eliminar", "routes/api/donations/eliminar.ts"),
 ] satisfies RouteConfig;

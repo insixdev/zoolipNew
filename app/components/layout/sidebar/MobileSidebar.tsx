@@ -1,51 +1,66 @@
-import { Link, useLocation } from 'react-router';
-import { Home, Users, Heart, Info, FileText, MessageCircle, Calendar, Settings, X } from 'lucide-react';
-import { useEffect } from 'react';
+import { Link, useLocation } from "react-router";
+import {
+  Home,
+  Users,
+  Heart,
+  Info,
+  FileText,
+  MessageCircle,
+  Calendar,
+  Settings,
+  X,
+} from "lucide-react";
+import { useEffect } from "react";
 
 export type MobileSidebarProps = {
   isOpen: boolean;
   onClose: () => void;
+  onlyForUsers?: boolean;
 };
 
 const menuItems = [
   {
-    label: 'Inicio',
-    path: '/',
+    label: "Inicio",
+    path: "/",
     icon: Home,
   },
   {
-    label: 'Comunidad',
-    path: '/community',
+    label: "Comunidad",
+    path: "/community",
     icon: Users,
   },
   {
-    label: 'Adopciones',
-    path: '/adopt',
+    label: "Adopciones",
+    path: "/adopt",
     icon: Heart,
   },
   {
-    label: 'Sobre Nosotros',
-    path: '/about',
+    label: "Sobre Nosotros",
+    path: "/about",
     icon: Info,
   },
   {
-    label: 'Blog',
-    path: '/blog',
+    label: "Blog",
+    path: "/blog",
     icon: FileText,
   },
   {
-    label: 'Contacto',
-    path: '/contact',
+    label: "Contacto",
+    path: "/contact",
     icon: MessageCircle,
   },
   {
-    label: 'Eventos',
-    path: '/events',
+    label: "Eventos",
+    path: "/events",
     icon: Calendar,
   },
 ];
 
-export default function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
+export default function MobileSidebar({
+  isOpen,
+  onClose,
+  onlyForUsers = false,
+}: MobileSidebarProps) {
   const location = useLocation();
 
   // Close sidebar when route changes
@@ -56,12 +71,12 @@ export default function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
   // Prevent body scroll when sidebar is open
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     }
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     };
   }, [isOpen]);
 
@@ -86,7 +101,9 @@ export default function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
             <div>
               <h2 className="text-xl font-bold text-gray-800">Menú</h2>
-              <p className="text-sm text-gray-500 mt-1">Navega por las secciones</p>
+              <p className="text-sm text-gray-500 mt-1">
+                Navega por las secciones
+              </p>
             </div>
             <button
               onClick={onClose}
@@ -103,7 +120,22 @@ export default function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
               {menuItems.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.path);
-                
+                // If this is the adopt entry and onlyForUsers is true, render disabled
+                if (item.path === "/adopt" && onlyForUsers) {
+                  return (
+                    <li key={item.path}>
+                      <div
+                        className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-400 line-through opacity-60 cursor-not-allowed"
+                        title="Acceso solo para usuarios registrados"
+                        aria-disabled="true"
+                      >
+                        <Icon size={20} className="text-gray-400" />
+                        <span>{item.label}</span>
+                      </div>
+                    </li>
+                  );
+                }
+
                 return (
                   <li key={item.path}>
                     <Link
@@ -111,13 +143,17 @@ export default function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                       className={`
                         flex items-center gap-3 px-4 py-3 rounded-lg
                         transition-all duration-200
-                        ${active 
-                          ? 'bg-orange-50 text-orange-600 font-medium shadow-sm' 
-                          : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                        ${
+                          active
+                            ? "bg-orange-50 text-orange-600 font-medium shadow-sm"
+                            : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                         }
                       `}
                     >
-                      <Icon size={20} className={active ? 'text-orange-600' : 'text-gray-500'} />
+                      <Icon
+                        size={20}
+                        className={active ? "text-orange-600" : "text-gray-500"}
+                      />
                       <span>{item.label}</span>
                     </Link>
                   </li>

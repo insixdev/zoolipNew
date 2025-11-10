@@ -76,6 +76,10 @@ export function AuthRoleComponent({
 
       )
     }, []);
+    const isAllowed = user?.role === "USER";
+    if(!isAllowed) {
+      return <>{fallback}</>;
+    }
     // Mientras está cargando el front
     if (isLoading) {
       return <>ERES UN PUTITO</>

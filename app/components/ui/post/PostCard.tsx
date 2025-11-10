@@ -5,25 +5,21 @@ import {
   Bookmark,
   MoreHorizontal,
 } from "lucide-react";
-import {
-  Card,
-  CardHeader,
-  CardContent,
-  CardFooter,
-} from "~/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
 
 export type Post = {
   id: string;
+  topico: string;
   type: "image" | "text";
   content: string;
   image?: string;
   author: {
-    name: string;
     username: string;
     avatar: string;
   };
-  timestamp: string;
+  fecha_duda_resuelta: string;
+  fecha_creacion: string;
+  fecha_edicion: string;
   likes: number;
   comments: number;
   shares: number;
@@ -53,13 +49,13 @@ export default function PostCard({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Avatar className="w-11 h-11">
-              <AvatarImage src={post.author.avatar} alt={post.author.name} />
-              <AvatarFallback>{post.author.name[0]}</AvatarFallback>
+              <AvatarImage src={post.author.avatar} alt={post.author.username /*name*/} />
+              <AvatarFallback>{post.author.username /*name[0]*/}</AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-semibold text-gray-900">{post.author.name}</p>
+              <p className="font-semibold text-gray-900">{post.author.username /*name*/}</p>
               <p className="text-sm text-gray-500">
-                {post.author.username} · {post.timestamp}
+                {post.author.username} · {post.fecha_creacion}
               </p>
             </div>
           </div>

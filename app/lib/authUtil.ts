@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "./server-constants";
+import { getTokenFromCookie } from "~/server/cookies";
 /**
  * Funcion para verificar el token y que no haya caducado
  * con la secret key del servidor principal
@@ -142,7 +143,33 @@ export function decodeClaims(token: string): TokenValidationResult {
     };
   }
 }
-
+export enum field {
+  id = "id",
+  username = "username",
+  email = "email",
+  role = "role",
+}
+// mediante el cookie extraemos el token
+// y lo decodificamos
+// y obtenemos el payload
+// y obtenemos el campo que queremos
+export function getUserFieldFromCookie(cookie: string, field: field) {
+  if (cookie) {
+    const token = getTokenFromCookie(cookie)
+    if(token){
+      const result = decodeClaims(token);
+      if (result.valid) {
+        return result.payload[field];
+      } else {
+        return null;
+      }
+    } else {
+      return null;
+    }
+  }
+  return null;
+  
+}
 /**
  * Extracts user ID from the token payload
  * @param payload The decoded JWT payload

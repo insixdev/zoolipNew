@@ -7,7 +7,7 @@ import {
 
 /** URL base del backend de publicaciones */
 const BASE_PUBLICATION_URL =
-  process.env.BASE_PUBLICATION_URL || "http://localhost:3050/api/publicacion/";
+  "http://localhost:3050/api/publicacion/";
 
 /**
  * Crea una nueva publicación en el foro
