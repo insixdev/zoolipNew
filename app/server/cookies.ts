@@ -105,9 +105,6 @@ export function getTokenFromCookie(cookie: string): string | null {
  * */
 export function getHeaderCookie(req: Request){
 
-  console.log("headers", Object.fromEntries(req.headers.entries()));
   const cookieHeader = req.headers.get("Cookie");
-  // 
-  console.log("cookienav full", cookieHeader);
   return cookieHeader
 }

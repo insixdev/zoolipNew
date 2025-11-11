@@ -27,7 +27,6 @@ export default function AdminLayout() {
               to="/community"
               // estilo que sea simple y que mantengga el tamañp
               className="inline-block px-4 py-2 text-sm font-medium text-white bg-rose-600 rounded-lg hover:bg-rose-700 transition-colors"
-
             >
             ir al inicio
             </Link>

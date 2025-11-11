@@ -114,10 +114,7 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-gray-100 relative">
-      <CommunityNavbar />
-      <SidebarContainer showSidebar={true} className="z-80" />
-
-      <div className="mx-auto max-w-4xl md:pl-64 px-4 pt-20 pb-10">
+      <div className="mx-auto max-w-4xl md:pl-40 px-4 pt-6 pb-10">
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100">
           {/* Header del perfil - estilo Instagram */}
           <div className="p-8 border-b border-gray-100">
@@ -153,24 +150,12 @@ export default function Profile() {
                 </div>
 
                 {/* Estadísticas estilo Instagram */}
-                <div className="flex gap-8 mb-4">
-                  <div className="text-center">
+                <div className="flex gap-8 mb-4 text-center text-gray-600">
+                  <div className="text-center justify-center ">
                     <span className="block text-lg font-semibold text-gray-900">
                       {user.publicaciones}
                     </span>
                     <span className="text-sm text-gray-600">publicaciones</span>
-                  </div>
-                  <div className="text-center">
-                    <span className="block text-lg font-semibold text-gray-900">
-                      1,234
-                    </span>
-                    <span className="text-sm text-gray-600">seguidores</span>
-                  </div>
-                  <div className="text-center">
-                    <span className="block text-lg font-semibold text-gray-900">
-                      567
-                    </span>
-                    <span className="text-sm text-gray-600">siguiendo</span>
                   </div>
                 </div>
 
@@ -216,17 +201,7 @@ export default function Profile() {
                 >
                   <Bookmark size={16} />
                   GUARDADO
-                </button>
-                <button
-                  onClick={() => setActiveTab("tagged")}
-                  className={`flex items-center gap-2 py-4 text-sm font-medium transition-colors ${
-                    activeTab === "tagged"
-                      ? "text-gray-900 border-b-2 border-gray-900"
-                      : "text-gray-500 hover:text-gray-700"
-                  }`}
-                >
-                  <UserPlus size={16} />
-                  ETIQUETADO
+                                <UserPlus size={16} />
                 </button>
               </div>
             </div>

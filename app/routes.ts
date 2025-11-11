@@ -10,7 +10,17 @@ export default [
   route("admin", "routes/admin/_layout.tsx", [
     index("routes/admin/_index.tsx"), // /admin - redirección inteligente
     route("dashboard", "routes/admin/dashboard.tsx"), // /admin/dashboard
-    route("system", "routes/admin/system.tsx"), // /admin/system
+    route("system", "routes/admin/system/system.tsx"), // /admin/system
+    route(
+      "system/institutionSolicitudes",
+      "routes/admin/system/institutionSolicitudes.tsx"
+    ),
+    route("system/users", "routes/admin/system/users.tsx"),
+    route("system/institutions", "routes/admin/system/institutions.tsx"),
+    route(
+      "system/institutionSolicitudes/:id",
+      "routes/admin/system/institutionSolicitudes.$id.tsx"
+    ),
     route("solicitudes", "routes/admin/solicitudes.tsx"), // /admin/solicitudes
     route("donaciones", "routes/admin/donaciones.tsx"), // /admin/donaciones
     route("mascotas", "routes/admin/mascotas.tsx"), // /admin/mascotas
@@ -24,11 +34,22 @@ export default [
     route("search", "routes/community/search.tsx"), // /community/search
     route("buscar", "routes/community/buscar.tsx"), // /community/buscar
     route("consultas", "routes/community/consultas.tsx"), // /community/consultas
+    route("profile", "routes/community/profile.tsx"),
     route("crear", "routes/community/crear.tsx"), // /community/crear
     route("refugios", "routes/community/refugios.tsx"), // /community/refugios
     route("following", "routes/community/following.tsx"), // /community/following
     route("chatCommunity", "routes/community/chatCommunity.tsx"), // /community/chatCommunity
     route("hashtag/:hashtag", "routes/community/communityTrendingView.tsx"), // /community/hashtag/AdopcionResponsable
+    route("donaciones", "routes/community/donaciones.tsx"), // /community/donaciones
+    route(
+      "donacionesInstitucion",
+      "routes/community/donacionesInstitucion.tsx"
+    ), // /community/donacionesInstitucion
+    route("donaciones/checkout", "routes/community/donaciones.checkout.tsx"), // /community/donaciones/checkout
+    route(
+      "solcitudeInstitutionForm",
+      "routes/community/solcitudeInstitutionForm.tsx"
+    ), // /community/solcitudeInstitutionForm
   ]),
 
   // Adopt nested routes
@@ -42,7 +63,6 @@ export default [
   ]),
   // Other main routes
   route("landing", "routes/landing.tsx"),
-  route("profile", "routes/profile.tsx"),
   route("settings", "routes/settings.tsx"),
 
   // Auth routes
@@ -62,9 +82,9 @@ export default [
   route("api/auth/register", "routes/api/auth/register.ts"),
   route("api/auth/logout", "routes/api/auth/logout.ts"),
   route("api/auth/has-access", "routes/api/auth/has-access.ts"),
+  route("api/auth/delete-cookie", "routes/api/auth/delete-cookie.ts"),
   route("api/auth/has-admin-access", "routes/api/auth/has-admin-access.ts"),
   route("api/admin/invitation", "routes/api/admin/invitation.ts"),
-
   // Post API routes
   route("api/post/crear", "routes/api/post/crearPost.ts"),
   route("api/post/actualizar", "routes/api/post/actualizarPost.ts"),

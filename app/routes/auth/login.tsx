@@ -27,7 +27,7 @@ export default function Login() {
   const [searchParams] = useSearchParams();
 
   const isLoading = fetcher.state === "submitting";
-  const redirectTo = searchParams.get("redirectTo") || "/profile";
+  const redirectTo = searchParams.get("redirectTo") || "community/profile";
   const isRegistered = searchParams.get("registered") === "true";
 
   // Clear field-specific errors when user starts typing

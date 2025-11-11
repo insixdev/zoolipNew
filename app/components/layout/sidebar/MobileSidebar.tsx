@@ -9,7 +9,9 @@ import {
   Calendar,
   Settings,
   X,
+  Gift,
 } from "lucide-react";
+import { AdminOnly } from "~/components/auth/AuthRoleComponent";
 import { useEffect, useState } from "react";
 
 export type MobileSidebarProps = {
@@ -35,6 +37,11 @@ const menuItems = [
     icon: Heart,
   },
   {
+    label: "Donaciones",
+    path: "/community/donaciones",
+    icon: Gift,
+  },
+  {
     label: "Sobre Nosotros",
     path: "/info/about",
     icon: Info,
@@ -44,7 +51,12 @@ const menuItems = [
     path: "/community/chatCommunity",
     icon: MessageCircle,
   },
-
+  {
+    label: "Solicitudes",
+    path: "/community/solcitudeInstitutionForm",
+    icon: Calendar,
+    adminOnly: true,
+  },
 ];
 
 export default function MobileSidebar({
@@ -58,7 +70,7 @@ export default function MobileSidebar({
   // Close sidebar when route changes
   useEffect(() => {
     onClose();
-  }, [location.pathname ]);
+  }, [location.pathname]);
 
   // Prevent body scroll when sidebar is open
   useEffect(() => {
@@ -110,10 +122,11 @@ export default function MobileSidebar({
           <nav className="flex-1 p-4 overflow-y-auto">
             <ul className="space-y-2">
               {menuItems.map((item) => {
-                const Icon = item.icon;
+                const Icon = item.icon as any;
                 const active = isActive(item.path);
-                // If this is the adopt entry and onlyForUsers is true, render disabled
-                if (item.path === "/adopt" || onlyForUsers) {
+
+                // If this is the adopt entry and onlyForUsers is true, render disabled (guest UX)
+                if (item.path === "/adopt" && onlyForUsers) {
                   return (
                     <li key={item.path}>
                       <div
@@ -128,7 +141,7 @@ export default function MobileSidebar({
                   );
                 }
 
-                return (
+                const li = (
                   <li key={item.path}>
                     <Link
                       to={item.path}
@@ -150,6 +163,13 @@ export default function MobileSidebar({
                     </Link>
                   </li>
                 );
+
+                // If adminOnly flag, render wrapped in AdminOnly
+                if ((item as any).adminOnly) {
+                  return <AdminOnly key={item.path}>{li}</AdminOnly>;
+                }
+
+                return li;
               })}
             </ul>
           </nav>

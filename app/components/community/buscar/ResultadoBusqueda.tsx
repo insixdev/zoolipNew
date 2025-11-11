@@ -55,7 +55,7 @@ export function ResultadoBusqueda({
               <h3 className="text-lg font-bold text-gray-900">{result.name}</h3>
               <p className="text-gray-600">{result.username}</p>
               <p className="text-sm text-gray-500 mt-1">
-                {result.followers} seguidores
+                {result.followers} 
               </p>
             </div>
             <button

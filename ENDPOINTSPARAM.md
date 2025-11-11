@@ -402,6 +402,132 @@ Obtener publicación por ID.
 
 ---
 
+### GET `/api/publicacion/obtenerPublicacionesPublicas`
+Obtener publicaciones públicas (últimas 10).
+
+**Request:** Sin parámetros
+
+**Response (200 OK):**
+```json
+[
+  {
+    "id_publicacion": 123,
+    "topico": "string",
+    "contenido": "string",
+    "nombreUsuario": "string",
+    "likes": 0,
+    "fecha_pregunta": "2024-01-01 10:00:00",
+    "fecha_duda_resuelta": null,
+    "fecha_edicion": null
+  }
+]
+```
+
+---
+
+### GET `/api/publicacion/obtenerFavUsuario`
+Obtener publicaciones favoritas de un usuario.
+
+**Request:** `?id_usuario=123` (query param)
+
+**Response (200 OK):**
+```json
+[
+  {
+    "id_publicacion": 123,
+    "topico": "string",
+    "contenido": "string",
+    "nombreUsuario": "string",
+    "likes": 0,
+    "fecha_pregunta": "2024-01-01 10:00:00",
+    "fecha_duda_resuelta": null,
+    "fecha_edicion": null
+  }
+]
+```
+
+---
+
+### POST `/api/publicacion/putPublicacionFav`
+Agregar publicación a favoritos de usuario.
+
+**Request:** `?id_publicacion=123&id_usuario=456` (query params)
+
+**Response:**
+```json
+{
+  "status": "success",
+  "httpCode": 200,
+  "message": "Publicacion añadida a favoritos"
+}
+```
+
+---
+
+### DELETE `/api/publicacion/deletePublicacionFav`
+Eliminar publicación de favoritos de usuario.
+
+**Request:** `?id_publicacion=123&id_usuario=456` (query params)
+
+**Response:**
+```json
+{
+  "status": "success",
+  "httpCode": 200,
+  "message": "Publicacion eliminada de favoritos"
+}
+```
+
+---
+
+## 👤 Usuarios (`/api/usuario`)
+
+### PUT `/api/usuario/actualizar`
+Actualizar información del usuario.
+
+**Request:**
+```json
+{
+  "id": 123,
+  "nombre": "string",
+  "email": "string",
+  "rol": "string",
+  "imagen_url": "string",
+  "biografia": "string"
+}
+```
+
+**Response:**
+```json
+{
+  "status": "success",
+  "httpCode": 200,
+  "message": "Usuario actualizado"
+}
+```
+
+---
+
+### DELETE `/api/usuario/eliminar`
+Eliminar un usuario.
+
+**Request:**
+```json
+123
+```
+*(Long id en body)*
+
+**Response:**
+```json
+{
+  "status": "success",
+  "httpCode": 200,
+  "message": "El usuario se ha eliminado correctamente"
+}
+```
+
+---
+
 ## 💬 Comentarios (`/api/comentario`)
 
 ### POST `/api/comentario/crear`
@@ -1080,10 +1206,64 @@ Obtener mensajes de un chat.
 
 ---
 
+## 🔌 WebSocket
+
+### WebSocket `/chat/**`
+Conexión WebSocket para chat en tiempo real.
+
+**Conexión:**
+```
+ws://localhost:8080/chat/{chat_name}
+```
+
+**Headers requeridos:**
+- `Cookie: AUTH_TOKEN` (autenticación JWT)
+
+**Uso:**
+- Envía mensajes de texto para ser entregados a todos los usuarios conectados en ese chat
+- Los mensajes se distribuyen a todas las sesiones en el mismo chat
+
+---
+
+### WebSocket `/post/**`
+Conexión WebSocket para búsqueda de publicaciones en tiempo real.
+
+**Conexión:**
+```
+ws://localhost:8080/post/{canal}
+```
+
+**Headers requeridos:**
+- `Cookie: AUTH_TOKEN` (autenticación JWT)
+
+**Uso:**
+- Envía contenido como búsqueda para obtener publicaciones coincidentes
+- Retorna lista de publicaciones que coinciden con el contenido de búsqueda
+- Los resultados se envían al cliente que realizó la búsqueda
+
+**Message Response:**
+```json
+[
+  {
+    "id_publicacion": 123,
+    "topico": "string",
+    "contenido": "string",
+    "nombreUsuario": "string",
+    "likes": 0,
+    "fecha_pregunta": "2024-01-01 10:00:00",
+    "fecha_duda_resuelta": null,
+    "fecha_edicion": null
+  }
+]
+```
+
+---
+
 ## 📊 Resumen
 
-- **Total de controladores**: 9
-- **Total de endpoints**: 48
+- **Total de controladores**: 10
+- **Total de endpoints REST**: 55
+- **Total de WebSocket**: 2
 - **Base URL**: `/api`
 
 ## 🔗 Recursos
@@ -1091,6 +1271,7 @@ Obtener mensajes de un chat.
 - [AuthController](src/main/java/com/surrogate/Zoolip/controllers/Auth/AuthController.java)
 - [MascotaController](src/main/java/com/surrogate/Zoolip/controllers/Bussines/MascotaController.java)
 - [PublicacionController](src/main/java/com/surrogate/Zoolip/controllers/Bussines/PublicacionController.java)
+- [UsuarioController](src/main/java/com/surrogate/Zoolip/controllers/Bussines/UsuarioController.java)
 - [ComentarioController](src/main/java/com/surrogate/Zoolip/controllers/Bussines/ComentarioController.java)
 - [DonacionController](src/main/java/com/surrogate/Zoolip/controllers/Bussines/DonacionController.java)
 - [InstitucionController](src/main/java/com/surrogate/Zoolip/controllers/Bussines/InstitucionController.java)
@@ -1102,8 +1283,12 @@ Obtener mensajes de un chat.
 
 ## 📌 Notas Importantes
 
-1. **Autenticación**: Los endpoints de `/api/auth/me`, `/api/auth/accounts` y `/api/auth/logout` requieren la cookie `AUTH_TOKEN`.
+1. **Autenticación**: Los endpoints de `/api/auth/me`, `/api/auth/accounts` y `/api/auth/logout` requieren la cookie `AUTH_TOKEN`. WebSockets requieren cookie de autenticación en el handshake.
 2. **Content-Type**: La mayoría de los endpoints POST/DELETE esperan `application/json`.
 3. **Códigos HTTP**: Revisa el campo `httpCode` en las respuestas para determinar el estado de la operación.
-4. **Fechas**: Formato ISO 8601 (`YYYY-MM-DDTHH:mm:ss`)
+4. **Fechas**: Formato ISO 8601 (`YYYY-MM-DDTHH:mm:ss`) o con espacios (`YYYY-MM-dd HH:mm:ss`).
 5. **IDs relacionales**: Algunos endpoints requieren objetos anidados con IDs de entidades relacionadas.
+6. **Usuario**: Ahora soporta campos adicionales como `imagen_url` (URL de foto de perfil) y `biografia` (descripción personal).
+7. **Publicaciones**: Incluyen tipo (PUBLICACION|CONSULTA) e `imagen_url`. Las publicaciones de tipo CONSULTA no pueden tener imágenes.
+8. **Favoritos**: Las publicaciones pueden ser marcadas como favoritas por usuarios usando los endpoints `putPublicacionFav` y `deletePublicacionFav`.
+9. **Búsqueda en tiempo real**: Usa WebSocket `/post/**` para buscar publicaciones por contenido en tiempo real.

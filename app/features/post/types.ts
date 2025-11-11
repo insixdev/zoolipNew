@@ -24,6 +24,10 @@ type UserId = {
  */
 export type PublicationCreateRequest = {
   id_usuario: UserId;
+  tipo: "CONSULTA" | "PUBLICACION"
+  imagen_url: string;
+  fecha_edicion: string;
+  fecha_duda_resuelta: string;
   topico: string;
   contenido: string;
   likes: number;

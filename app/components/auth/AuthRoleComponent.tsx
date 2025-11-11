@@ -76,10 +76,6 @@ export function AuthRoleComponent({
 
       )
     }, []);
-    const isAllowed = user?.role === "USER";
-    if(!isAllowed) {
-      return <>{fallback}</>;
-    }
     // Mientras está cargando el front
     if (isLoading) {
       return <>ERES UN PUTITO</>
@@ -163,7 +159,17 @@ export function UserOnly({
     </AuthRoleComponent>
   );
 }
-
+export function AnyOnly({
+  children,
+  fallback = null,
+  
+}){
+  return (
+    <AuthRoleComponent allowedRoles={[USER_ROLES.ADOPTANTE, USER_ROLES.USER, USER_ROLES.ADMIN]} fallback={fallback}>
+      {children}
+    </AuthRoleComponent>
+  );
+  }
 /**
  * Componente para contenido de ADOPTANTE o USER (excluye ADMIN)
  */

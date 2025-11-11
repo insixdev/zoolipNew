@@ -6,7 +6,7 @@ import {
   useLoaderData,
 } from "react-router";
 import TrendingSection from "~/components/community/TrendingSection";
-import FeedTabs, { EmptyFollowingState } from "~/components/community/FeedTabs";
+import FeedTabs from "~/components/community/FeedTabs";
 import CreatePostCard from "~/components/community/indexCommunity/CreatePostCard";
 import PostsList from "~/components/community/indexCommunity/PostsList";
 import LoadMoreButton from "~/components/community/indexCommunity/LoadMoreButton";
@@ -233,34 +233,26 @@ export default function CommunityIndex() {
           {/* Create Post Card */}
           Auth
           <CreatePostCard onPostCreated={handlePostCreated} />
-
-
           {/* Feed Tabs */}
           <FeedTabs>
-            {(activeTab) => (
+            {() => (
               <>
-                {activeTab === "forYou" ? (
-                  <>
-                    <PostsList
-                      posts={visiblePosts}
-                      commentsMap={commentsMap}
-                      commentsLoadingPostId={commentsLoadingPostId}
-                      onLike={handleLike}
-                      onComment={handleComment}
-                      onShare={handleShare}
-                      onSave={handleSave}
-                      onAddComment={handleAddComment}
-                      onLikeComment={handleLikeComment}
-                    />
-                    <LoadMoreButton
-                      onClick={handleLoadMore}
-                      isLoading={loadMoreFetcher.state === "loading"}
-                      hasMore={hasMore}
-                    />
-                  </>
-                ) : (
-                  <EmptyFollowingState />
-                )}
+                <PostsList
+                  posts={visiblePosts}
+                  commentsMap={commentsMap}
+                  commentsLoadingPostId={commentsLoadingPostId}
+                  onLike={handleLike}
+                  onComment={handleComment}
+                  onShare={handleShare}
+                  onSave={handleSave}
+                  onAddComment={handleAddComment}
+                  onLikeComment={handleLikeComment}
+                />
+                <LoadMoreButton
+                  onClick={handleLoadMore}
+                  isLoading={loadMoreFetcher.state === "loading"}
+                  hasMore={hasMore}
+                />
               </>
             )}
           </FeedTabs>

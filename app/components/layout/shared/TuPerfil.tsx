@@ -109,7 +109,7 @@ export function TuPerfil() {
           )}
 
           <Link
-            to="/profile"
+            to="/community/profile"
             onClick={() => setIsProfileMenuOpen(false)}
             className="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-rose-50 hover:text-rose-600 transition-colors"
           >

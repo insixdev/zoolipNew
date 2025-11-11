@@ -13,6 +13,7 @@ export default function SidebarContainer({
   showSidebar,
   className = "",
   onlyForUsers,
+  currentRole = ""
 }: SidebarContainerProps) {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 

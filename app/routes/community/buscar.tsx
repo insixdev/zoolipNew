@@ -1,6 +1,14 @@
+import { LoaderFunctionArgs } from "react-router";
 import { BarraBusqueda } from "~/components/community/buscar/BarraBusqueda";
 import { ResultadoBusqueda } from "~/components/community/buscar/ResultadoBusqueda";
 import { TrendingSidebar } from "~/components/community/shared/TrendingSidebar";
+import { requireAuth } from "~/lib/authGuard";
+
+// Loader para verificar autenticación
+export async function loader({ request }: LoaderFunctionArgs) {
+  await requireAuth(request);
+  return null;
+}
 
 export default function CommunityBuscar() {
   const searchResults = [

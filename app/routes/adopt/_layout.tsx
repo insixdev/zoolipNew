@@ -3,6 +3,7 @@ import { AuthRoleComponent, CommunityRoles } from "~/components/auth/AuthRoleCom
 import CommunityNavbar from "~/components/layout/community/CommunityNavbar";
 import SidebarContainer from "~/components/layout/sidebar/SidebarContainer";
 import { useSmartAuth } from "~/features/auth/useSmartAuth";
+import { USER_ROLES } from "~/lib/constants";
 
 export default function AdoptLayout() {
   const { user } = useSmartAuth();
@@ -19,7 +20,8 @@ export default function AdoptLayout() {
     {/* Content area */}
     <div className="pt-20">
     <CommunityRoles fallback={
-      <div className="bg-gradient-to-br from-orange-50 to-rose-50 rounded-2xl shadow-lg border border-orange-200 p-10 text-center max-w-md mx-auto mt-10">
+      <>
+           <div className="bg-gradient-to-br from-orange-50 to-rose-50 rounded-2xl shadow-lg border border-orange-200 p-10 text-center max-w-md mx-auto mt-10">
       <svg
       xmlns="http://www.w3.org/2000/svg"
       className="mx-auto text-rose-400 mb-4"
@@ -40,12 +42,11 @@ export default function AdoptLayout() {
       <h3 className="text-2xl font-bold text-gray-900 mb-2">
       Solo para adoptantes y usuarios
       </h3>
-
+      {(user === null) &&(
+<div>
       <p className="text-gray-600 mb-6">
       Inicia sesión para participar en la comunidad y acceder a todas las publicaciones.
         </p>
-
-      <div className="flex justify-center gap-4">
       <Link
       to="/login"
       className="px-6 py-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-lg hover:from-rose-600 hover:to-pink-700 transition-all shadow-md hover:shadow-lg font-semibold"
@@ -59,8 +60,15 @@ export default function AdoptLayout() {
       >
       Registrarse
       </Link>
+
+</div>
+
+      )}
+      <div className="flex justify-center gap-4">
       </div>
       </div>
+
+      </>
     }>
 
         <Outlet />

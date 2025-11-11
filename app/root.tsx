@@ -8,6 +8,7 @@ import {
   useRouteError,
   Link,
   useLoaderData,
+  redirect,
 } from "react-router";
 import type {
   LinksFunction,
@@ -16,6 +17,7 @@ import type {
 } from "react-router";
 import { AuthProvider } from "~/features/auth/authProvider";
 import { SmartAuthWrapper } from "~/components/auth/SmartAuthWrapper";
+import { InstitutionRequestProvider } from "~/context/InstitutionRequestContext";
 import "./app.css";
 import { getUserFromRequest } from "./server/me";
 import {
@@ -24,6 +26,7 @@ import {
   UserResponseHandler,
 } from "./features/entities/User";
 import Landing from "./routes/landing";
+import { authCookie } from "./routes/api/auth/delete-cookie";
 
 export const links: LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -80,7 +83,7 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
     const isAuthAction =
       nextUrl.pathname.includes("/login") ||
       nextUrl.pathname.includes("/register") ||
-      nextUrl.pathname.includes("/profile");
+      nextUrl.pathname.includes("community/profile");
     nextUrl.pathname.includes("/community/crear");
     if (isAuthAction) {
       console.log("Revalidando, mandando request al principal");
@@ -101,7 +104,16 @@ export const loader: LoaderFunction = async ({ request }) => {
   console.log(" ROOT LOADER EJECUTADO - URL:", url.pathname);
 
   // Estrategia adicional: verificar si es una navegación que realmente necesita datos del usuario
-  const publicRoutes = ["/landing", "/info/", "/adopt/_index", "/community/_index" ]; const isPublicRoute = publicRoutes.some((route) => url.pathname.includes(route));
+  const publicRoutes = [
+    "/landing",
+    "/info/",
+    "/adopt/_index",
+    "/community/_index",
+  ];
+
+  const isPublicRoute = publicRoutes.some((route) =>
+    url.pathname.includes(route)
+  );
 
   if (isPublicRoute) {
     console.log(
@@ -111,7 +123,6 @@ export const loader: LoaderFunction = async ({ request }) => {
       headers: { "Content-Type": "application/json" },
     });
   }
-
 
   // Verificar si el cliente indica que ya tiene datos de usuario
   const skipUserFetch = request.headers.get("X-Skip-User-Fetch");
@@ -126,34 +137,47 @@ export const loader: LoaderFunction = async ({ request }) => {
 
   console.log("Cookie header:", request.headers.get("Cookie"));
 
-
-
   const user = await getUserFromRequest(request); // obtiene
 
-
   if (user instanceof UserResponseHandler) {
-    console.log("enroot: user:", user, "error:", user.message+" statusjos:" + user.status);
+    console.log(
+      "enroot: user:",user,
+      "error:",
+      user.message + " statusjos:" + user.status
+    );
+
     return new Response(JSON.stringify({ user: user.user, authError: null }), {
       headers: { "Content-Type": "application/json" },
     });
+
   } else {
+  if (!user || user.status === "error" || user.message === "Invalid token") {
+    console.log("Token inválido, eliminando cookie y redirigiendo al login");
+
+    return Response.json({ error: "Invalid token", user: null}, {
+      headers: {
+        "Set-Cookie": await authCookie.serialize("", { maxAge: 0, path: "/", expires: new Date(0) }), // 🔥 elimina la cookie
+      },
+    });
+  }
+
     // No pasar errores de autenticación al contexto
     // Los errores del loader de root no deben mostrarse al usuario
     //
     // TODO: HACERLO MEJOR
-    console.log("Usuario se encontro en cache o gubo error :", JSON.stringify(user));
-    let frontUser: User | null  | unknown= null;  // esta mal pero ahora esta mejor
-    try{
-      if(user instanceof UserResponseHandler){
-        
-      frontUser = user.user;
-        
-      }else if(user && typeof user === "object" && "user" in user){
+    console.log(
+      "Usuario se encontro en cache o gubo error :",
+      JSON.stringify(user)
+    );
+
+    let frontUser: User | null | unknown = null; // esta mal pero ahora esta mejor
+    try {
+       if (user && typeof user === "object" && "user" in user) {
         frontUser = user?.user;
       }
-      
-    }catch (error) {
+    } catch (error) {
       console.error("Error al obtener el usuario:", error);
+
       frontUser = null;
     }
 
@@ -170,7 +194,7 @@ export const loader: LoaderFunction = async ({ request }) => {
 export default function App() {
   // para mejor optimizacion hacemos un chekeo rapido en el frontend acerca de si tiene cookie
   //
-  
+
   const { user: initialUser, authError } = useLoaderData<{
     user: User | null;
     authError: { message: string; status: string } | null;
@@ -179,7 +203,9 @@ export default function App() {
   return (
     <AuthProvider initialUser={initialUser} initialError={authError}>
       <SmartAuthWrapper>
-        <Outlet />
+        <InstitutionRequestProvider>
+          <Outlet />
+        </InstitutionRequestProvider>
       </SmartAuthWrapper>
     </AuthProvider>
   );
@@ -243,9 +269,7 @@ export function ErrorBoundary() {
       <h1 className="text-4xl font-bold mb-4 text-red-600">
         Error desconocido
       </h1>
-      <pre className="text-gray-700">
-        {JSON.stringify(error, null, 2)}
-      </pre>
+      <pre className="text-gray-700">{JSON.stringify(error, null, 2)}</pre>
       <a
         href="/"
         className="mt-6 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
@@ -255,4 +279,3 @@ export function ErrorBoundary() {
     </div>
   );
 }
-

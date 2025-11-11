@@ -143,7 +143,7 @@ export default function MobileNavbar({
               >
                 Hola, {user.username}
               </div>
-              <Link to="/profile">
+              <Link to="community/profile">
                 <Button
                   variant="secondary"
                   size="lg"

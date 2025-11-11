@@ -92,24 +92,28 @@ export default function SystemDashboard() {
       icon: <FaUsers />,
       link: "/admin/system/users",
       color: "bg-blue-100 text-blue-600",
+      description: "Ver, buscar y administrar cuentas de usuario",
     },
     {
       title: "Configuración",
       icon: <FaCog />,
       link: "/admin/system/config",
       color: "bg-gray-100 text-gray-600",
+      description: "Ajustes generales del sistema y parámetros",
     },
     {
       title: "Reportes",
       icon: <FaChartBar />,
       link: "/admin/system/reports",
       color: "bg-purple-100 text-purple-600",
+      description: "Generar y visualizar reportes del sistema",
     },
     {
       title: "Seguridad",
       icon: <FaShieldAlt />,
       link: "/admin/system/security",
       color: "bg-green-100 text-green-600",
+      description: "Políticas, roles y monitoreo de seguridad",
     },
   ];
 
@@ -148,6 +152,34 @@ export default function SystemDashboard() {
             <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
             <span className="text-sm font-medium">Sistema operativo</span>
           </div>
+        </div>
+
+        {/* Acciones rápidas */}
+        <div className="flex items-center gap-3 mb-6">
+          <Link
+            to="/admin/system/users"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Gestionar Usuarios
+          </Link>
+          <Link
+            to="/admin/system/institutions"
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+          >
+            Gestionar Instituciones
+          </Link>
+          <Link
+            to="/admin/system/institutionSolicitudes"
+            className="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700"
+          >
+            Solicitudes Instituciones
+          </Link>
+          <Link
+            to="/admin/donaciones"
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+          >
+            Donaciones
+          </Link>
         </div>
 
         {/* Estadísticas del sistema */}
@@ -213,10 +245,15 @@ export default function SystemDashboard() {
                 <Link
                   to={action.link}
                   key={index}
-                  className={`${action.color} p-4 rounded-lg flex items-center space-x-3 hover:opacity-90 transition-opacity`}
+                  className={`${action.color} p-4 rounded-lg flex items-start gap-3 hover:opacity-95 transition-all`}
                 >
-                  <span className="text-xl">{action.icon}</span>
-                  <span className="font-medium">{action.title}</span>
+                  <div className="text-xl mt-1">{action.icon}</div>
+                  <div className="flex-1">
+                    <div className="font-medium">{action.title}</div>
+                    <div className="text-sm text-gray-500">
+                      {action.description}
+                    </div>
+                  </div>
                 </Link>
               ))}
             </div>

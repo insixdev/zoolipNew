@@ -124,6 +124,7 @@ export async function getUserFromRequest(
   //logeateeeeeeeeeee
   console.log("en me" + JSON.stringify(token));
 
+
   // en caso de que sea valido el token y no sea null
   // por decodeClaims
   // decodificar el token
@@ -135,6 +136,7 @@ export async function getUserFromRequest(
     console.log("LLAMANDO A fetchMe (servidor Spring Boot)");
     const response = await fetchMe(cookieHeader);
     console.log(" response de me", response);
+    
     // por si es UserErrorResponse
     if ("message" in response && "status" in response) {
       const res = {

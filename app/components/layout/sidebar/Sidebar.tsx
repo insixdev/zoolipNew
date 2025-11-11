@@ -9,7 +9,9 @@ import {
   Calendar,
   Settings,
   User,
+  Gift,
 } from "lucide-react";
+import { AdminOnly } from "~/components/auth/AuthRoleComponent";
 import { cn } from "~/lib/generalUtil";
 import { p } from "public/build/_shared/chunk-O7IRWV66";
 
@@ -41,9 +43,21 @@ const menuItems = [
     icon: Heart,
   },
   {
+    label: "Donaciones",
+    path: "/community/donaciones",
+    icon: Gift,
+  },
+  {
     label: "Crear",
     path: "/community/crear",
     icon: User,
+  },
+  // Admin-only: solicitudes institucionales
+  {
+    label: "Solicitudes",
+    path: "/community/solcitudeInstitutionForm",
+    icon: Calendar,
+    adminOnly: true,
   },
 ];
 
@@ -74,20 +88,11 @@ export default function Sidebar({
 
       <nav className="flex-1 p-4 overflow-y-auto">
         <ul className="space-y-1">
-
           {menuItems.map((item) => {
-            const Icon = item.icon;
+            const Icon = item.icon as any;
             const active = isActive(item.path);
 
-            const shouldShow = (onlyForUsers && item.path === "/community/crear" )
-
-            return shouldShow ? (
-              /////
-              <p>bitch</p>
-                
-              ) : (
-                
-              
+            const content = (
               <li key={item.path}>
                 <Link
                   to={item.path}
@@ -113,6 +118,30 @@ export default function Sidebar({
                 </Link>
               </li>
             );
+
+            // If adminOnly flag is set, wrap with AdminOnly so only admins see it
+            if ((item as any).adminOnly) {
+              return <AdminOnly key={item.path}>{content}</AdminOnly>;
+            }
+
+            // Existing onlyForUsers behavior: if onlyForUsers is true and this item is /community/crear,
+            // render a disabled-looking placeholder (keep previous UX)
+            if (onlyForUsers && item.path === "/community/crear" || onlyForUsers && item.path === "/community/buscar") {
+              return (
+                <li key={item.path}>
+                  <div
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-400 line-through opacity-60 cursor-not-allowed"
+                    title="Acceso solo para usuarios registrados"
+                    aria-disabled="true"
+                  >
+                    <Icon size={20} className="text-gray-400" />
+                    <span className="text-sm">{item.label}</span>
+                  </div>
+                </li>
+              );
+            }
+
+            return content;
           })}
         </ul>
       </nav>

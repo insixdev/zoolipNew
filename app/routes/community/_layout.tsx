@@ -9,6 +9,7 @@ import { USER_ROLES } from "~/lib/constants";
 //macor commun para todas las rutas de community 
 export default function CommunityLayout() {
   const { user } = useSmartAuth();
+  console.log("PERRITAS",user)
   let isUser = false;
   if(!user){
     isUser = true

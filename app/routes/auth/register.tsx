@@ -16,7 +16,7 @@ import { UserAppRegister } from "~/features/entities/User";
 
 // Loader para redirigir usuarios autenticados
 export async function loader({ request }: LoaderFunctionArgs) {
-  await redirectIfAuthenticated(request, "/profile");
+  await redirectIfAuthenticated(request, "community/profile");
   return null;
 }
 export async function action({ request }: ActionFunctionArgs) {
