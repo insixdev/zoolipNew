@@ -17,7 +17,7 @@ type PostAuthor = {
 };
 
 type Post = {
-  id: string;
+  id: number;
   type: "image" | "text";
   topico: string;
   content: string;
@@ -61,18 +61,26 @@ export default function PostCard({
 }: PostCardProps) {
   const [showComments, setShowComments] = useState(false);
 
+  // Validar que el post tenga ID
+  if (!post || !post.id) {
+    console.error("PostCard: Invalid post", post);
+    return null;
+  }
+
+  const postId = post.id.toString();
+
   const handleCommentClick = () => {
     const newShowState = !showComments;
     setShowComments(newShowState);
-    onComment?.(post.id);
+    onComment?.(postId);
   };
 
   const handleAddComment = (content: string) => {
-    onAddComment?.(post.id, content);
+    onAddComment?.(postId, content);
   };
 
   const handleLikeComment = (commentId: string) => {
-    onLikeComment?.(post.id, commentId);
+    onLikeComment?.(postId, commentId);
   };
 
   return (
@@ -122,7 +130,7 @@ export default function PostCard({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-5">
             <button
-              onClick={() => onLike?.(post.id)}
+              onClick={() => onLike?.(postId)}
               className="flex items-center gap-2 text-gray-600 hover:text-rose-600 transition-colors"
             >
               <Heart
@@ -145,7 +153,7 @@ export default function PostCard({
             </button>
 
             <button
-              onClick={() => onShare?.(post.id)}
+              onClick={() => onShare?.(postId)}
               className="flex items-center gap-2 text-gray-600 hover:text-rose-600 transition-colors"
             >
               <Share2 size={18} />
@@ -154,7 +162,7 @@ export default function PostCard({
           </div>
 
           <button
-            onClick={() => onSave?.(post.id)}
+            onClick={() => onSave?.(postId)}
             className="text-gray-600 hover:text-rose-600 transition-colors"
           >
             <Bookmark
@@ -177,7 +185,7 @@ export default function PostCard({
             </div>
           ) : (
             <CommentsSection
-              postId={post.id}
+              postId={postId}
               comments={postComments}
               onAddComment={handleAddComment}
               onLikeComment={handleLikeComment}

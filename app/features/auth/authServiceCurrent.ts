@@ -9,10 +9,10 @@ import type {
 /** URL base del backend principal */
 const BASE_AUTH_URL =
   process.env.BASE_AUTH_URL || "http://localhost:3050/api/auth/";
-
 /** Función para registrarse */
 export async function registerService(user): Promise<UserResponse> {
   try {
+    console.log("user", user);
     const res = await fetch(`${BASE_AUTH_URL}register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

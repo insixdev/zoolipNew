@@ -4,10 +4,7 @@ import {
   UserErrorHandler,
   UserResponseHandler,
 } from "~/features/entities/User";
-import {
-  USER_ROLES,
-  type UserRole,
-} from "~/lib/constants";
+import { USER_ROLES, type UserRole } from "~/lib/constants";
 
 /**
  * Guard genérico para verificar roles específicos
@@ -36,6 +33,7 @@ async function requireSpecificRole(
       [USER_ROLES.ADMIN]: "Administrador",
       [USER_ROLES.ADOPTANTE]: "Adoptante",
       [USER_ROLES.USER]: "Usuario de Comunidad",
+      [USER_ROLES.SYSTEM]: "Sistema",
     };
 
     const requiredRoleNames = allowedRoles
@@ -82,6 +80,16 @@ export async function requireAdoptante(
   request: Request
 ): Promise<UserResponseHandler> {
   return requireSpecificRole(request, [USER_ROLES.ADOPTANTE], "/login");
+}
+
+/**
+ * Guard específico para ROLE_SYSTEM
+ * Solo permite acceso al sistema
+ */
+export async function requireSystem(
+  request: Request
+): Promise<UserResponseHandler> {
+  return requireSpecificRole(request, [USER_ROLES.SYSTEM], "/login");
 }
 
 /**

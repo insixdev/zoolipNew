@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useSmartAuth } from "~/features/auth/useSmartAuth";
-import { ADMIN_ROLES, type AdminRole } from "~/lib/constants";
+import { ADMIN_ROLES, USER_ROLES, UserRole, type AdminRole } from "~/lib/constants";
 
 export default function AdminIndex() {
   const { user, isLoading } = useSmartAuth();
@@ -10,14 +10,20 @@ export default function AdminIndex() {
   useEffect(() => {
     if (isLoading || !user) return;
 
+    const userRole = user.role as UserRole;
     const adminRole = user.role as AdminRole;
+
+    // Verificar si el rol es admin
+    if (userRole === USER_ROLES.SYSTEM) {
+      navigate("/admin/system", { replace: true });
+      return;
+    }
 
     // Redirección inteligente según el rol
     switch (adminRole) {
       case ADMIN_ROLES.ADMINISTRADOR:
-        navigate("/admin/system", { replace: true });
+        navigate("/admin/dashboard", { replace: true });
         break;
-
       case ADMIN_ROLES.VETERINARIO:
       case ADMIN_ROLES.PROTECTORA:
       case ADMIN_ROLES.REFUGIO:

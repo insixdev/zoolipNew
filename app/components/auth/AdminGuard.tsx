@@ -175,7 +175,7 @@ export function AdministradorOnly({
 }) {
   return (
     <AdminGuard
-      allowedAdminRoles={[ADMIN_ROLES.ADMINISTRADOR]}
+      allowedAdminRoles={[ADMIN_ROLES.SYSTEM]}
       fallback={fallback}
     >
       {children}
@@ -225,6 +225,7 @@ export function AnyAdminRole({
         ADMIN_ROLES.PROTECTORA,
         ADMIN_ROLES.VETERINARIO,
         ADMIN_ROLES.ADMINISTRADOR,
+        ADMIN_ROLES.SYSTEM,
       ]}
       fallback={fallback}
     >

@@ -9,3 +9,30 @@
 //
 //
 // }
+export type  AdminResponse ={
+  status: string,
+  message: string,
+  httpCode: number
+}
+
+const url = "http://localhost:3050/api/auth/admin/"
+export async function adminRegister(user): Promise<AdminResponse> {
+  try {
+    console.log("userADMIN", user);
+    const res = await fetch(`${url}register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(user),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || "Error en el registro");
+    }
+    return data;
+  } catch (err) {
+    console.error("Register error:", err);
+    throw err;
+  }
+
+}

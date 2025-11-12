@@ -53,6 +53,7 @@ export async function loader({ params, request }) {
   );
 }
 
+// ACTION 
 export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
 
@@ -65,17 +66,18 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // validar el role
   if (
-    userData.role === "PROTECTORA" ||
-    userData.role === "VETERINARIO" ||
-    userData.role === "REFUGIO"
+    userData.role === "PROTECTORA" || userData.role === "VETERINARIO" || userData.role === "REFUGIO"
   ) {
-    return Response.json(
+    console.log("Admin Registration Data: dio bin", userData);
+
+ }else{
+return Response.json(
       { error: "El rol no es valido, contacta al administrador" },
       { status: 400 }
     );
-  }
 
-  console.log("Admin Registration Data:", userData);
+ }
+
 
   try {
     const cookie = await registrarAdminProcess(userData);

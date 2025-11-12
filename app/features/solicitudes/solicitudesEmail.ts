@@ -1,4 +1,5 @@
 import nodeemail from "nodemailer";
+
 const zoolipEmail = process.env.EMAIL
 const password = process.env.PASSWORD
 

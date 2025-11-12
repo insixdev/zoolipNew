@@ -1,13 +1,15 @@
 // para separar funciones en el action de adminRegisterInvite
 
+import { adminRegister } from "../admin/adminService";
 import { loginService, registerService } from "../auth/authServiceCurrent";
 import { UserAppRegister } from "./User";
 
 export async function registrarAdminProcess(userData: UserAppRegister){
 // primero lo registramos como usuario admiin
     try {
+    console.log("ADMIN REGISTER DATA:", userData);
 
-    const res = await registerService(userData);
+    const res = await adminRegister(userData);
     console.log("ADMIN REGISTER Response:", res);
     if (!res) {
     return { 

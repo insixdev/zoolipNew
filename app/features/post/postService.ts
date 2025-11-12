@@ -3,11 +3,11 @@ import {
   PublicationUpdateRequest,
   PublicationResponse,
   PublicationGetResponse,
+  PublicationPublicGetResponse,
 } from "./types";
 
 /** URL base del backend de publicaciones */
-const BASE_PUBLICATION_URL =
-  "http://localhost:3050/api/publicacion/";
+const BASE_PUBLICATION_URL = "http://localhost:3050/api/publicacion/";
 
 /**
  * Crea una nueva publicación en el foro
@@ -24,6 +24,7 @@ export async function createPublicationService(
     const hd = new Headers();
     hd.append("Content-Type", "application/json");
     hd.append("Cookie", cookie);
+    console.log("jsonpublication", JSON.stringify(publication));
 
     const res = await fetch(`${BASE_PUBLICATION_URL}crear`, {
       method: "POST",
@@ -170,13 +171,195 @@ export async function getAllPublicationsService(
 
     if (!res.ok) {
       const data = await res.json();
-      throw new Error(data.message || "Error al obtener publicaciones");
+      throw new Error(
+        data.message || "Error al obtener todas las publicaciones"
+      );
     }
 
     const data = await res.json();
     return data;
   } catch (err) {
     console.error("Get all publications error:", err);
+    throw err;
+  }
+}
+
+/**
+ * Obtiene publicaciones favoritas de un usuario
+ * @param userId - ID del usuario
+ * @param cookie - Cookie de autenticación
+ * @returns Promise con array de publicaciones favoritas
+ * @throws Error si falla la petición
+ */
+export async function getFavPublicationsService(
+  userId: number,
+  cookie: string
+): Promise<PublicationGetResponse[]> {
+  try {
+    const hd = new Headers();
+    hd.append("Content-Type", "application/json");
+    hd.append("Cookie", cookie);
+
+    const res = await fetch(
+      `${BASE_PUBLICATION_URL}obtenerFavUsuario?id_usuario=${userId}`,
+      {
+        method: "GET",
+        headers: hd,
+      }
+    );
+
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(
+        data.message || "Error al obtener publicaciones favoritas"
+      );
+    }
+
+    const data = await res.json();
+    return data;
+  } catch (err) {
+    console.error("Get fav publications error:", err);
+    throw err;
+  }
+}
+
+/**
+ * Agrega una publicación a favoritos
+ * @param publicationId - ID de la publicación
+ * @param userId - ID del usuario
+ * @param cookie - Cookie de autenticación
+ * @returns Promise con la respuesta del servidor
+ * @throws Error si falla la petición
+ */
+export async function addFavPublicationService(
+  publicationId: number,
+  userId: number,
+  cookie: string
+): Promise<PublicationResponse> {
+  try {
+    const hd = new Headers();
+    hd.append("Content-Type", "application/json");
+    hd.append("Cookie", cookie);
+
+    const res = await fetch(
+      `${BASE_PUBLICATION_URL}putPublicacionFav?id_publicacion=${publicationId}&id_usuario=${userId}`,
+      {
+        method: "POST",
+        headers: hd,
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || "Error al agregar a favoritos");
+    }
+
+    return data;
+  } catch (err) {
+    console.error("Add fav publication error:", err);
+    throw err;
+  }
+}
+
+/**
+ * Elimina una publicación de favoritos
+ * @param publicationId - ID de la publicación
+ * @param userId - ID del usuario
+ * @param cookie - Cookie de autenticación
+ * @returns Promise con la respuesta del servidor
+ * @throws Error si falla la petición
+ */
+export async function removeFavPublicationService(
+  publicationId: number,
+  userId: number,
+  cookie: string
+): Promise<PublicationResponse> {
+  try {
+    const hd = new Headers();
+    hd.append("Content-Type", "application/json");
+    hd.append("Cookie", cookie);
+
+    const res = await fetch(
+      `${BASE_PUBLICATION_URL}deletePublicacionFav?id_publicacion=${publicationId}&id_usuario=${userId}`,
+      {
+        method: "DELETE",
+        headers: hd,
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.message || "Error al eliminar de favoritos");
+    }
+
+    return data;
+  } catch (err) {
+    console.error("Remove fav publication error:", err);
+    throw err;
+  }
+}
+
+/**
+ * Obtiene publicaciones públicas (últimas 10)
+ * @param cookie - Cookie de autenticación
+ * @returns Promise con array de publicaciones públicas
+ * @throws Error si falla la petición
+ */
+export async function getAllPublicPublicationsService(
+  cookie: string
+): Promise<PublicationPublicGetResponse[]> {
+  try {
+    const hd = new Headers();
+    hd.append("Cookie", cookie);
+    hd.append("Content-Type", "application/json");
+
+    console.log(
+      "Fetching public publications from:",
+      `${BASE_PUBLICATION_URL}obtenerPublicacionesPublicas`
+    );
+
+    const res = await fetch(
+      `${BASE_PUBLICATION_URL}obtenerPublicacionesPublicas`,
+      {
+        method: "GET",
+        headers: hd,
+      }
+    );
+
+    console.log("Response status:", res.status);
+    console.log("Response ok:", res.ok);
+
+    // Verificar si la respuesta tiene contenido
+    const text = await res.text();
+    console.log("Response text length:", text.length);
+
+    if (!res.ok) {
+      let errorMessage = "Error al obtener publicaciones públicas";
+      try {
+        const errorData = JSON.parse(text);
+        errorMessage = errorData.message || errorMessage;
+      } catch {
+        errorMessage = text || errorMessage;
+      }
+      throw new Error(errorMessage);
+    }
+
+    // Si la respuesta está vacía, devolver array vacío
+    if (!text || text.trim() === "") {
+      console.log("Empty response, returning empty array");
+      return [];
+    }
+
+    const data = JSON.parse(text);
+    console.log(
+      "Parsed data length:",
+      Array.isArray(data) ? data.length : "not array"
+    );
+    return data;
+  } catch (err) {
+    console.error("Get public publications error:", err);
     throw err;
   }
 }

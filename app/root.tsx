@@ -27,6 +27,7 @@ import {
 } from "./features/entities/User";
 import Landing from "./routes/landing";
 import { authCookie } from "./routes/api/auth/delete-cookie";
+import { useEffect } from "react";
 
 export const links: LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -130,7 +131,7 @@ export const loader: LoaderFunction = async ({ request }) => {
     console.log(
       " Cliente indica que ya tiene datos de usuario, saltando fetch"
     );
-    return new Response(JSON.stringify({ user: null, authError: null }), {
+    return new Response(JSON.stringify({ user: null, authError: "xskip"}), {
       headers: { "Content-Type": "application/json" },
     });
   }
@@ -139,69 +140,88 @@ export const loader: LoaderFunction = async ({ request }) => {
 
   const user = await getUserFromRequest(request); // obtiene
 
-  if (user instanceof UserResponseHandler) {
-    console.log(
-      "enroot: user:",user,
-      "error:",
-      user.message + " statusjos:" + user.status
-    );
-
-    return new Response(JSON.stringify({ user: user.user, authError: null }), {
-      headers: { "Content-Type": "application/json" },
-    });
-
+  if(!isErrorUser(user)){
+    console.log("aver: ", user.message)
+    if (!isErrorUser(user)) {
+      console.log(
+        "enroot: user:",
+        user,
+        "error:",
+      );
+    }
+    return Response.json({ user: user, authError: "SUCCES"});
   } else {
-  if (!user || user.status === "error" || user.message === "Invalid token") {
-    console.log("Token inválido, eliminando cookie y redirigiendo al login");
+    if (!user || user.status === "error" || user.message === "Invalid token") {
+      console.log("Token inválido, eliminando cookie y redirigiendo al login");
+      console.log("userRRRRRRRR", user);
 
-    return Response.json({ error: "Invalid token", user: null}, {
-      headers: {
-        "Set-Cookie": await authCookie.serialize("", { maxAge: 0, path: "/", expires: new Date(0) }), // 🔥 elimina la cookie
-      },
-    });
-  }
-
+      return Response.json(
+        { authError: "Invalid token", user: null },
+        {
+          headers: {
+            "Set-Cookie": await authCookie.serialize("", {
+              maxAge: 0,
+              path: "/",
+              expires: new Date(0),
+            }), // 🔥 elimina la cookie
+          },
+        }
+      );
+    }
+ 
     // No pasar errores de autenticación al contexto
     // Los errores del loader de root no deben mostrarse al usuario
-    //
     // TODO: HACERLO MEJOR
     console.log(
       "Usuario se encontro en cache o gubo error :",
       JSON.stringify(user)
     );
 
-    let frontUser: User | null | unknown = null; // esta mal pero ahora esta mejor
+    let frontUser: User | null; // esta mal pero ahora esta mejor
+
     try {
-       if (user && typeof user === "object" && "user" in user) {
-        frontUser = user?.user;
+      if(user.message){
+        
       }
+     console.log("user: ", user)
+     return new Response(
+      JSON.stringify({
+        user: null,
+        authError: null, // No pasar el error al contexto
+      }),
+      { headers: { "Content-Type": "application/json" } }
+    );
+       
+      
+
     } catch (error) {
       console.error("Error al obtener el usuario:", error);
 
       frontUser = null;
     }
 
-    return new Response(
-      JSON.stringify({
-        user: frontUser,
-        authError: null, // No pasar el error al contexto
-      }),
-      { headers: { "Content-Type": "application/json" } }
-    );
   }
 };
 
 export default function App() {
   // para mejor optimizacion hacemos un chekeo rapido en el frontend acerca de si tiene cookie
   //
-
   const { user: initialUser, authError } = useLoaderData<{
     user: User | null;
     authError: { message: string; status: string } | null;
   }>();
+  console.log("initialUser: ", initialUser)
+  console.log("ERROR", authError);
+
+  useEffect(() => {
+    if(initialUser){
+      console.log("initialUser: ", initialUser)
+
+    }
+  }, [])
 
   return (
-    <AuthProvider initialUser={initialUser} initialError={authError}>
+    <AuthProvider initialUser={initialUser} >
       <SmartAuthWrapper>
         <InstitutionRequestProvider>
           <Outlet />
@@ -235,6 +255,7 @@ export function ErrorBoundary() {
       </div>
     );
   }
+
   // Caso 2: error normal (excepción JS)
   if (error instanceof Error) {
     return (

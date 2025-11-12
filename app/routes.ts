@@ -86,7 +86,7 @@ export default [
   route("api/auth/has-admin-access", "routes/api/auth/has-admin-access.ts"),
   route("api/admin/invitation", "routes/api/admin/invitation.ts"),
   // Post API routes
-  route("api/post/crear", "routes/api/post/crearPost.ts"),
+  route("api/post/crearPost", "routes/api/post/crearPost.ts"),
   route("api/post/actualizar", "routes/api/post/actualizarPost.ts"),
   route("api/post/eliminar", "routes/api/post/eliminarPost.ts"),
   route("api/post/obtenerTodas", "routes/api/post/obtenerTodas.ts"),

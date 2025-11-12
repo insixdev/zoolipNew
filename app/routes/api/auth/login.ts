@@ -9,6 +9,7 @@ import {
   type UserServerResponse,
 } from "~/features/entities/User";
 import { getHeaderCookie, verifyTokenFromCookie } from "~/server/cookies";
+import { clearUserCache } from "~/server/me";
 
 /* tipo especial que contiene los headers y la response*/
 export type HandleData = {
@@ -172,7 +173,7 @@ export async function action({ request }: ActionFunctionArgs) {
       message: "Inicio de sesión exitoso",
     };
     console.log("SUC");
-
+    clearUserCache(); // Limpiar el caché
     const headers = new Headers();
     headers.append("Content-Type", "application/json");
 

@@ -12,24 +12,35 @@ import PostsList from "~/components/community/indexCommunity/PostsList";
 import LoadMoreButton from "~/components/community/indexCommunity/LoadMoreButton";
 import type { Post } from "~/components/community/indexCommunity/PostCard";
 import type { Comment } from "~/components/community/comentarios/CommentItem";
-import { getAllPublicationsService } from "~/features/post/postService";
+import { getAllPublicPublicationsService } from "~/features/post/postService";
 import { postParseResponse } from "~/features/post/postResponseParse";
 import { AuthRoleComponent } from "~/components/auth/AuthRoleComponent";
 import { USER_ROLES } from "~/lib/constants";
 const POSTS_PER_PAGE = 5; // Número de posts a mostrar por página
 
 // loader para cargar las post inciciales
-async function loader({ request }: LoaderFunctionArgs) {
+export async function loader({ request }: LoaderFunctionArgs) {
   const cookie = request.headers.get("Cookie");
-  if (!cookie)
-    return {
-      // mas adelante obtener por endpoiinnt publico
-      posts: null,
-    };
-  const fetchedPost = await getAllPublicationsService(cookie);
-  const posts: Post[] = postParseResponse(fetchedPost);
+  console.log("cookie", cookie);
 
-  return { posts };
+  if (!cookie) {
+    return redirect("/");
+  }
+
+  try {
+    console.log("Calling getAllPublicPublicationsService...");
+    const fetchedPost = await getAllPublicPublicationsService(cookie);
+    console.log("fetchedPost received:", fetchedPost);
+
+    const posts: Post[] = postParseResponse(fetchedPost);
+    console.log("posts parsed:", posts.length);
+
+    return { posts };
+  } catch (error) {
+    console.error("Error loading posts:", error);
+    // Devolver array vacío en caso de error
+    return { posts: [] };
+  }
 }
 
 export default function CommunityIndex() {
@@ -88,7 +99,7 @@ export default function CommunityIndex() {
     // Actualizar UI optimistamente
     setPostsList((prev) =>
       prev.map((post) =>
-        post.id.toString() === postId
+        post.id?.toString() === postId
           ? {
               ...post,
               // alternar el flag booleano y ajustar el contador usando el flag previo
@@ -139,7 +150,9 @@ export default function CommunityIndex() {
     // Actualizar UI optimistamente
     setPostsList((prev) =>
       prev.map((post) =>
-        post.id === postId ? { ...post, isSaved: !post.isSaved } : post
+        post.id?.toString() === postId
+          ? { ...post, isSaved: !post.isSaved }
+          : post
       )
     );
 
@@ -171,7 +184,9 @@ export default function CommunityIndex() {
     // Actualizar contador de comentarios
     setPostsList((prev) =>
       prev.map((post) =>
-        post.id === postId ? { ...post, comments: post.comments + 1 } : post
+        post.id?.toString() === postId
+          ? { ...post, comments: post.comments + 1 }
+          : post
       )
     );
 
@@ -217,12 +232,9 @@ export default function CommunityIndex() {
   };
 
   const handlePostCreated = () => {
-    console.log("Post created! Reloading...");
-    // TODO: Recargar posts desde el servidor
-    // loadMoreFetcher.load("/api/post/obtenerTodas");
-
-    // Por ahora, mostrar mensaje
-    alert("¡Publicación creada! Recarga la página para verla en el feed.");
+    console.log("Post created! Reloading posts...");
+    // Recargar la página para obtener los posts actualizados
+    window.location.reload();
   };
 
   return (
@@ -231,7 +243,6 @@ export default function CommunityIndex() {
         {/* Feed principal */}
         <div className="xl:col-span-3 space-y-6 max-w-2xl">
           {/* Create Post Card */}
-          Auth
           <CreatePostCard onPostCreated={handlePostCreated} />
           {/* Feed Tabs */}
           <FeedTabs>

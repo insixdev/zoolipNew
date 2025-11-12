@@ -103,20 +103,21 @@ export const action: ActionFunction = async ({ request }) => {
         success: false,
       });
     }
+    //
+    // // Enviar email de confirmación
+    // const emailRes = await solicitudeSuccesInstitutionEmail(
+    //   solicitud.email_contacto,
+    //   solicitud.nombre_institucion
+    // );
 
-    // Enviar email de confirmación
-    const emailRes = await solicitudeSuccesInstitutionEmail(
-      solicitud.email_contacto,
-      solicitud.nombre_institucion
-    );
+    //console.log("Respuesta de email:", emailRes);
+    //
+    // const emailStatus =
+    //   emailRes.status === "ok"
+    //     ? ` Se envió un correo de confirmación a ${solicitud.email_contacto}`
+    //     : ` No se pudo enviar el correo de confirmación a ${solicitud.email_contacto}, pero tu solicitud fue registrada`;
 
-    console.log("Respuesta de email:", emailRes);
-
-    const emailStatus =
-      emailRes.status === "ok"
-        ? `✓ Se envió un correo de confirmación a ${solicitud.email_contacto}`
-        : `⚠ No se pudo enviar el correo de confirmación a ${solicitud.email_contacto}, pero tu solicitud fue registrada`;
-
+    const emailStatus = "mode dev";
     // La solicitud fue exitosa, incluso si el email falla
     return Response.json({
       success: true,

@@ -11,7 +11,23 @@ import {
   User,
 } from "~/features/entities/User";
 import { w } from "public/build/_shared/chunk-O7IRWV66";
-
+import { getInstitutionByIdService } from "~/features/entities/institucion/institutionService";
+async function fetchInstitutionServiceForRole(id: number, cookie) {
+  try {
+    const data = await getInstitutionByIdService(id, cookie);
+    if (data.tipo == "REFUGIO") {
+      return { institution: "ROLE_REFUGIO" };
+    } else if (data.tipo == "VETERINARIA") {
+      return { institution: "ROLE_VETERINARIA" };
+    } else if (data.tipo == "PROTECTORA") {
+      return { institution: "ROLE_PROTECTORA" };
+    } else {
+      return { institution: null };
+    }
+  } catch (err) {
+    return { institution: null };
+  }
+}
 // Cache simple en memoria para evitar múltiples llamadas
 const userCache = new Map<
   string,
@@ -24,7 +40,7 @@ const userCache = new Map<
 // Cache para evitar llamadas duplicadas muy rápidas
 const recentCalls = new Map<string, number>();
 
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos - más agresivo
+const CACHE_DURATION = 3 * 60 * 1000; // 5 minutos - más agresivo
 const DUPLICATE_CALL_THRESHOLD = 1000; // 1 segundo
 
 // Función para limpiar el caché (útil para logout)
@@ -61,8 +77,11 @@ export async function getUserFromRequest(
   const cached = userCache.get(cacheKey);
 
   if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-    console.log("USANDO CACHE - No llamada al servidor, data:" + JSON.stringify(cached.data));
-    
+    console.log(
+      "USANDO CACHE - No llamada al servidor, data:" +
+        JSON.stringify(cached.data)
+    );
+
     return cached.data;
   }
 
@@ -124,7 +143,6 @@ export async function getUserFromRequest(
   //logeateeeeeeeeeee
   console.log("en me" + JSON.stringify(token));
 
-
   // en caso de que sea valido el token y no sea null
   // por decodeClaims
   // decodificar el token
@@ -136,7 +154,7 @@ export async function getUserFromRequest(
     console.log("LLAMANDO A fetchMe (servidor Spring Boot)");
     const response = await fetchMe(cookieHeader);
     console.log(" response de me", response);
-    
+
     // por si es UserErrorResponse
     if ("message" in response && "status" in response) {
       const res = {
@@ -148,21 +166,26 @@ export async function getUserFromRequest(
     }
 
     if (jwtPayload.valid) {
+      let role = jwtPayload.payload.role; // default role
+
+      // For admins, keep the role as ROLE_ADMINISTRADOR
+      // Institution type can be handled separately if needed
+
       // en caso de que sea valido el token
       const user = {
         id: jwtPayload.payload.id_usuario.toString(),
         email: jwtPayload.payload.email,
         username: jwtPayload.payload.sub,
-        role: jwtPayload.payload.role,
+        role: role,
       } as User;
 
-      console.log("result que se guardara en cahek", user);
+      console.log("result que se guardara en cache", user);
       const result = {
         user: {
           id: jwtPayload.payload.id_usuario.toString(),
           email: jwtPayload.payload.email,
           username: jwtPayload.payload.sub,
-          role: jwtPayload.payload.role,
+          role: role,
         },
         status: "ok",
         message: "User found on SSR",
@@ -176,6 +199,9 @@ export async function getUserFromRequest(
         });
         console.log("GUARDADO EN CACHE para authProvider");
       }
+      console.log(
+        "NOOOOOOOOO USNADOCACHE - CON LLAMADA data:" + JSON.stringify(result)
+      );
 
       return result;
     } else {

@@ -9,7 +9,6 @@ export function TuPerfil() {
 
   const { user, logout: clientLogout } = useSmartAuth();
 
-
   // Cerrar menú cuando se hace click fuera
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -74,7 +73,7 @@ export function TuPerfil() {
         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-100 to-rose-200 flex items-center justify-center text-rose-700 font-medium group-hover:shadow-lg transition-all border-2 border-white shadow-sm">
           {getUserInitials()}
         </div>
-        <span className="hidden lg:inline text-sm font-medium text-gray-700 group-hover:text-rose-600">
+        <span className="text-sm font-medium text-gray-700 group-hover:text-rose-600">
           {user?.username || "Perfil"}
         </span>
         <svg
@@ -158,36 +157,35 @@ export function TuPerfil() {
           </Link>
           <div className="border-t border-rose-100 my-1"></div>
           <div>
-          {!user ? (<p>no tenes cuenta perra</p>): (
-
-
-             <button
-            onClick={handleLogout}
-            disabled={fetcher.state !== "idle"}
-            className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-rose-50 hover:text-rose-600 transition-colors disabled:opacity-50"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-4 w-4 mr-3 text-gray-500"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-              />
-            </svg>
-            {fetcher.state !== "idle" ? "Cerrando sesión..." : "Cerrar sesión"}
-          </button>
-
-          )}
+            {!user ? (
+              <p>no tenes cuenta perra</p>
+            ) : (
+              <button
+                onClick={handleLogout}
+                disabled={fetcher.state !== "idle"}
+                className="w-full flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-rose-50 hover:text-rose-600 transition-colors disabled:opacity-50"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4 mr-3 text-gray-500"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                  />
+                </svg>
+                {fetcher.state !== "idle"
+                  ? "Cerrando sesión..."
+                  : "Cerrar sesión"}
+              </button>
+            )}
           </div>
-
         </div>
-
       )}
     </div>
   );

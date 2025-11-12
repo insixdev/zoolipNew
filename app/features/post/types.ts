@@ -15,7 +15,7 @@ export enum TopicCategory {
 }
 
 /** Tipo de usuario asociado a la publicación */
-type UserId = {
+export type UserIdPost = {
   id: number;
 };
 
@@ -23,8 +23,8 @@ type UserId = {
  * Request para crear una nueva publicación
  */
 export type PublicationCreateRequest = {
-  id_usuario: UserId;
-  tipo: "CONSULTA" | "PUBLICACION"
+  id_usuario: UserIdPost;
+  tipo: "CONSULTA" | "PUBLICACION";
   imagen_url: string;
   fecha_edicion: string;
   fecha_duda_resuelta: string;
@@ -65,4 +65,18 @@ export type PublicationGetResponse = {
   fecha_pregunta: string;
   fecha_edicion: string;
   fecha_duda_resuelta: string;
+};
+
+/**
+ * Response al obtener publicaciones públicas
+ */
+export type PublicationPublicGetResponse = {
+  id_publicacion: number;
+  topico: string;
+  contenido: string;
+  nombreUsuario: string;
+  likes: number;
+  fecha_pregunta: string;
+  fecha_duda_resuelta: string | null;
+  fecha_edicion: string | null;
 };

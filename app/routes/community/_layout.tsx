@@ -13,7 +13,6 @@ export default function CommunityLayout() {
   let isUser = false;
   if(!user){
     isUser = true
-
   }
   return (
     <div className="min-h-screen bg-gray-100 relative">

@@ -1,5 +1,5 @@
 import { LoaderFunctionArgs } from "react-router";
-import { getAllPublicationsService } from "~/features/post/postService";
+import { getAllPublicPublicationsService } from "~/features/post/postService";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const cookie = request.headers.get("Cookie");
@@ -15,7 +15,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   try {
-    const publications = await getAllPublicationsService(cookie);
+    const publications = await getAllPublicPublicationsService(cookie);
 
     return Response.json(
       {

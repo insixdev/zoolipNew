@@ -144,7 +144,7 @@ export default function CommunityNavbar({
           />
           </AuthRoleComponent>
 
-          <AuthRoleComponent allowedRoles={[USER_ROLES.ADMIN]}>
+          <AuthRoleComponent allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.SYSTEM]}>
             <NavItem
               to="/admin"
               icon={

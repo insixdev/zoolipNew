@@ -1,79 +1,138 @@
 import { createPublicationService } from "~/features/post/postService";
-import { PublicationCreateRequest } from "~/features/post/types";
-import { field, getUserFieldFromCookie, getUserIdFromToken } from "~/lib/authUtil";
+import { PublicationCreateRequest, UserIdPost } from "~/features/post/types";
+import {
+  field,
+  getUserFieldFromCookie,
+  getUserIdFromToken,
+} from "~/lib/authUtil";
+import { toLocalISOString } from "~/lib/generalUtil";
 
 //action para crear post
 export async function action({ request }) {
+  console.log("=== CREATE POST ACTION ===");
   const cookie = request.headers.get("Cookie");
-  const userIdFormCookie= getUserFieldFromCookie(cookie, field.id);
-  // fijarse si realetn  funca
-  console.log("userIdFormCookie", userIdFormCookie);
 
-  if(!userIdFormCookie){
-    return {
-      status: "error",
-      message: "Unexpected error",
-    }
+  if (!cookie) {
+    console.error("No cookie found");
+    return Response.json(
+      {
+        status: "error",
+        message: "No autenticado",
+      },
+      { status: 401 }
+    );
   }
+
+  const userIdFormCookie = getUserFieldFromCookie(cookie, "id_usuario");
+  console.log("userIdFormCookie:", userIdFormCookie);
+
+  if (!userIdFormCookie) {
+    console.error("No user ID in cookie");
+    return Response.json(
+      {
+        status: "error",
+        message: "Usuario no encontrado",
+      },
+      { status: 401 }
+    );
+  }
+
   const formData = await request.formData();
-  const data= Object.fromEntries(formData);
-  const postValidation = postBasicValidation(data)
-  // fijarse si realetn  funca
-  if(!postValidation.post){
-    return {
-      status: postValidation.status,
-      message: postValidation.message,
-    }
-  }
-  console.log("postValidation", postValidation);
+  const data = Object.fromEntries(formData);
+  console.log("Form data received:", data);
 
-  const postRequest= {
-    topico: postValidation.post.topico,
+  const postValidation = postBasicValidation(data);
+
+  if (!postValidation.post) {
+    console.error("Validation failed:", postValidation.message);
+    return Response.json(
+      {
+        status: postValidation.status,
+        message: postValidation.message,
+      },
+      { status: 400 }
+    );
+  }
+  console.log("Post validated successfully");
+
+  const id: UserIdPost = {
+    id: Number(userIdFormCookie),
+  };
+  const now = toLocalISOString(new Date(Date.now()));
+
+  const postRequest: PublicationCreateRequest = {
+    id_usuario: id,
+    topico: postValidation.post.topico || "General",
     contenido: postValidation.post.contenido,
-    likes: postValidation.post.likes,
-    fecha_pregunta: Date.now().toString(),
-    id_usuario: {
-      id: userIdFormCookie
-    } 
-  } as PublicationCreateRequest
-  const postRes = await createPublicationService(postRequest, cookie);
-  
-  console.log(data);
-  return Response.json({status: "success", message: "Publicacion creada con éxito"},{status: postRes.httpCode});
+    likes: 0,
+    imagen_url: "",
+    fecha_pregunta: now,
+    fecha_edicion: "",
+    fecha_duda_resuelta: "",
+    tipo: postValidation.post.tipo || "PUBLICACION",
+  };
+
+  console.log("Creating post with data:", postRequest);
+
+  try {
+    const postRes = await createPublicationService(postRequest, cookie);
+    console.log("Post created successfully:", postRes);
+
+    return Response.json(
+      { status: "success", message: "Publicación creada con éxito" },
+      { status: 200 }
+    );
+  } catch (err) {
+    console.error("Error creating post:", err);
+    return Response.json(
+      { status: "error", message: `Error al crear publicación: ${err}` },
+      { status: 500 }
+    );
+  }
 }
-function postBasicValidation(data ){
-  if(!data){
+function postBasicValidation(data) {
+  if (!data) {
     return {
       status: "error",
-      message: "Unexpected error, no hay datos",
-    }
+      message: "No hay datos",
+    };
   }
-  try{
-    const postData = data as PublicationCreateRequest
-    if(postData.topico.length === 0 || postData.contenido.length === 0){
-      if(postData.likes !== 0){
-        return {
-          status: "unexpected error",
-          message: "Unexpected error",
-        }
-      }
+
+  try {
+    const postData = data as any;
+    console.log("Validating post data:", postData);
+
+    // Validar que tenga contenido
+    if (!postData.contenido || postData.contenido.trim().length === 0) {
       return {
         status: "error",
-        message: "Error los datos no son correctos, tiene que tener contenido",
-      }
+        message: "El contenido no puede estar vacío",
+      };
     }
+
+    // El topico es opcional, pero si está vacío usar "General"
+    const validatedPost = {
+      topico:
+        postData.topico && postData.topico.trim().length > 0
+          ? postData.topico
+          : "General",
+      contenido: postData.contenido.trim(),
+      likes: 0,
+      tipo: postData.tipo || "PUBLICACION",
+    };
+
     return {
       status: "success",
-      message: "Post validado con exito",
-      post: postData
-    }
-  } catch(err){
+      message: "Post validado con éxito",
+      post: validatedPost,
+    };
+  } catch (err) {
+    console.error("Validation error:", err);
     return {
       status: "error",
-      message: "Error en procesar los datos de la publicacion, error: ${err}",
-    }
+      message: `Error al procesar los datos: ${err}`,
+    };
   }
-
 }
 
 export async function loader() {
