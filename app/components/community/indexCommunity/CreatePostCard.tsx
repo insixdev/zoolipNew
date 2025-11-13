@@ -75,6 +75,9 @@ export default function CreatePostCard({ onPostCreated }: CreatePostCardProps) {
       <AuthRoleComponent
         allowedRoles={[
           USER_ROLES.ADMIN,
+          USER_ROLES.VETERINARIA,
+          USER_ROLES.PROTECTORA,
+          USER_ROLES.REFUGIO,
           USER_ROLES.ADOPTANTE,
           USER_ROLES.USER,
           USER_ROLES.SYSTEM,

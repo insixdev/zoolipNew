@@ -13,6 +13,17 @@ const emailer = nodeemail.createTransport({
   },
 
 })
+export function rechazadaEmail(email: string, nombre: string) {
+  const res = emailer.sendMail({
+    to: email, subject: "Solicitud rechazada", text: `Hola ${nombre}, tu solicitud fue rechazada`
+  })
+}
+export function newUserEmail(email: string, nombre: string) {
+  const res = emailer.sendMail({
+    to: email, subject: "Bienvenido a Zoolip", text: `Hola ${nombre} te damos la bienvenida a Zoolip, `
+  })
+  
+}
 /*
  * cuando se hizo una solicitud de institucion con un mensaje de bienvenida
  * */
@@ -21,7 +32,7 @@ export  async function solicitudeSuccesInstitutionEmail(email: string, nombre: s
     if(zoolipEmail=== "" || zoolipEmail === undefined || password === undefined) return {status: "internal error", mensaje: "no hay contraseña o email zoolip"}
 
     const res = await emailer.sendMail({
-      to: email, subject: "Bienvenido a Zoolip", text: `Hola ${nombre} te damos la bienvenida a Zoolip, te contactaremos pronto`
+      to: email, subject: "Bienvenido a Zoolip", text: `Hola ${nombre}, te contactaremos pronto si tu solicitud fue aprobada`
     })
     console.log(res)
     return {status: "ok", mensaje: "email de bienvenida enviado"}

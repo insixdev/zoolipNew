@@ -4,6 +4,7 @@ import {
   ChatGetResponse,
   MessageGetResponse,
 } from "./types";
+import { handleFetchResponse } from "~/lib/tokenErrorHandler";
 
 /** URL base del backend de chats */
 const BASE_CHAT_URL =

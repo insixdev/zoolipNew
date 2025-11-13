@@ -102,13 +102,6 @@ export default function SystemDashboard() {
       description: "Ajustes generales del sistema y parámetros",
     },
     {
-      title: "Reportes",
-      icon: <FaChartBar />,
-      link: "/admin/system/reports",
-      color: "bg-purple-100 text-purple-600",
-      description: "Generar y visualizar reportes del sistema",
-    },
-    {
       title: "Seguridad",
       icon: <FaShieldAlt />,
       link: "/admin/system/security",

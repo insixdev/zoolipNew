@@ -18,6 +18,7 @@ import type {
 import { AuthProvider } from "~/features/auth/authProvider";
 import { SmartAuthWrapper } from "~/components/auth/SmartAuthWrapper";
 import { InstitutionRequestProvider } from "~/context/InstitutionRequestContext";
+import CookieBanner from "~/components/ui/CookieBanner";
 import "./app.css";
 import { getUserFromRequest } from "./server/me";
 import {
@@ -197,6 +198,7 @@ export default function App() {
       <SmartAuthWrapper>
         <InstitutionRequestProvider>
           <Outlet />
+          <CookieBanner />
         </InstitutionRequestProvider>
       </SmartAuthWrapper>
     </AuthProvider>

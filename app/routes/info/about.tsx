@@ -1,128 +1,132 @@
-import React from "react";
-import { Link } from "react-router";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "~/components/ui/Accordion";
 
 export default function About() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/landing" className="text-rose-600 font-semibold text-lg">
-            Zoolip
-          </Link>
-          <nav className="flex gap-6">
-            <Link
-              to="/community"
-              className="text-gray-700 hover:text-rose-600 transition-colors font-medium"
-            >
-              ← Volver a la Comunidad
-            </Link>
-          </nav>
-        </div>
-      </header>
-
-      {/* Contenido principal */}
-      <main className="max-w-4xl mx-auto px-4 py-12">
-        <div className="bg-white rounded-xl shadow-sm p-8 md:p-12">
+    <div className="min-h-screen bg-gray-50 py-12">
+      <div className="container mx-auto px-4 max-w-4xl">
+        <div className="bg-white rounded-lg shadow-md p-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Sobre Nosotros
+            Sobre Zoolip
           </h1>
-          <p className="text-gray-500 mb-8">
-            Conoce más sobre Zoolip y nuestra misión
+          <p className="text-gray-600 mb-8">
+            Conectando corazones con patitas desde 2024
           </p>
 
-          <div className="prose prose-gray max-w-none">
-            <section className="mb-10">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                Nuestra Historia
-              </h2>
-              <p className="text-gray-700 mb-4">
-                Zoolip nació en 2023 con un objetivo claro: crear una comunidad
-                donde los amantes de los animales pudieran conectarse, compartir
-                experiencias y, lo más importante, ayudar a encontrar hogares
-                amorosos para mascotas necesitadas.
-              </p>
-              <p className="text-gray-700 mb-4">
-                Lo que comenzó como un pequeño proyecto entre amigos se ha
-                convertido en una plataforma vibrante que conecta a miles de
-                personas apasionadas por el bienestar animal.
-              </p>
-            </section>
+          <Accordion type="single" collapsible defaultValue="item-1">
+            <AccordionItem value="item-1">
+              <AccordionTrigger>Nuestra Misión</AccordionTrigger>
+              <AccordionContent className="flex flex-col gap-4 text-balance">
+                <p className="text-gray-700">
+                  En Zoolip, nuestra misión es facilitar la adopción responsable
+                  de mascotas, conectando a personas que buscan un compañero
+                  peludo con refugios y protectoras que cuidan de animales
+                  necesitados.
+                </p>
+                <p className="text-gray-700">
+                  Creemos que cada mascota merece un hogar amoroso y cada
+                  persona merece la alegría que trae una mascota a su vida.
+                </p>
+              </AccordionContent>
+            </AccordionItem>
 
-            <section className="mb-10">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                Nuestra Misión
-              </h2>
-              <p className="text-gray-700 mb-4">
-                En Zoolip nos comprometemos a:
-              </p>
-              <ul className="list-disc pl-5 text-gray-700 space-y-2 mb-4">
-                <li>Facilitar la adopción responsable de mascotas</li>
-                <li>
-                  Crear una comunidad solidaria de amantes de los animales
-                </li>
-                <li>Promover la tenencia responsable de mascotas</li>
-                <li>Educar sobre el cuidado y bienestar animal</li>
-              </ul>
-            </section>
+            <AccordionItem value="item-2">
+              <AccordionTrigger>Nuestra Historia</AccordionTrigger>
+              <AccordionContent className="flex flex-col gap-4 text-balance">
+                <p className="text-gray-700">
+                  Zoolip nació de la pasión por los animales y la tecnología.
+                  Fundada en 2024, comenzamos con la visión de crear una
+                  plataforma que simplificara el proceso de adopción y ayudara a
+                  más animales a encontrar hogares.
+                </p>
+                <p className="text-gray-700">
+                  Desde entonces, hemos ayudado a cientos de mascotas a
+                  encontrar familias amorosas y continuamos creciendo cada día.
+                </p>
+              </AccordionContent>
+            </AccordionItem>
 
-            <section className="mb-10">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                Nuestro Equipo
-              </h2>
-              <p className="text-gray-700 mb-4">
-                Somos un equipo multidisciplinario de amantes de los animales,
-                desarrolladores, diseñadores y especialistas en bienestar
-                animal. Lo que nos une es nuestra pasión por crear un mundo
-                mejor para las mascotas y sus dueños.
-              </p>
-            </section>
+            <AccordionItem value="item-3">
+              <AccordionTrigger>Qué Hacemos</AccordionTrigger>
+              <AccordionContent className="flex flex-col gap-4 text-balance">
+                <ul className="list-disc list-inside text-gray-700 space-y-2">
+                  <li>
+                    Conectamos adoptantes con refugios y protectoras de animales
+                  </li>
+                  <li>
+                    Facilitamos el proceso de adopción con herramientas
+                    digitales
+                  </li>
+                  <li>
+                    Proporcionamos información sobre cuidado responsable de
+                    mascotas
+                  </li>
+                  <li>
+                    Apoyamos a refugios con tecnología para gestionar sus
+                    operaciones
+                  </li>
+                  <li>
+                    Promovemos la adopción responsable y el bienestar animal
+                  </li>
+                </ul>
+              </AccordionContent>
+            </AccordionItem>
 
-            <section className="mb-10">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                Únete a Nuestra Comunidad
-              </h2>
-              <p className="text-gray-700 mb-6">
-                Ya sea que estés buscando adoptar, compartir historias de tu
-                mascota o simplemente conectarte con otros amantes de los
-                animales, ¡te damos la bienvenida a Zoolip!
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Link
-                  to="/community"
-                  className="inline-flex justify-center items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-rose-600 hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 transition-colors"
-                >
-                  Explorar la Comunidad
-                </Link>
-                <Link
-                  to="/adopt"
-                  className="inline-flex justify-center items-center px-6 py-3 border border-gray-300 text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500 transition-colors"
-                >
-                  Ver Mascotas en Adopción
-                </Link>
-              </div>
-            </section>
+            <AccordionItem value="item-4">
+              <AccordionTrigger>Nuestros Valores</AccordionTrigger>
+              <AccordionContent className="flex flex-col gap-4 text-balance">
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">
+                      Compasión
+                    </h4>
+                    <p className="text-gray-700">
+                      Nos preocupamos profundamente por el bienestar de todos
+                      los animales.
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">
+                      Transparencia
+                    </h4>
+                    <p className="text-gray-700">
+                      Operamos con honestidad y claridad en todas nuestras
+                      interacciones.
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">
+                      Responsabilidad
+                    </h4>
+                    <p className="text-gray-700">
+                      Promovemos la adopción responsable y el cuidado adecuado
+                      de las mascotas.
+                    </p>
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
 
-            <section className="pt-8 border-t border-gray-200">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                Contáctanos
-              </h2>
-              <p className="text-gray-700 mb-4">
-                ¿Tienes preguntas o comentarios? Nos encantaría saber de ti.
-              </p>
-              <p className="text-gray-700">
-                Email:{" "}
-                <a
-                  href="mailto:hola@zoolip.com"
-                  className="text-rose-600 hover:underline"
-                >
-                  hola@zoolip.com
-                </a>
-              </p>
-            </section>
-          </div>
+            <AccordionItem value="item-5">
+              <AccordionTrigger>Contacto</AccordionTrigger>
+              <AccordionContent className="flex flex-col gap-4 text-balance">
+                <p className="text-gray-700">
+                  ¿Tienes preguntas o quieres colaborar con nosotros?
+                </p>
+                <ul className="list-disc list-inside text-gray-700 space-y-2">
+                  <li>Email: info@zoolip.com</li>
+                  <li>Teléfono: +34 900 123 456</li>
+                  <li>Dirección: Calle Principal 123, Madrid, España</li>
+                </ul>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

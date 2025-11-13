@@ -1,4 +1,9 @@
-import { PetRequest, PetResponse, PetUpdateRequest, PetGetByResponse } from "./types";
+import {
+  PetRequest,
+  PetResponse,
+  PetUpdateRequest,
+  PetGetByResponse,
+} from "./types";
 
 /** URL base del backend de mascotas */
 const BASE_PETS_URL =
@@ -11,7 +16,10 @@ const BASE_PETS_URL =
  * @returns Promise con la respuesta del servidor
  * @throws Error si falla la petición
  */
-export async function addPetService(pet: PetRequest, cookie: string): Promise<PetResponse> {
+export async function addPetService(
+  pet: PetRequest,
+  cookie: string
+): Promise<PetResponse> {
   try {
     // Transformación de nombres para el backend (camelCase → snake_case)
     const body = {
@@ -22,7 +30,7 @@ export async function addPetService(pet: PetRequest, cookie: string): Promise<Pe
       raza: pet.race,
       especie: pet.species,
       id_institucion: pet.id_institution,
-      nombre: pet.name
+      nombre: pet.name,
     };
 
     const hd = new Headers();
@@ -38,7 +46,11 @@ export async function addPetService(pet: PetRequest, cookie: string): Promise<Pe
     const data = await res.json();
 
     if (!res.ok) {
-      throw new Error(data.message || "Error al añadir mascota");
+      const errorMessage =
+        data.error || data.message || "Error al añadir mascota";
+      const error = new Error(errorMessage);
+      (error as any).data = data;
+      throw error;
     }
 
     return data;
@@ -55,7 +67,10 @@ export async function addPetService(pet: PetRequest, cookie: string): Promise<Pe
  * @returns Promise con la respuesta del servidor
  * @throws Error si falla la petición
  */
-export async function deletePetService(id: string, cookie: string): Promise<PetResponse> {
+export async function deletePetService(
+  id: string,
+  cookie: string
+): Promise<PetResponse> {
   try {
     const hd = new Headers();
     hd.append("Content-Type", "application/json");
@@ -70,7 +85,11 @@ export async function deletePetService(id: string, cookie: string): Promise<PetR
     const data = await res.json();
 
     if (!res.ok) {
-      throw new Error(data.message || "Error al eliminar mascota");
+      const errorMessage =
+        data.error || data.message || "Error al eliminar mascota";
+      const error = new Error(errorMessage);
+      (error as any).data = data;
+      throw error;
     }
 
     return data;
@@ -87,7 +106,10 @@ export async function deletePetService(id: string, cookie: string): Promise<PetR
  * @returns Promise con la respuesta del servidor
  * @throws Error si falla la petición
  */
-export async function editPetService(pet: PetUpdateRequest, cookie: string): Promise<PetResponse> {
+export async function editPetService(
+  pet: PetUpdateRequest,
+  cookie: string
+): Promise<PetResponse> {
   try {
     const body = {
       id: pet.id,
@@ -98,7 +120,7 @@ export async function editPetService(pet: PetUpdateRequest, cookie: string): Pro
       raza: pet.race,
       especie: pet.species,
       id_institucion: pet.id_institution,
-      nombre: pet.name
+      nombre: pet.name,
     };
 
     const hd = new Headers();
@@ -131,7 +153,10 @@ export async function editPetService(pet: PetUpdateRequest, cookie: string): Pro
  * @returns Promise con los datos de la mascota
  * @throws Error si falla la petición o no se encuentra la mascota
  */
-export async function getPetByIdService(id: string, cookie: string): Promise<PetGetByResponse> {
+export async function getPetByIdService(
+  id: string,
+  cookie: string
+): Promise<PetGetByResponse> {
   try {
     const hd = new Headers();
     hd.append("Content-Type", "application/json");
@@ -161,7 +186,9 @@ export async function getPetByIdService(id: string, cookie: string): Promise<Pet
  * @returns Promise con array de mascotas
  * @throws Error si falla la petición
  */
-export async function getAllPetsService(cookie: string): Promise<PetGetByResponse[]> {
+export async function getAllPetsService(
+  cookie: string
+): Promise<PetGetByResponse[]> {
   try {
     const hd = new Headers();
     hd.append("Content-Type", "application/json");
@@ -172,12 +199,18 @@ export async function getAllPetsService(cookie: string): Promise<PetGetByRespons
       headers: hd,
     });
 
+    const data = await res.json();
+
     if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.message || "Error al obtener mascotas");
+      console.error("Get all pets error:", data);
+      // Propagar el error con el mensaje del backend
+      const errorMessage =
+        data.error || data.message || "Error al obtener mascotas";
+      const error = new Error(errorMessage);
+      (error as any).data = data; // Guardar data completa para debugging
+      throw error;
     }
 
-    const data = await res.json();
     return data;
   } catch (err) {
     console.error("Get all pets error:", err);

@@ -37,9 +37,9 @@ export async function action({ request }) {
     console.log("has-access API - hasAccess result:", hasAccess);
 
     if (hasAccess) {
-      return Response.json({ hasAccess: true, ok: true });
+      return Response.json({ hasAccess: true, ok: true, user });
     } else {
-      return Response.json({ hasAccess: false, ok: true });
+      return Response.json({ hasAccess: false, ok: true, user });
     }
   } catch (error) {
     console.log(error);
@@ -48,5 +48,27 @@ export async function action({ request }) {
       ok: false,
       error: "Error al verificar el acceso: ${error}",
     });
+  }
+}
+
+// Agregar método POST para obtener el usuario actual sin verificar roles
+export async function loader({ request }) {
+  try {
+    const userResult = await getUserFromRequest(request);
+
+    if ("succes" in userResult && !userResult.succes) {
+      return Response.json(
+        { ok: false, error: "No autenticado" },
+        { status: 401 }
+      );
+    }
+
+    return Response.json({ ok: true, user: userResult });
+  } catch (error) {
+    console.error("Error obteniendo usuario:", error);
+    return Response.json(
+      { ok: false, error: "Error al obtener usuario" },
+      { status: 500 }
+    );
   }
 }

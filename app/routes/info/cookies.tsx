@@ -1,107 +1,122 @@
-import React from "react";
-import { Link } from "react-router";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "~/components/ui/Accordion";
 
 export default function Cookies() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/landing" className="text-rose-600 font-semibold text-lg">
-            Zoolip
-          </Link>
-          <nav className="flex gap-6">
-            <Link
-              to="/community"
-              className="text-gray-700 hover:text-rose-600 transition-colors font-medium"
-            >
-              ← Volver a la Comunidad
-            </Link>
-          </nav>
-        </div>
-      </header>
-
-      {/* Contenido principal */}
-      <main className="max-w-4xl mx-auto px-4 py-12">
-        <div className="bg-white rounded-xl shadow-sm p-8 md:p-12">
+    <div className="min-h-screen bg-gray-50 py-12">
+      <div className="container mx-auto px-4 max-w-4xl">
+        <div className="bg-white rounded-lg shadow-md p-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Política de Cookies
           </h1>
-          <p className="text-gray-500 mb-8">
-            Última actualización: 29 de octubre de 2025
+          <p className="text-gray-600 mb-8">
+            Última actualización: {new Date().toLocaleDateString("es-ES")}
           </p>
 
-          <div className="prose prose-gray max-w-none">
-            <section className="mb-10">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                1. ¿Qué son las cookies?
-              </h2>
-              <p className="text-gray-700 mb-4">
-                Las cookies son pequeños archivos de texto que se almacenan en
-                tu dispositivo cuando visitas nuestro sitio web. Nos ayudan a
-                mejorar tu experiencia de navegación y a entender cómo
-                interactúas con nuestra plataforma.
-              </p>
-            </section>
+          <Accordion type="single" collapsible defaultValue="item-1">
+            <AccordionItem value="item-1">
+              <AccordionTrigger>¿Qué son las Cookies?</AccordionTrigger>
+              <AccordionContent className="flex flex-col gap-4 text-balance">
+                <p className="text-gray-700">
+                  Las cookies son pequeños archivos de texto que se almacenan en
+                  tu dispositivo cuando visitas un sitio web. Se utilizan
+                  ampliamente para hacer que los sitios web funcionen de manera
+                  más eficiente y proporcionen información a los propietarios
+                  del sitio.
+                </p>
+              </AccordionContent>
+            </AccordionItem>
 
-            <section className="mb-10">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                2. Tipos de cookies que utilizamos
-              </h2>
-              <p className="text-gray-700 mb-4">
-                En Zoolip utilizamos los siguientes tipos de cookies:
-              </p>
-              <ul className="list-disc pl-5 text-gray-700 space-y-2 mb-4">
-                <li>
-                  <strong>Esenciales:</strong> Necesarias para el funcionamiento
-                  básico del sitio.
-                </li>
-                <li>
-                  <strong>Rendimiento:</strong> Nos ayudan a entender cómo los
-                  visitantes interactúan con nuestro sitio.
-                </li>
-                <li>
-                  <strong>Funcionalidad:</strong> Permiten recordar tus
-                  preferencias y configuraciones.
-                </li>
-                <li>
-                  <strong>Publicidad:</strong> Utilizadas para mostrarte
-                  anuncios relevantes.
-                </li>
-              </ul>
-            </section>
+            <AccordionItem value="item-2">
+              <AccordionTrigger>Cookies que Utilizamos</AccordionTrigger>
+              <AccordionContent className="flex flex-col gap-4 text-balance">
+                <div className="space-y-4">
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">
+                      Cookies Esenciales
+                    </h4>
+                    <p className="text-gray-700">
+                      Estas cookies son necesarias para que el sitio web
+                      funcione y no se pueden desactivar. Incluyen cookies de
+                      autenticación y seguridad.
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">
+                      Cookies de Rendimiento
+                    </h4>
+                    <p className="text-gray-700">
+                      Nos ayudan a entender cómo los visitantes interactúan con
+                      nuestro sitio web, recopilando información de forma
+                      anónima.
+                    </p>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-gray-900 mb-2">
+                      Cookies de Funcionalidad
+                    </h4>
+                    <p className="text-gray-700">
+                      Permiten que el sitio web recuerde las elecciones que
+                      haces (como tu idioma o región) y proporcionen
+                      características mejoradas y más personales.
+                    </p>
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
 
-            <section className="mb-10">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                3. Gestión de cookies
-              </h2>
-              <p className="text-gray-700 mb-4">
-                Puedes gestionar tus preferencias de cookies a través de la
-                configuración de tu navegador. Ten en cuenta que deshabilitar
-                ciertas cookies puede afectar la funcionalidad de nuestro sitio
-                web.
-              </p>
-            </section>
+            <AccordionItem value="item-3">
+              <AccordionTrigger>Cómo Controlar las Cookies</AccordionTrigger>
+              <AccordionContent className="flex flex-col gap-4 text-balance">
+                <p className="text-gray-700">
+                  Puedes controlar y/o eliminar las cookies como desees. Puedes
+                  eliminar todas las cookies que ya están en tu dispositivo y
+                  puedes configurar la mayoría de los navegadores para evitar
+                  que se coloquen.
+                </p>
+                <p className="text-gray-700">
+                  Sin embargo, si haces esto, es posible que tengas que ajustar
+                  manualmente algunas preferencias cada vez que visites un sitio
+                  y algunos servicios y funcionalidades pueden no funcionar.
+                </p>
+              </AccordionContent>
+            </AccordionItem>
 
-            <section className="mb-10">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                4. Más información
-              </h2>
-              <p className="text-gray-700 mb-4">
-                Para más información sobre cómo utilizamos tus datos personales,
-                por favor consulta nuestra{" "}
-                <Link
-                  to="/info/privacidad"
-                  className="text-rose-600 hover:underline"
-                >
-                  Política de Privacidad
-                </Link>
-                .
-              </p>
-            </section>
-          </div>
+            <AccordionItem value="item-4">
+              <AccordionTrigger>Cookies de Terceros</AccordionTrigger>
+              <AccordionContent className="flex flex-col gap-4 text-balance">
+                <p className="text-gray-700">
+                  Algunos de nuestros socios pueden establecer cookies en tu
+                  dispositivo cuando visitas Zoolip. Estos incluyen:
+                </p>
+                <ul className="list-disc list-inside text-gray-700 space-y-2">
+                  <li>Google Analytics para análisis de tráfico</li>
+                  <li>Servicios de redes sociales para compartir contenido</li>
+                  <li>Proveedores de publicidad (si aplicable)</li>
+                </ul>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-5">
+              <AccordionTrigger>Más Información</AccordionTrigger>
+              <AccordionContent className="flex flex-col gap-4 text-balance">
+                <p className="text-gray-700">
+                  Si tienes preguntas sobre nuestra política de cookies, puedes
+                  contactarnos en:
+                </p>
+                <ul className="list-disc list-inside text-gray-700 space-y-2">
+                  <li>Email: cookies@zoolip.com</li>
+                  <li>Teléfono: +34 900 123 456</li>
+                </ul>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

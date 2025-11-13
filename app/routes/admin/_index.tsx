@@ -1,7 +1,12 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router";
 import { useSmartAuth } from "~/features/auth/useSmartAuth";
-import { ADMIN_ROLES, USER_ROLES, UserRole, type AdminRole } from "~/lib/constants";
+import {
+  ADMIN_ROLES,
+  USER_ROLES,
+  UserRole,
+  type AdminRole,
+} from "~/lib/constants";
 
 export default function AdminIndex() {
   const { user, isLoading } = useSmartAuth();
@@ -96,9 +101,9 @@ function AdminDashboardOld() {
       color: "bg-purple-100 text-purple-600",
     },
     {
-      title: "Ver reportes",
+      title: "Ver dashboard",
       icon: <FaChartLine />,
-      link: "/admin/reportes",
+      link: "/admin/dashboard",
       color: "bg-yellow-100 text-yellow-600",
     },
   ];

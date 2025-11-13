@@ -40,22 +40,29 @@ export function AdminSidebar({ adminRole }: AdminSidebarProps) {
       case ADMIN_ROLES.VETERINARIO:
         return [
           { to: "/admin", icon: Home, label: "Dashboard" },
-          { to: "/admin/atencion", icon: Stethoscope, label: "Atención" },
+          {
+            to: "/admin/revision-mascota",
+            icon: Stethoscope,
+            label: "Revisión Médica",
+          },
           { to: "/admin/mascotas", icon: User, label: "Mascotas" },
-          { to: "/admin/donaciones", icon: Heart, label: "Donaciones" },
+          {
+            to: "/admin/solicitudes",
+            icon: ClipboardList,
+            label: "Solicitudes",
+          },
         ];
 
       case ADMIN_ROLES.PROTECTORA:
       case ADMIN_ROLES.REFUGIO:
         return [
           { to: "/admin", icon: Home, label: "Dashboard" },
+          { to: "/admin/mascotas", icon: User, label: "Mascotas" },
           {
             to: "/admin/solicitudes",
             icon: ClipboardList,
             label: "Solicitudes",
           },
-          { to: "/admin/mascotas", icon: User, label: "Mascotas" },
-          { to: "/admin/donaciones", icon: Heart, label: "Donaciones" },
         ];
 
       default:
@@ -128,8 +135,8 @@ export function AdminSidebar({ adminRole }: AdminSidebarProps) {
       <div className="p-4 border-t border-gray-100">
         <Link
           to="/settings"
-          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-            isActive("/admin/configuracion")
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group ${
+            isActive("/settings")
               ? "bg-rose-100 text-rose-700 font-medium"
               : "text-gray-700 hover:bg-rose-50 hover:text-rose-700"
           }`}
@@ -137,7 +144,7 @@ export function AdminSidebar({ adminRole }: AdminSidebarProps) {
           <Settings
             size={20}
             className={
-              isActive("/admin/configuracion")
+              isActive("/settings")
                 ? "text-rose-700"
                 : "text-gray-500 group-hover:text-rose-700"
             }

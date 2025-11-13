@@ -34,6 +34,9 @@ async function requireSpecificRole(
       [USER_ROLES.ADOPTANTE]: "Adoptante",
       [USER_ROLES.USER]: "Usuario de Comunidad",
       [USER_ROLES.SYSTEM]: "Sistema",
+      [USER_ROLES.VETERINARIA]: "Veterinaria",
+      [USER_ROLES.REFUGIO]: "Refugio",
+      [USER_ROLES.PROTECTORA]: "Protectora",
     };
 
     const requiredRoleNames = allowedRoles
@@ -63,13 +66,23 @@ async function requireSpecificRole(
 }
 
 /**
- * Guard específico para ROLE_ADMIN
- * Solo permite acceso a usuarios con rol de administrador
+ * Guard específico para ROLE_ADMIN (cualquier tipo de admin)
+ * Permite acceso a administradores, veterinarias, refugios y protectoras
  */
 export async function requireAdmin(
   request: Request
 ): Promise<UserResponseHandler> {
-  return requireSpecificRole(request, [USER_ROLES.ADMIN], "/login");
+  return requireSpecificRole(
+    request,
+    [
+      USER_ROLES.ADMIN,
+      USER_ROLES.VETERINARIA,
+      USER_ROLES.REFUGIO,
+      USER_ROLES.PROTECTORA,
+      USER_ROLES.SYSTEM,
+    ],
+    "/login"
+  );
 }
 
 /**
@@ -111,7 +124,15 @@ export async function requireAnyAuth(
 ): Promise<UserResponseHandler> {
   return requireSpecificRole(
     request,
-    [USER_ROLES.ADMIN, USER_ROLES.ADOPTANTE, USER_ROLES.USER],
+    [
+      USER_ROLES.ADMIN,
+      USER_ROLES.ADOPTANTE,
+      USER_ROLES.USER,
+      USER_ROLES.VETERINARIA,
+      USER_ROLES.REFUGIO,
+      USER_ROLES.PROTECTORA,
+      USER_ROLES.SYSTEM,
+    ],
     "/login"
   );
 }
@@ -126,6 +147,50 @@ export async function requireAdoptanteOrUser(
   return requireSpecificRole(
     request,
     [USER_ROLES.ADOPTANTE, USER_ROLES.USER],
+    "/login"
+  );
+}
+
+/**
+ * Guard específico para ROLE_VETERINARIA
+ * Solo permite acceso a veterinarias
+ */
+export async function requireVeterinaria(
+  request: Request
+): Promise<UserResponseHandler> {
+  return requireSpecificRole(request, [USER_ROLES.VETERINARIA], "/login");
+}
+
+/**
+ * Guard específico para ROLE_REFUGIO
+ * Solo permite acceso a refugios
+ */
+export async function requireRefugio(
+  request: Request
+): Promise<UserResponseHandler> {
+  return requireSpecificRole(request, [USER_ROLES.REFUGIO], "/login");
+}
+
+/**
+ * Guard específico para ROLE_PROTECTORA
+ * Solo permite acceso a protectoras
+ */
+export async function requireProtectora(
+  request: Request
+): Promise<UserResponseHandler> {
+  return requireSpecificRole(request, [USER_ROLES.PROTECTORA], "/login");
+}
+
+/**
+ * Guard para instituciones (veterinarias, refugios, protectoras)
+ * Excluye ROLE_ADMINISTRADOR y ROLE_SYSTEM
+ */
+export async function requireInstitution(
+  request: Request
+): Promise<UserResponseHandler> {
+  return requireSpecificRole(
+    request,
+    [USER_ROLES.VETERINARIA, USER_ROLES.REFUGIO, USER_ROLES.PROTECTORA],
     "/login"
   );
 }

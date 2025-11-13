@@ -1,4 +1,5 @@
 import { UserUpdateRequest, UserResponse } from "./types";
+import { handleFetchResponse } from "~/lib/tokenErrorHandler";
 
 /**
  * Servicio para operaciones de usuarios
@@ -29,13 +30,7 @@ export async function updateUserService(
       body: JSON.stringify(user),
     });
 
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.message || "Error al actualizar usuario");
-    }
-
-    return data;
+    return await handleFetchResponse<UserResponse>(res);
   } catch (err) {
     console.error("Update user error:", err);
     throw err;
@@ -64,13 +59,7 @@ export async function deleteUserService(
       body: JSON.stringify(id),
     });
 
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.message || "Error al eliminar usuario");
-    }
-
-    return data;
+    return await handleFetchResponse<UserResponse>(res);
   } catch (err) {
     console.error("Delete user error:", err);
     throw err;
@@ -94,13 +83,7 @@ export async function getAllUsersService(cookie?: string): Promise<any[]> {
       headers: hd,
     });
 
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data.message || "Error al obtener usuarios");
-    }
-
-    const data = await res.json();
-    return data;
+    return await handleFetchResponse<any[]>(res);
   } catch (err) {
     console.error("Get all users error:", err);
     throw err;
@@ -139,18 +122,6 @@ export async function searchUsersService(
 
     console.log(`📥 Status de búsqueda: ${res.status}`);
 
-    if (!res.ok) {
-      const text = await res.text();
-      let errorMessage = "Error al buscar usuarios";
-      try {
-        const errorData = text ? JSON.parse(text) : {};
-        errorMessage = errorData.message || errorMessage;
-      } catch {
-        errorMessage = text || errorMessage;
-      }
-      throw new Error(errorMessage);
-    }
-
     const text = await res.text();
     if (!text || text.trim() === "") {
       console.log("⚠️ Respuesta vacía del servidor");
@@ -158,6 +129,15 @@ export async function searchUsersService(
     }
 
     const data = JSON.parse(text);
+
+    if (!res.ok) {
+      const errorMessage =
+        data.error || data.message || "Error al buscar usuarios";
+      const error = new Error(errorMessage);
+      (error as any).data = data;
+      throw error;
+    }
+
     console.log(`✅ Usuarios encontrados: ${data.length}`);
     return data;
   } catch (err) {

@@ -8,8 +8,7 @@ export default [
   route("admin-register/invite/:token", "routes/admin/adminRegisterInvite.tsx"),
 
   route("admin", "routes/admin/_layout.tsx", [
-    index("routes/admin/_index.tsx"), // /admin - redirección inteligente
-    route("dashboard", "routes/admin/dashboard.tsx"), // /admin/dashboard
+    index("routes/admin/dashboard.tsx"), // /admin - dashboard principal
     route("system", "routes/admin/system/system.tsx"), // /admin/system
     route(
       "system/institutionSolicitudes",
@@ -23,10 +22,16 @@ export default [
     ),
     route("solicitudes", "routes/admin/solicitudes.tsx"), // /admin/solicitudes
     route("donaciones", "routes/admin/donaciones.tsx"), // /admin/donaciones
+
     route("mascotas", "routes/admin/mascotas.tsx"), // /admin/mascotas
+    route("editarMascota/:id", "routes/admin/editarMascota.$id.tsx"), // /admin/editarMascota/:id
+    route("api/pets/eliminar/:id", "routes/api/pets/EliminarPet.$id.ts"),
+
     route("atencion", "routes/admin/atencion.tsx"), // /admin/atencion
     route("registrarAdmin", "routes/admin/registrarAdmin.tsx"), // /admin/registrarAdmin
     route("crearMascota", "routes/admin/crearMascota.tsx"), // /admin/crearMascota
+    route("revision-mascota", "routes/admin/revision-mascota.tsx"), // /admin/revision-mascota (solo veterinarias)
+    route("reportes", "routes/admin/reportes.tsx"), // /admin/reportes (redirect temporal a dashboard)
   ]),
   // Community nested routes
   route("community", "routes/community/_layout.tsx", [
@@ -96,12 +101,12 @@ export default [
   // Pets API routes
   route("api/pets/crear", "routes/api/pets/CrearPet.ts"),
   route("api/pets/actualizar", "routes/api/pets/ActualizarPet.ts"),
-  route("api/pets/eliminar", "routes/api/pets/EliminarPet.ts"),
 
   // Comments API routes
   route("api/comments/crear", "routes/api/comments/crear.ts"),
   route("api/comments/actualizar", "routes/api/comments/actualizar.ts"),
   route("api/comments/eliminar", "routes/api/comments/eliminar.ts"),
+
   route(
     "api/comments/obtenerPorPublicacion",
     "routes/api/comments/obtenerPorPublicacion.ts"
@@ -111,4 +116,7 @@ export default [
   route("api/donations/crear", "routes/api/donations/crear.ts"),
   route("api/donations/actualizar", "routes/api/donations/actualizar.ts"),
   route("api/donations/eliminar", "routes/api/donations/eliminar.ts"),
+
+  // User API routes
+  route("api/user/update", "routes/api/user/update.ts"),
 ] satisfies RouteConfig;

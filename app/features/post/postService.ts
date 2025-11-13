@@ -5,6 +5,7 @@ import {
   PublicationGetResponse,
   PublicationPublicGetResponse,
 } from "./types";
+import { handleFetchResponse } from "~/lib/tokenErrorHandler";
 
 /** URL base del backend de publicaciones */
 const BASE_PUBLICATION_URL = "http://localhost:3050/api/publicacion/";
@@ -32,13 +33,7 @@ export async function createPublicationService(
       body: JSON.stringify(publication),
     });
 
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.message || "Error al crear publicación");
-    }
-
-    return data;
+    return await handleFetchResponse<PublicationResponse>(res);
   } catch (err) {
     console.error("Create publication error:", err);
     throw err;
@@ -67,13 +62,7 @@ export async function updatePublicationService(
       body: JSON.stringify(publication),
     });
 
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.message || "Error al actualizar publicación");
-    }
-
-    return data;
+    return await handleFetchResponse<PublicationResponse>(res);
   } catch (err) {
     console.error("Update publication error:", err);
     throw err;
@@ -102,13 +91,7 @@ export async function deletePublicationService(
       body: JSON.stringify(id),
     });
 
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.message || "Error al eliminar publicación");
-    }
-
-    return data;
+    return await handleFetchResponse<PublicationResponse>(res);
   } catch (err) {
     console.error("Delete publication error:", err);
     throw err;
@@ -137,13 +120,7 @@ export async function getPublicationByIdService(
       body: JSON.stringify(id),
     });
 
-    if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.message || "Error al obtener publicación");
-    }
-
-    const data = await res.json();
-    return data;
+    return await handleFetchResponse<PublicationGetResponse>(res);
   } catch (err) {
     console.error("Get publication by id error:", err);
     throw err;
@@ -169,15 +146,7 @@ export async function getAllPublicationsService(
       headers: hd,
     });
 
-    if (!res.ok) {
-      const data = await res.json();
-      throw new Error(
-        data.message || "Error al obtener todas las publicaciones"
-      );
-    }
-
-    const data = await res.json();
-    return data;
+    return await handleFetchResponse<PublicationGetResponse[]>(res);
   } catch (err) {
     console.error("Get all publications error:", err);
     throw err;
@@ -208,15 +177,7 @@ export async function getFavPublicationsService(
       }
     );
 
-    if (!res.ok) {
-      const data = await res.json();
-      throw new Error(
-        data.message || "Error al obtener publicaciones favoritas"
-      );
-    }
-
-    const data = await res.json();
-    return data;
+    return await handleFetchResponse<PublicationGetResponse[]>(res);
   } catch (err) {
     console.error("Get fav publications error:", err);
     throw err;
@@ -249,13 +210,7 @@ export async function addFavPublicationService(
       }
     );
 
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.message || "Error al agregar a favoritos");
-    }
-
-    return data;
+    return await handleFetchResponse<PublicationResponse>(res);
   } catch (err) {
     console.error("Add fav publication error:", err);
     throw err;
@@ -288,13 +243,7 @@ export async function removeFavPublicationService(
       }
     );
 
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.message || "Error al eliminar de favoritos");
-    }
-
-    return data;
+    return await handleFetchResponse<PublicationResponse>(res);
   } catch (err) {
     console.error("Remove fav publication error:", err);
     throw err;

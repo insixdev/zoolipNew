@@ -2,7 +2,7 @@ import { ActionFunctionArgs } from "react-router";
 import { deletePetService } from "~/features/mascotas/petsService";
 import { field, getUserFieldFromCookie } from "~/lib/authUtil";
 
-export async function action({ request }: ActionFunctionArgs) {
+export async function action({ request, params }: ActionFunctionArgs) {
   const cookie = request.headers.get("Cookie");
 
   if (!cookie) {
@@ -15,22 +15,10 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const formData = await request.formData();
-  const role = formData.get("role");
 
-  // Solo administradores pueden eliminar mascotas
-  if (role !== "ADMINISTRADOR") {
-    return Response.json(
-      {
-        message: "No tienes permiso para eliminar mascotas",
-        status: "error",
-      },
-      { status: 403 }
-    );
-  }
 
   try {
-    const petId = formData.get("id");
+    const petId = params.id;
 
     if (!petId) {
       return Response.json(

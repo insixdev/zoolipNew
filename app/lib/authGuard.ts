@@ -1,6 +1,9 @@
 import { redirect } from "react-router";
 import { getUserFromRequest } from "~/server/me";
-import { UserErrorHandler, UserResponseHandler } from "~/features/entities/User";
+import {
+  UserErrorHandler,
+  UserResponseHandler,
+} from "~/features/entities/User";
 import { getHeaderCookie, verifyTokenFromCookie } from "~/server/cookies";
 
 /**
@@ -21,6 +24,27 @@ export async function requireAuth(
   }
 
   return userResult as UserResponseHandler;
+}
+
+/**
+ * Función helper para proteger rutas que requieren roles específicos
+ * @param request - Request de React Router
+ * @param allowedRoles - Array de roles permitidos (ej: ["ROLE_VETERINARIA", "ROLE_REFUGIO"])
+ */
+export async function requireRole(
+  request: Request,
+  allowedRoles: string[]
+): Promise<UserResponseHandler> {
+  const userResult = await requireAuth(request);
+
+  if (!userResult.user || !allowedRoles.includes(userResult.user.role)) {
+    throw new Response(
+      `Acceso denegado. Se requiere uno de los siguientes roles: ${allowedRoles.join(", ")}`,
+      { status: 403 }
+    );
+  }
+
+  return userResult;
 }
 
 /**
@@ -105,8 +129,6 @@ export async function redirectIfAuthenticated(
     }
 
     // Para cualquier otro error, permitir acceso (mejor fallar abierto)
-    console.log(
-      error
-    );
+    console.log(error);
   }
 }

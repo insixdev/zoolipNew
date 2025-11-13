@@ -64,17 +64,55 @@ export default function Login() {
         setErrors({});
         console.log("Login exitoso, redirigiendo...");
 
-        // Usar window.location para forzar una recarga completa
-        // Esto asegura que el loader del root se ejecute con la nueva cookie
-        const finalRedirect = redirectTo.startsWith("/")
-          ? redirectTo
-          : `/${redirectTo}`;
+        // Si hay un redirectTo específico, usarlo
+        if (searchParams.get("redirectTo")) {
+          const finalRedirect = redirectTo.startsWith("/")
+            ? redirectTo
+            : `/${redirectTo}`;
+          console.log("Redirigiendo a redirectTo:", finalRedirect);
+          setTimeout(() => {
+            window.location.href = finalRedirect;
+          }, 100);
+          return;
+        }
 
-        console.log("Redirigiendo a:", finalRedirect);
+        // Si no hay redirectTo, redirigir según el rol del usuario
+        // Primero revalidar para obtener el usuario actualizado
+        console.log("Revalidando para obtener rol del usuario...");
+        revalidator.revalidate();
 
-        // Pequeño delay para asegurar que la cookie se estableció
+        // Dar tiempo para que se actualice el contexto
         setTimeout(() => {
-          window.location.href = finalRedirect;
+          // Intentar obtener el rol de las cookies o hacer una llamada rápida
+          fetch("/api/auth/has-access", {
+            method: "GET",
+            credentials: "include",
+          })
+            .then((res) => res.json())
+            .then((data) => {
+              console.log("User role data:", data);
+              const userRole = data.user?.user?.role || data.user?.role;
+
+              // Redirigir según el rol
+              if (
+                userRole === "ROLE_VETERINARIA" ||
+                userRole === "ROLE_REFUGIO" ||
+                userRole === "ROLE_PROTECTORA" ||
+                userRole === "ROLE_ADMINISTRADOR" ||
+                userRole === "ROLE_SYSTEM"
+              ) {
+                console.log("Admin detectado, redirigiendo a /admin");
+                window.location.href = "/admin";
+              } else {
+                console.log("Usuario normal, redirigiendo a /community");
+                window.location.href = "/community";
+              }
+            })
+            .catch((err) => {
+              console.error("Error obteniendo rol:", err);
+              // Fallback a community si hay error
+              window.location.href = "/community";
+            });
         }, 100);
       } else if (fetcher.data.status === "error") {
         setErrors({
@@ -82,7 +120,7 @@ export default function Login() {
         });
       }
     }
-  }, [fetcher.data, navigate, redirectTo]);
+  }, [fetcher.data, navigate, redirectTo, searchParams, revalidator]);
 
   // Client-side validation
   const validateForm = (formData: FormData): LoginErrors => {

@@ -1,154 +1,142 @@
-import React from "react";
-import { Link } from "react-router";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "~/components/ui/Accordion";
 
 export default function Privacidad() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100">
-      {/* Header */}
-      <header className="bg-white shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Link to="/landing" className="text-rose-600 font-semibold text-lg">
-            Zoolip
-          </Link>
-          <nav className="flex gap-6">
-            <Link
-              to="/community"
-              className="text-gray-700 hover:text-rose-600 transition-colors font-medium"
-            >
-              ← Volver a la Comunidad
-            </Link>
-          </nav>
-        </div>
-      </header>
-
-      {/* Contenido principal */}
-      <main className="max-w-4xl mx-auto px-4 py-12">
-        <div className="bg-white rounded-xl shadow-sm p-8 md:p-12">
+    <div className="min-h-screen bg-gray-50 py-12">
+      <div className="container mx-auto px-4 max-w-4xl">
+        <div className="bg-white rounded-lg shadow-md p-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Política de Privacidad
           </h1>
-          <p className="text-gray-500 mb-8">
-            Última actualización: 29 de octubre de 2025
+          <p className="text-gray-600 mb-8">
+            Última actualización: {new Date().toLocaleDateString("es-ES")}
           </p>
 
-          <div className="prose prose-gray max-w-none">
-            <section className="mb-10">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+          <Accordion type="single" collapsible defaultValue="item-1">
+            <AccordionItem value="item-1">
+              <AccordionTrigger>
                 1. Información que Recopilamos
-              </h2>
-              <p className="text-gray-700 mb-4">
-                Recopilamos información que nos proporcionas directamente, como
-                cuando creas una cuenta, publicas contenido o te comunicas con
-                nosotros. Esto puede incluir:
-              </p>
-              <ul className="list-disc pl-5 text-gray-700 space-y-2 mb-4">
-                <li>Información de registro (nombre, correo electrónico)</li>
-                <li>Contenido que publicas en la plataforma</li>
-                <li>Mensajes que envías a otros usuarios</li>
-                <li>Información de pago (si aplica)</li>
-              </ul>
-            </section>
+              </AccordionTrigger>
+              <AccordionContent className="flex flex-col gap-4 text-balance">
+                <p className="text-gray-700">
+                  Recopilamos información que nos proporcionas directamente,
+                  como tu nombre, dirección de correo electrónico, número de
+                  teléfono y otra información de contacto cuando te registras en
+                  Zoolip.
+                </p>
+                <p className="text-gray-700">
+                  También recopilamos información sobre tu uso de la plataforma,
+                  incluyendo las páginas que visitas, las búsquedas que realizas
+                  y las interacciones con otros usuarios.
+                </p>
+              </AccordionContent>
+            </AccordionItem>
 
-            <section className="mb-10">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                2. Cómo Usamos tu Información
-              </h2>
-              <p className="text-gray-700 mb-4">
-                Utilizamos la información que recopilamos para:
-              </p>
-              <ul className="list-disc pl-5 text-gray-700 space-y-2 mb-4">
-                <li>Proporcionar, mantener y mejorar nuestros servicios</li>
-                <li>Personalizar tu experiencia en la plataforma</li>
-                <li>
-                  Comunicarnos contigo sobre actualizaciones y notificaciones
-                </li>
-                <li>
-                  Proteger contra actividades fraudulentas o no autorizadas
-                </li>
-              </ul>
-            </section>
+            <AccordionItem value="item-2">
+              <AccordionTrigger>2. Cómo Usamos tu Información</AccordionTrigger>
+              <AccordionContent className="flex flex-col gap-4 text-balance">
+                <p className="text-gray-700">Utilizamos tu información para:</p>
+                <ul className="list-disc list-inside text-gray-700 space-y-2">
+                  <li>Proporcionar y mejorar nuestros servicios</li>
+                  <li>Facilitar el proceso de adopción</li>
+                  <li>
+                    Comunicarnos contigo sobre tu cuenta y actualizaciones
+                  </li>
+                  <li>Personalizar tu experiencia en la plataforma</li>
+                  <li>Prevenir fraudes y garantizar la seguridad</li>
+                </ul>
+              </AccordionContent>
+            </AccordionItem>
 
-            <section className="mb-10">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                3. Compartir Información
-              </h2>
-              <p className="text-gray-600 mb-4">
-                No vendemos ni compartimos tu información personal con terceros,
-                excepto en los siguientes casos:
-              </p>
-              <ul className="list-disc pl-5 text-gray-700 space-y-2 mb-4">
-                <li>Con tu consentimiento explícito</li>
-                <li>Para cumplir con requisitos legales</li>
-                <li>
-                  Con proveedores de servicios que nos ayudan a operar la
-                  plataforma
-                </li>
-              </ul>
-            </section>
+            <AccordionItem value="item-3">
+              <AccordionTrigger>3. Compartir Información</AccordionTrigger>
+              <AccordionContent className="flex flex-col gap-4 text-balance">
+                <p className="text-gray-700">
+                  No vendemos tu información personal a terceros. Podemos
+                  compartir tu información con:
+                </p>
+                <ul className="list-disc list-inside text-gray-700 space-y-2">
+                  <li>
+                    Refugios y protectoras cuando solicitas adoptar una mascota
+                  </li>
+                  <li>
+                    Proveedores de servicios que nos ayudan a operar la
+                    plataforma
+                  </li>
+                  <li>Autoridades legales cuando sea requerido por ley</li>
+                </ul>
+              </AccordionContent>
+            </AccordionItem>
 
-            <section className="mb-10">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                4. Tus Derechos
-              </h2>
-              <p className="text-gray-600 mb-4">
-                Tienes derecho a acceder, corregir o eliminar tu información
-                personal. Puedes gestionar tus preferencias de privacidad en la
-                configuración de tu cuenta o contactándonos directamente.
-              </p>
-            </section>
+            <AccordionItem value="item-4">
+              <AccordionTrigger>
+                4. Cookies y Tecnologías Similares
+              </AccordionTrigger>
+              <AccordionContent className="flex flex-col gap-4 text-balance">
+                <p className="text-gray-700">
+                  Utilizamos cookies y tecnologías similares para mejorar tu
+                  experiencia, analizar el uso de la plataforma y personalizar
+                  el contenido.
+                </p>
+                <p className="text-gray-700">
+                  Puedes controlar el uso de cookies a través de la
+                  configuración de tu navegador. Ten en cuenta que deshabilitar
+                  las cookies puede afectar la funcionalidad de la plataforma.
+                </p>
+              </AccordionContent>
+            </AccordionItem>
 
-            <section>
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">
-                5. Contacto
-              </h2>
-              <p className="text-gray-600">
-                Si tienes preguntas sobre esta política de privacidad,
-                contáctanos en{" "}
-                <a
-                  href="mailto:privacidad@zoolip.com"
-                  className="text-rose-600 hover:underline"
-                >
-                  privacidad@zoolip.com
-                </a>
-                .
-              </p>
-            </section>
-          </div>
+            <AccordionItem value="item-5">
+              <AccordionTrigger>5. Seguridad de los Datos</AccordionTrigger>
+              <AccordionContent className="flex flex-col gap-4 text-balance">
+                <p className="text-gray-700">
+                  Implementamos medidas de seguridad técnicas y organizativas
+                  para proteger tu información personal contra acceso no
+                  autorizado, pérdida o alteración.
+                </p>
+                <p className="text-gray-700">
+                  Sin embargo, ningún método de transmisión por Internet o
+                  almacenamiento electrónico es 100% seguro. No podemos
+                  garantizar la seguridad absoluta de tu información.
+                </p>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-6">
+              <AccordionTrigger>6. Tus Derechos</AccordionTrigger>
+              <AccordionContent className="flex flex-col gap-4 text-balance">
+                <p className="text-gray-700">Tienes derecho a:</p>
+                <ul className="list-disc list-inside text-gray-700 space-y-2">
+                  <li>Acceder a tu información personal</li>
+                  <li>Corregir información inexacta</li>
+                  <li>Solicitar la eliminación de tu información</li>
+                  <li>Oponerte al procesamiento de tu información</li>
+                  <li>Solicitar la portabilidad de tus datos</li>
+                </ul>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="item-7">
+              <AccordionTrigger>7. Contacto</AccordionTrigger>
+              <AccordionContent className="flex flex-col gap-4 text-balance">
+                <p className="text-gray-700">
+                  Si tienes preguntas sobre esta política de privacidad o deseas
+                  ejercer tus derechos, contáctanos en:
+                </p>
+                <ul className="list-disc list-inside text-gray-700 space-y-2">
+                  <li>Email: privacidad@zoolip.com</li>
+                  <li>Teléfono: +34 900 123 456</li>
+                </ul>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="bg-white border-t border-gray-100 mt-12">
-        <div className="max-w-4xl mx-auto px-4 py-8">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="mb-4 md:mb-0">
-              <span className="text-gray-500 text-sm">
-                © 2025 Zoolip. Todos los derechos reservados.
-              </span>
-            </div>
-            <div className="flex gap-6">
-              <Link
-                to="/info/terminos"
-                className="text-gray-500 hover:text-rose-600 text-sm transition-colors"
-              >
-                Términos
-              </Link>
-              <Link
-                to="/info/privacidad"
-                className="text-rose-600 font-medium text-sm"
-              >
-                Privacidad
-              </Link>
-              <Link
-                to="/info/cookies"
-                className="text-gray-500 hover:text-rose-600 text-sm transition-colors"
-              >
-                Cookies
-              </Link>
-            </div>
-          </div>
-        </div>
-      </footer>
+      </div>
     </div>
   );
 }

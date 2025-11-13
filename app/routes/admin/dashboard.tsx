@@ -1,293 +1,240 @@
-import { Link } from "react-router";
-import {
-  FaPaw,
-  FaUsers,
-  FaClinicMedical,
-  FaDog,
-  FaCalendarAlt,
-  FaChartLine,
-  FaUserMd,
-  FaHeart,
-} from "react-icons/fa";
-import { useSmartAuth } from "~/features/auth/useSmartAuth";
-import { ADMIN_ROLES, type AdminRole } from "~/lib/constants";
+import { useLoaderData } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
+import { requireAdmin } from "~/lib/roleGuards";
+import { AnyAdminRole } from "~/components/auth/AdminGuard";
+import { AreaChartInteractive } from "~/components/charts/AreaChartInteractive";
+import { AreaChartLinear } from "~/components/charts/AreaChartLinear";
 
-export default function AdminDashboard() {
-  const { user } = useSmartAuth();
-  const adminRole = user?.tipo as AdminRole;
+// Loader
+export async function loader({ request }: LoaderFunctionArgs) {
+  await requireAdmin(request);
 
-  // Estadísticas según el rol
-  const getStats = () => {
-    const baseStats = [
-      {
-        title: "Mascotas en adopción",
-        value: "24",
-        icon: <FaPaw className="text-blue-500 text-2xl" />,
-        link: "/admin/mascotas",
-      },
-      {
-        title: "Donaciones recibidas",
-        value: "$2,450",
-        icon: <FaHeart className="text-rose-500 text-2xl" />,
-        link: "/admin/donaciones",
-      },
-    ];
+  // Datos de ejemplo - en producción vendrían de tu API
+  const adopcionesData = generateMonthlyData("adopciones", "donaciones");
+  const visitasData = generateMonthlyData("desktop", "mobile");
 
-    if (adminRole === ADMIN_ROLES.VETERINARIO) {
-      return [
-        ...baseStats,
-        {
-          title: "Citas programadas",
-          value: "8",
-          icon: <FaCalendarAlt className="text-yellow-500 text-2xl" />,
-          link: "/admin/atencion",
-        },
-        {
-          title: "Atenciones del mes",
-          value: "45",
-          icon: <FaUserMd className="text-purple-500 text-2xl" />,
-          link: "/admin/atencion",
-        },
-      ];
-    }
+  return { adopcionesData, visitasData };
+}
 
-    return [
-      ...baseStats,
-      {
-        title: "Solicitudes pendientes",
-        value: "12",
-        icon: <FaUsers className="text-green-500 text-2xl" />,
-        link: "/admin/solicitudes",
-      },
-      {
-        title: "Adopciones del mes",
-        value: "7",
-        icon: <FaDog className="text-purple-500 text-2xl" />,
-        link: "/admin/solicitudes",
-      },
-    ];
-  };
+// Helper para generar datos de ejemplo
+function generateMonthlyData(key1: string, key2: string) {
+  const data = [];
+  const startDate = new Date("2024-01-01");
 
-  // Acciones rápidas según el rol
-  const getQuickActions = () => {
-    const baseActions = [
-      {
-        title: "Agregar mascota",
-        icon: <FaDog />,
-        link: "/admin/crearMascota",
-        color: "bg-blue-100 text-blue-600",
-      },
-      {
-        title: "Ver donaciones",
-        icon: <FaHeart />,
-        link: "/admin/donaciones",
-        color: "bg-rose-100 text-rose-600",
-      },
-    ];
+  for (let i = 0; i < 180; i++) {
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + i);
 
-    if (adminRole === ADMIN_ROLES.VETERINARIO) {
-      return [
-        ...baseActions,
-        {
-          title: "Atención médica",
-          icon: <FaUserMd />,
-          link: "/admin/atencion",
-          color: "bg-purple-100 text-purple-600",
-        },
-        {
-          title: "Ver reportes",
-          icon: <FaChartLine />,
-          link: "/admin/reportes",
-          color: "bg-yellow-100 text-yellow-600",
-        },
-      ];
-    }
+    data.push({
+      date: date.toISOString().split("T")[0],
+      [key1]: Math.floor(Math.random() * 50) + 10,
+      [key2]: Math.floor(Math.random() * 40) + 5,
+    });
+  }
 
-    return [
-      ...baseActions,
-      {
-        title: "Ver solicitudes",
-        icon: <FaUsers />,
-        link: "/admin/solicitudes",
-        color: "bg-green-100 text-green-600",
-      },
-      {
-        title: "Ver reportes",
-        icon: <FaChartLine />,
-        link: "/admin/reportes",
-        color: "bg-yellow-100 text-yellow-600",
-      },
-    ];
-  };
+  return data;
+}
 
-  const stats = getStats();
-  const quickActions = getQuickActions();
-
-  const recentActivity = [
-    {
-      id: 1,
-      user: "María González",
-      action: "adoptó a Max",
-      time: "Hace 2 horas",
-      type: "adopción",
-    },
-    {
-      id: 2,
-      user: "Refugio Patitas",
-      action: "agregó 3 nuevos perros",
-      time: "Hace 5 horas",
-      type: "refugio",
-    },
-    {
-      id: 3,
-      user: "Dr. Carlos Ruiz",
-      action: "actualizó historial médico",
-      time: "Ayer",
-      type: "veterinaria",
-    },
+// Componente de ejemplo para gráfico lineal
+function AreaChartLinearExample() {
+  const monthlyData = [
+    { month: "Enero", visitors: 186 },
+    { month: "Febrero", visitors: 305 },
+    { month: "Marzo", visitors: 237 },
+    { month: "Abril", visitors: 173 },
+    { month: "Mayo", visitors: 209 },
+    { month: "Junio", visitors: 214 },
   ];
 
-  const getRoleTitle = () => {
-    switch (adminRole) {
-      case ADMIN_ROLES.VETERINARIO:
-        return "Panel de Veterinaria";
-      case ADMIN_ROLES.PROTECTORA:
-        return "Panel de Protectora";
-      case ADMIN_ROLES.REFUGIO:
-        return "Panel de Refugio";
-      default:
-        return "Panel de Administración";
-    }
+  return (
+    <AreaChartLinear
+      data={monthlyData}
+      dataKey="visitors"
+      xAxisKey="month"
+      config={{
+        label: "Visitantes",
+        color: "#ec4899",
+      }}
+      title="Visitantes Mensuales"
+      description="Total de visitantes en los últimos 6 meses"
+      trend={{
+        value: 5.2,
+        label: "este mes",
+      }}
+      footer="Enero - Junio 2024"
+      height={200}
+    />
+  );
+}
+
+export default function AdminReportes() {
+  const { adopcionesData, visitasData } = useLoaderData<typeof loader>();
+
+  const adopcionesConfig = {
+    adopciones: {
+      label: "Adopciones",
+      color: "hsl(var(--chart-1))",
+    },
+    donaciones: {
+      label: "Donaciones",
+      color: "hsl(var(--chart-2))",
+    },
+  };
+
+  const visitasConfig = {
+    desktop: {
+      label: "Desktop",
+      color: "#ec4899",
+    },
+    mobile: {
+      label: "Mobile",
+      color: "#f97316",
+    },
   };
 
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold text-gray-800 mb-6">
-        {getRoleTitle()}
-      </h1>
+    <AnyAdminRole
+      fallback={
+        <div className="text-center py-12">
+          <p className="text-gray-600">No tienes acceso a esta sección</p>
+        </div>
+      }
+    >
+      <div>
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
+          <p className="text-gray-600 mt-2">
+            Visualiza estadísticas y métricas de tu institución
+          </p>
+        </div>
 
-      {/* Estadísticas principales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat, index) => (
-          <Link
-            to={stat.link}
-            key={index}
-            className="bg-white p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow"
-          >
+        {/* Estadísticas rápidas */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+          <div className="bg-white rounded-lg shadow-md p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-500 text-sm">{stat.title}</p>
-                <p className="text-2xl font-bold">{stat.value}</p>
+                <p className="text-sm text-gray-500">Total Adopciones</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">247</p>
               </div>
-              <div className="p-3 rounded-full bg-opacity-20 bg-gray-200">
-                {stat.icon}
-              </div>
-            </div>
-          </Link>
-        ))}
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        {/* Acciones rápidas */}
-        <div className="lg:col-span-2">
-          <h2 className="text-xl font-semibold mb-4">Acciones rápidas</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {quickActions.map((action, index) => (
-              <Link
-                to={action.link}
-                key={index}
-                className={`${action.color} p-4 rounded-lg flex items-center space-x-3 hover:opacity-90 transition-opacity`}
-              >
-                <span className="text-xl">{action.icon}</span>
-                <span className="font-medium">{action.title}</span>
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* Actividad reciente */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Actividad reciente</h2>
-          <div className="bg-white rounded-lg shadow-sm p-4">
-            <ul className="space-y-4">
-              {recentActivity.map((activity) => (
-                <li
-                  key={activity.id}
-                  className="flex items-start space-x-3 pb-3 border-b border-gray-100 last:border-0 last:pb-0"
+              <div className="bg-green-100 p-3 rounded-full">
+                <svg
+                  className="h-6 w-6 text-green-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
                 >
-                  <div
-                    className={`p-2 rounded-full ${
-                      activity.type === "adopción"
-                        ? "bg-green-100 text-green-600"
-                        : activity.type === "refugio"
-                          ? "bg-blue-100 text-blue-600"
-                          : "bg-purple-100 text-purple-600"
-                    }`}
-                  >
-                    {activity.type === "adopción" ? (
-                      <FaDog />
-                    ) : activity.type === "refugio" ? (
-                      <FaClinicMedical />
-                    ) : (
-                      <FaUserMd />
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">
-                      {activity.user}{" "}
-                      <span className="text-gray-500">{activity.action}</span>
-                    </p>
-                    <p className="text-xs text-gray-400">{activity.time}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      </div>
-
-      {/* Sección de mascotas recientes */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Mascotas recientes</h2>
-          <Link
-            to="/admin/mascotas"
-            className="text-rose-600 hover:underline text-sm"
-          >
-            Ver todas
-          </Link>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((pet) => (
-            <div
-              key={pet}
-              className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow"
-            >
-              <div className="h-32 bg-gray-200 flex items-center justify-center">
-                <FaPaw className="text-4xl text-gray-400" />
-              </div>
-              <div className="p-3">
-                <h3 className="font-medium">Mascota {pet}</h3>
-                <p className="text-sm text-gray-500">
-                  {adminRole === ADMIN_ROLES.VETERINARIO
-                    ? "En tratamiento"
-                    : "En adopción"}
-                </p>
-                <div className="mt-2 flex justify-between items-center">
-                  <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
-                    {adminRole === ADMIN_ROLES.VETERINARIO
-                      ? "Activo"
-                      : "Disponible"}
-                  </span>
-                  <button className="text-xs text-rose-600 hover:underline">
-                    Ver más
-                  </button>
-                </div>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
               </div>
             </div>
-          ))}
+            <p className="text-xs text-green-600 mt-2">+12% vs mes anterior</p>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Mascotas Disponibles</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">34</p>
+              </div>
+              <div className="bg-blue-100 p-3 rounded-full">
+                <svg
+                  className="h-6 w-6 text-blue-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                  />
+                </svg>
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">En el sistema</p>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Donaciones</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">$12,450</p>
+              </div>
+              <div className="bg-rose-100 p-3 rounded-full">
+                <svg
+                  className="h-6 w-6 text-rose-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+            </div>
+            <p className="text-xs text-rose-600 mt-2">+8% vs mes anterior</p>
+          </div>
+
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">Solicitudes Pendientes</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">12</p>
+              </div>
+              <div className="bg-yellow-100 p-3 rounded-full">
+                <svg
+                  className="h-6 w-6 text-yellow-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+            </div>
+            <p className="text-xs text-gray-500 mt-2">Requieren atención</p>
+          </div>
+        </div>
+
+        {/* Gráficos */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+          <AreaChartInteractive
+            data={adopcionesData}
+            config={adopcionesConfig}
+            title="Adopciones y Donaciones"
+            description="Tendencia de adopciones y donaciones en el tiempo"
+            height={300}
+          />
+
+          <AreaChartInteractive
+            data={visitasData}
+            config={visitasConfig}
+            title="Visitas al Sitio"
+            description="Tráfico por dispositivo"
+            height={300}
+          />
+        </div>
+
+        {/* Gráficos lineales simples */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <AreaChartLinearExample />
         </div>
       </div>
-    </div>
+    </AnyAdminRole>
   );
 }

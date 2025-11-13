@@ -4,6 +4,7 @@ import {
   InstitutionResponse,
   InstitutionGetResponse,
 } from "./types";
+import { handleFetchResponse } from "~/lib/tokenErrorHandler";
 
 /** URL base del backend de instituciones */
 const BASE_INSTITUTION_URL =

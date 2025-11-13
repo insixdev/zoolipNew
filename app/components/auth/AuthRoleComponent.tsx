@@ -119,7 +119,7 @@ export function AuthRoleComponent({
 }
 
 /**
- * Componente específico para contenido solo de ADMIN
+ * Componente específico para contenido solo de ADMIN (cualquier tipo)
  */
 export function AdminOnly({
   children,
@@ -129,7 +129,16 @@ export function AdminOnly({
   fallback?: ReactNode;
 }) {
   return (
-    <AuthRoleComponent allowedRoles={[USER_ROLES.ADMIN]} fallback={fallback}>
+    <AuthRoleComponent
+      allowedRoles={[
+        USER_ROLES.ADMIN,
+        USER_ROLES.VETERINARIA,
+        USER_ROLES.REFUGIO,
+        USER_ROLES.PROTECTORA,
+        USER_ROLES.SYSTEM,
+      ]}
+      fallback={fallback}
+    >
       {children}
     </AuthRoleComponent>
   );
@@ -174,7 +183,15 @@ export function UserOnly({
 export function AnyOnly({ children, fallback = null }) {
   return (
     <AuthRoleComponent
-      allowedRoles={[USER_ROLES.ADOPTANTE, USER_ROLES.USER, USER_ROLES.ADMIN]}
+      allowedRoles={[
+        USER_ROLES.ADOPTANTE,
+        USER_ROLES.USER,
+        USER_ROLES.ADMIN,
+        USER_ROLES.VETERINARIA,
+        USER_ROLES.REFUGIO,
+        USER_ROLES.PROTECTORA,
+        USER_ROLES.SYSTEM,
+      ]}
       fallback={fallback}
     >
       {children}

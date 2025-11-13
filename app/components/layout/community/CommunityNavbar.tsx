@@ -54,7 +54,7 @@ export default function CommunityNavbar({
   const location = useLocation();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const notificationsRef = useRef<HTMLDivElement>(null);
-  const { user } = useSmartAuth()
+  const { user } = useSmartAuth();
 
   // Cerrar menús cuando se hace click fuera
   useEffect(() => {
@@ -96,62 +96,71 @@ export default function CommunityNavbar({
         {/* Navegación central */}
         <div className="flex-1 flex items-center justify-center space-x-10">
           {/* Admin Link - Only visible to admins */}
-          {(user===null) && (
-          <NavItem
-            to="/adopt"
-            icon={
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2.2}
-                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                />
-              </svg>
-            }
-            label="Adoptar"
-            isActive={isActive("/adopt")}
-            key="adopt"/>
+          {user === null && (
+            <NavItem
+              to="/adopt"
+              icon={
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2.2}
+                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                  />
+                </svg>
+              }
+              label="Adoptar"
+              isActive={isActive("/adopt")}
+              key="adopt"
+            />
           )}
-          <AuthRoleComponent allowedRoles={[USER_ROLES.USER, USER_ROLES.ADOPTANTE]}>
-          <NavItem
-            to="/adopt"
-            icon={
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2.2}
-                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                />
-              </svg>
-            }
-            label="Adoptar"
-            isActive={isActive("/adopt")}
-            key="adopt"
-          />
+          <AuthRoleComponent
+            allowedRoles={[USER_ROLES.USER, USER_ROLES.ADOPTANTE]}
+          >
+            <NavItem
+              to="/adopt"
+              icon={
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2.2}
+                    d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
+                  />
+                </svg>
+              }
+              label="Adoptar"
+              isActive={isActive("/adopt")}
+              key="adopt"
+            />
           </AuthRoleComponent>
 
-          <AuthRoleComponent allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.SYSTEM]}>
+          <AuthRoleComponent
+            allowedRoles={[
+              USER_ROLES.ADMIN,
+              USER_ROLES.SYSTEM,
+              USER_ROLES.VETERINARIA,
+              USER_ROLES.REFUGIO,
+              USER_ROLES.PROTECTORA,
+            ]}
+          >
             <NavItem
               to="/admin"
-              icon={
-                <FaUserShield className="h-5 w-5" />
-              }
+              icon={<FaUserShield className="h-5 w-5" />}
               label="Admin"
-              isActive={isActive('/admin')}
+              isActive={isActive("/admin")}
             />
           </AuthRoleComponent>
           <NavItem
@@ -185,6 +194,9 @@ export default function CommunityNavbar({
               USER_ROLES.ADMIN,
               USER_ROLES.ADOPTANTE,
               USER_ROLES.USER,
+              USER_ROLES.VETERINARIA,
+              USER_ROLES.REFUGIO,
+              USER_ROLES.PROTECTORA,
             ]}
           >
             <Link
@@ -215,6 +227,9 @@ export default function CommunityNavbar({
               USER_ROLES.ADMIN,
               USER_ROLES.ADOPTANTE,
               USER_ROLES.USER,
+              USER_ROLES.VETERINARIA,
+              USER_ROLES.REFUGIO,
+              USER_ROLES.PROTECTORA,
             ]}
           >
             <div className="relative" ref={notificationsRef}>

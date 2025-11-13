@@ -11,7 +11,7 @@ import {
   User,
 } from "~/features/entities/User";
 import { w } from "public/build/_shared/chunk-O7IRWV66";
-import { getInstitutionByIdService } from "~/features/entities/institucion/institutionService";
+import { getInstitutionByIdService, getInstitutionByIdUsuarioService } from "~/features/entities/institucion/institutionService";
 async function fetchInstitutionServiceForRole(id: number, cookie) {
   try {
     const data = await getInstitutionByIdService(id, cookie);
@@ -77,10 +77,9 @@ export async function getUserFromRequest(
   const cached = userCache.get(cacheKey);
 
   if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-    console.log(
-      "✅ USANDO CACHE - No llamada al servidor, usuario:",
-      cached.data.user?.username || "sin usuario"
-    );
+    const username =
+      "user" in cached.data ? cached.data.user?.username : "sin usuario";
+    console.log("✅ USANDO CACHE - No llamada al servidor, usuario:", username);
 
     return cached.data;
   } else if (cached) {
@@ -172,8 +171,21 @@ export async function getUserFromRequest(
     if (jwtPayload.valid) {
       let role = jwtPayload.payload.role; // default role
 
-      // For admins, keep the role as ROLE_ADMINISTRADOR
-      // Institution type can be handled separately if needed
+      // Si es ROLE_ADMINISTRADOR, verificar el tipo de institución
+      if (role === "ROLE_ADMINISTRADOR" ) {
+        console.log(
+          "🏢 Admin detectado, verificando tipo de institución:",
+        );
+        const institutionData = await getInstitutionByIdUsuarioService(
+          jwtPayload.payload.id_usuario,
+          cookieHeader
+        );
+
+        if (institutionData.tipo) {
+          role = `ROLE_${institutionData.tipo}`;
+          console.log(" Rol específico asignado:", role);
+        }
+      }
 
       // en caso de que sea valido el token
       const user = {

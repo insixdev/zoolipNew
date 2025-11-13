@@ -29,7 +29,7 @@ export default function Settings() {
           <div className="py-6">
             <div className="flex items-center gap-4 mb-2">
               <Link
-                to="/"
+                to="/community"
                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2 text-gray-600 hover:text-gray-900"
               >
                 <ArrowLeft size={20} />

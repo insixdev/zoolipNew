@@ -41,6 +41,81 @@ export const loader: LoaderFunction = async ({ request }) => {
   }
 };
 
+// Action para aceptar/rechazar solicitudes
+export async function action({ request }: { request: Request }) {
+  const formData = await request.formData();
+  const cookieHeader = request.headers.get("Cookie");
+
+  if (!cookieHeader) {
+    return Response.json(
+      { success: false, error: "No autenticado" },
+      { status: 401 }
+    );
+  }
+
+  const actionType = formData.get("_action");
+  const solicitudId = formData.get("solicitudId");
+
+  try {
+    if (actionType === "accept") {
+      // Aquí llamarías al servicio para aceptar la solicitud
+      console.log("Aceptando solicitud:", solicitudId);
+
+      // Ejemplo de llamada al backend
+      const response = await fetch(
+        `http://localhost:3050/api/institucion/solicitud/${solicitudId}/aceptar`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Cookie: cookieHeader,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Error al aceptar solicitud");
+      }
+
+      return Response.json({
+        success: true,
+        message: "Solicitud aceptada correctamente",
+      });
+    } else if (actionType === "reject") {
+      // Aquí llamarías al servicio para rechazar la solicitud
+      console.log("Rechazando solicitud:", solicitudId);
+
+      const response = await fetch(
+        `http://localhost:3050/api/institucion/solicitud/${solicitudId}/rechazar`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Cookie: cookieHeader,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Error al rechazar solicitud");
+      }
+
+      return Response.json({
+        success: true,
+        message: "Solicitud rechazada correctamente",
+      });
+    }
+
+    return Response.json({ success: false, error: "Acción no válida" });
+  } catch (error) {
+    console.error("Error procesando solicitud:", error);
+    return Response.json(
+      { success: false, error: "Error al procesar solicitud" },
+      { status: 500 }
+    );
+  }
+}
+
 export default function InstitutionSolicitudes() {
   const fetcher = useFetcher();
   const loaderData = useLoaderData() as any[];

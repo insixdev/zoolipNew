@@ -1,72 +1,111 @@
-import { w } from "public/build/_shared/chunk-O7IRWV66";
+import type { ActionFunctionArgs } from "react-router";
 import { addPetService } from "~/features/mascotas/petsService";
+import { getInstitutionByIdUsuarioService } from "~/features/entities/institucion/institutionService";
+import { requireAdmin } from "~/lib/roleGuards";
 
-export async function action({request}){
-
+export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
-  const role= formData.get("role");
-  // los adoptantes podrian actualizar
-  if(role !== "ADMINISTRADOR") // solo adminsitradores pueden ingresar nuevas mascotas  {}
-  {
-    return Response.json({
-      message: "No tienes permiso para crear mascotas",
-      status: "error",
-    }, {status: 401});
+  const cookieHeader = request.headers.get("Cookie");
+
+  if (!cookieHeader) {
+    return Response.json(
+      {
+        message: "No autenticado",
+        status: "error",
+      },
+      { status: 401 }
+    );
   }
 
   try {
+    // Verificar que sea admin
+    await requireAdmin(request);
 
-  // TODO: futuro servicio/endpoint de backend 
-  const getIdInstitucionByIdUusario = 123;
+    // Obtener id_institucion del JWT payload
+    const token = cookieHeader.split("AUTH_TOKEN=")[1]?.split(";")[0];
+    if (!token) {
+      return Response.json(
+        {
+          message: "Token no encontrado",
+          status: "error",
+        },
+        { status: 401 }
+      );
+    }
 
-  const pet = {
-    size: formData.get("size"),
-    adoptionState: formData.get("adoptionState"),
-    healthState: formData.get("healthState"),
-    age: formData.get("age"),
-    race: formData.get("race"),
-    species: formData.get("species"),
-    id_institution: formData.get("id_institution"),
-    name: formData.get("name"),
-  };
+    // Decodificar el token para obtener id_usuario
+    const payload = JSON.parse(atob(token.split(".")[1]));
+    if (!payload || !payload.id_usuario) {
+      return Response.json(
+        {
+          message: "Token no válido",
+          status: "error",
+        },
+        { status: 401 }
+      );
+    }
 
-  if(!pet){
-    return Response.json({
-      message: "Error al crear mascota, datos malformados",
-      status: "error",
-    }, {status: 401});
+    // Obtener la institución del usuario
+    const institutionData = await getInstitutionByIdUsuarioService(
+      payload.id_usuario,
+      cookieHeader
+    );
+
+    if (!institutionData || !institutionData.id_institucion) {
+      return Response.json(
+        {
+          message: "No tienes una institución asociada",
+          status: "error",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Preparar datos de la mascota
+    const pet = {
+      name: formData.get("nombre") as string,
+      size: formData.get("tamanio") as string,
+      adoptionState: "DISPONIBLE", // Por defecto
+      healthState: "SALUDABLE", // Por defecto
+      age: parseInt(formData.get("edad") as string),
+      race: formData.get("raza") as string,
+      species: formData.get("especie") as string,
+      id_institution: {
+        id_institucion: institutionData.id_institucion,
+      },
+    };
+
+    // Validar datos
+    if (!pet.name || !pet.size || !pet.age || !pet.race || !pet.species) {
+      return Response.json(
+        {
+          message: "Faltan datos requeridos",
+          status: "error",
+        },
+        { status: 400 }
+      );
+    }
+
+    console.log("Creando mascota:", pet);
+
+    // Llamar al servicio
+    const res = await addPetService(pet, cookieHeader);
+
+    return Response.json(
+      {
+        message: res.message || "Mascota creada exitosamente",
+        status: res.status || "success",
+      },
+      { status: res.httpCode || 200 }
+    );
+  } catch (err) {
+    console.error("Create pet error:", err);
+    return Response.json(
+      {
+        message: err instanceof Error ? err.message : "Error al crear mascota",
+        status: "error",
+      },
+      { status: 500 }
+    );
   }
-  const cookie = request.headers.get("Cookie"); // la del navegador
-  if(!cookie){
-    return Response.json({
-      message: "Error al crear mascota, no hay cookie",
-      status: "error",
-    }, {status: 401});
-  }
-  const res = await addPetService(pet, getIdInstitucionByIdUusario.toString());
-
-  if(!res){
-    return Response.json({
-      message: "Error al crear mascota" ,
-      status: "error",
-    }, {status: 500});
-  }
-    return Response.json({
-      message: res.message,
-      status: res.status,
-    },{status: res.httpCode});
-
-  } catch(err) {
-    console.error("Create pet error:", err); // internamente
-    return Response.json({
-      message: "Error al crear mascota",
-      status: "error",
-    }, {status: 500});
-    
-  }
-
 }
-
-
-
-

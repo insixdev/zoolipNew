@@ -1,12 +1,15 @@
 // Roles de usuario - NUNCA cambiar estos valores
 //
-//fallback
-//"tipo": "REFUGIO|VETERINARIA|PROTECTORA",
+// Los roles específicos de institución se asignan en el SSR (me.ts)
+// cuando un ROLE_ADMINISTRADOR tiene una institución asociada:
+// - ROLE_VETERINARIA (para instituciones tipo VETERINARIA)
+// - ROLE_REFUGIO (para instituciones tipo REFUGIO)
+// - ROLE_PROTECTORA (para instituciones tipo PROTECTORA)
 
 export const ADMIN_ROLES = {
-  VETERINARIO: "VETERINARIA",
-  PROTECTORA: "PROTECTORA",
-  REFUGIO: "REFUGIO",
+  VETERINARIO: "ROLE_VETERINARIA",
+  PROTECTORA: "ROLE_PROTECTORA",
+  REFUGIO: "ROLE_REFUGIO",
   ADMINISTRADOR: "ROLE_ADMINISTRADOR",
   SYSTEM: "ROLE_SYSTEM",
 } as const;
@@ -17,6 +20,9 @@ export const USER_ROLES = {
   USER: "ROLE_ROLE_USER",
   ADOPTANTE: "ROLE_ADOPTANTE",
   ADMIN: "ROLE_ADMINISTRADOR",
+  VETERINARIA: "ROLE_VETERINARIA",
+  REFUGIO: "ROLE_REFUGIO",
+  PROTECTORA: "ROLE_PROTECTORA",
   SYSTEM: "ROLE_SYSTEM",
 } as const;
 
