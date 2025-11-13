@@ -23,8 +23,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const cookie = request.headers.get("Cookie");
   console.log("cookie", cookie);
 
+  // Permitir acceso sin cookie (modo público)
+  // Si no hay cookie, simplemente retornar posts vacíos o públicos
   if (!cookie) {
-    return redirect("/");
+    console.log("⚠️ Acceso público a community - sin autenticación");
+    return { posts: [], isPublic: true };
   }
 
   try {
@@ -237,13 +240,42 @@ export default function CommunityIndex() {
     window.location.reload();
   };
 
+  const isPublic = loaderData?.isPublic ?? false;
+
   return (
     <div className="w-full mx-auto md:pl-72 px-6 pt-6 pb-10 pr-12">
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-12">
         {/* Feed principal */}
         <div className="xl:col-span-3 space-y-6 max-w-2xl">
-          {/* Create Post Card */}
-          <CreatePostCard onPostCreated={handlePostCreated} />
+          {/* Banner para usuarios no autenticados */}
+          {isPublic && (
+            <div className="bg-gradient-to-r from-orange-50 to-rose-50 border border-orange-200 rounded-2xl p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                ¡Únete a nuestra comunidad! 
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Inicia sesión para crear publicaciones, comentar y conectar con
+                otros amantes de las mascotas.
+              </p>
+              <div className="flex gap-3">
+                <a
+                  href="/login?redirectTo=/community"
+                  className="px-6 py-2 bg-gradient-to-r from-orange-500 to-rose-500 text-white rounded-xl hover:from-orange-600 hover:to-rose-600 transition-all font-medium shadow-lg"
+                >
+                  Iniciar sesión
+                </a>
+                <a
+                  href="/register"
+                  className="px-6 py-2 border border-orange-300 text-orange-600 rounded-xl hover:bg-orange-50 transition-all font-medium"
+                >
+                  Registrarse
+                </a>
+              </div>
+            </div>
+          )}
+
+          {/* Create Post Card - solo para usuarios autenticados */}
+          {!isPublic && <CreatePostCard onPostCreated={handlePostCreated} />}
           {/* Feed Tabs */}
           <FeedTabs>
             {() => (

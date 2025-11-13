@@ -101,7 +101,7 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    // Hacer login al servidor 
+    // Hacer login al servidor
     const loginResponse = await handleLogin(userData as UserServerRequest);
 
     console.log(
@@ -172,7 +172,7 @@ export async function action({ request }: ActionFunctionArgs) {
       status: "success",
       message: "Inicio de sesión exitoso",
     };
-    console.log("SUC");
+    console.log("✅ LOGIN EXITOSO - Limpiando caché de usuario");
     clearUserCache(); // Limpiar el caché
     const headers = new Headers();
     headers.append("Content-Type", "application/json");

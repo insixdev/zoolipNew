@@ -73,7 +73,12 @@ export default function CreatePostCard({ onPostCreated }: CreatePostCardProps) {
       )}
 
       <AuthRoleComponent
-        allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.ADOPTANTE, USER_ROLES.USER]}
+        allowedRoles={[
+          USER_ROLES.ADMIN,
+          USER_ROLES.ADOPTANTE,
+          USER_ROLES.USER,
+          USER_ROLES.SYSTEM,
+        ]}
         fallback={
           <div
             onMouseEnter={() => setFocusCrear(true)}

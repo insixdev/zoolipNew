@@ -115,6 +115,64 @@ export async function deleteInstitutionService(
 }
 
 /**
+ * Obtiene los datos de una institución por su ID de usuario
+ * @param id - ID de usaurio asocioadj a consultar
+ * @param cookie - Cookie de autenticación
+ * @returns Promise con los datos de la institución
+ * @throws Error si falla la petición o no se encuentra la institución
+ */
+export async function getInstitutionByIdUsuarioService(
+  id: number,
+  cookie: string
+): Promise<InstitutionGetResponse> {
+  try {
+    const hd = new Headers();
+    hd.append("Content-Type", "application/json");
+    hd.append("Cookie", cookie);
+
+    console.log(`Obteniendo institución por ID de usuario: ${id}`);
+
+    const res = await fetch(
+      `${BASE_INSTITUTION_URL}obtenerPorIdUsuario?id_usuario=${id}`,
+      {
+        method: "GET",
+        headers: hd,
+      }
+    );
+
+    console.log(`Status de respuesta: ${res.status}`);
+
+    // Leer el texto de la respuesta primero
+    const text = await res.text();
+    console.log(`Respuesta raw: ${text}`);
+
+    if (!res.ok) {
+      let errorMessage = "Error al obtener institución";
+      try {
+        const errorData = text ? JSON.parse(text) : {};
+        errorMessage = errorData.message || errorMessage;
+      } catch {
+        // Si no se puede parsear, usar el texto tal cual
+        errorMessage = text || errorMessage;
+      }
+      throw new Error(errorMessage);
+    }
+
+    // Si la respuesta está vacía, lanzar error
+    if (!text || text.trim() === "") {
+      throw new Error("El servidor devolvió una respuesta vacía");
+    }
+
+    const data = JSON.parse(text);
+    console.log(`✅ Institución obtenida:`, data);
+    return data;
+  } catch (err) {
+    console.error("❌ Get institution by id usuario error:", err);
+    throw err;
+  }
+}
+
+/**
  * Obtiene los datos de una institución por su ID
  * @param id - ID de la institución a consultar
  * @param cookie - Cookie de autenticación

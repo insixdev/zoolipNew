@@ -16,6 +16,7 @@ import {
 import {
   addInstitutionService,
   getInstitutionByIdService,
+  getInstitutionByIdUsuarioService,
 } from "~/features/entities/institucion/institutionService";
 import {
   InstitutionCreateRequest,
@@ -53,31 +54,35 @@ export async function loader({ params, request }) {
   );
 }
 
-// ACTION 
+// ACTION
 export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
 
-  const userData: UserAppRegister = {
+  // El tipo de institución viene de la invitación (VETERINARIA, REFUGIO, PROTECTORA)
+  const institutionType = formData.get("role") as string;
+
+  // Validar el tipo de institución
+  const validTypes = ["PROTECTORA", "VETERINARIA", "REFUGIO"];
+  if (!validTypes.includes(institutionType)) {
+    return Response.json(
+      {
+        success: false,
+        error: "El tipo de institución no es válido, contacta al administrador",
+      },
+      { status: 400 }
+    );
+  }
+
+  // Preparar datos para el backend
+  // Probar con diferentes formatos de campo para el rol
+  const userData = {
     username: formData.get("name") as string,
     password: formData.get("password") as string,
     email: formData.get("email") as string,
-    role: formData.get("role") as string,
+    rol: "ADMINISTRADOR", // Rol del usuario en el sistema
   };
 
-  // validar el role
-  if (
-    userData.role === "PROTECTORA" || userData.role === "VETERINARIO" || userData.role === "REFUGIO"
-  ) {
-    console.log("Admin Registration Data: dio bin", userData);
-
- }else{
-return Response.json(
-      { error: "El rol no es valido, contacta al administrador" },
-      { status: 400 }
-    );
-
- }
-
+  console.log(" Admin Registration Data:", userData);
 
   try {
     const cookie = await registrarAdminProcess(userData);
@@ -88,7 +93,6 @@ return Response.json(
         { status: 400 }
       );
     }
-    
 
     const token = getTokenFromCookie(cookie);
     if (!token) {
@@ -109,63 +113,126 @@ return Response.json(
     }
     const infoUserData = getUserInfoFromToken(payload.payload);
 
-    if (userData.role !== "ADMIN") {
-      if (!infoUserData) {
-        return Response.json(
-          { error: "En la autenticacion no se encontro el usuario" },
-          { status: 400 }
-        );
-      }
-      const userid: UserId = {
-        id: Number(infoUserData.id),
-      };
-      const institucionData: InstitutionCreateRequest = {
-        nombre: formData.get("nombreInstitucion") as string,
-        tipo: formData.get("tipoInstitucion") as InstitutionType,
-        email: formData.get("emailInstitucion") as string,
-        descripcion: formData.get("descripcion") as string,
-        horario_inicio: formData.get("horario_inicio") as string,
-        horario_fin: formData.get("horario_fin") as string,
-        id_usuario: userid,
-      };
-
-      const res = await addInstitutionService(institucionData, cookie);
-
-      if (!res) {
-        return Response.json(
-          { error: "Error al registrar la institucion intentalo de nuevo" },
-          { status: 400 }
-        );
-      }
-      if (userData.role === "VETERINARIO") {
-        // WARNING ID de la institucion no hay conmo obtenerlo
-        // se usara por ahora la de usuario (admin)
-
-        const vetData = await getInstitutionByIdService(userid.id, cookie);
-        if (!vetData) {
-          return Response.json(
-            { error: "Error al registrar el veterinario intentalo de nuevo" },
-            { status: 400 }
-          );
-        }
-
-        const intitucionId: InstitutionId = {
-          id_institucion: userid.id,
-        };
-        const veterinarianData: VeterinarianCreateRequest = {
-          nombre: vetData.nombre as string,
-          id_institucion: intitucionId,
-        };
-        await createVeterinarianService(veterinarianData, cookie);
-      }
+    if (!infoUserData) {
+      return Response.json(
+        {
+          success: false,
+          error: "No se pudo obtener la información del usuario del token",
+        },
+        { status: 400 }
+      );
     }
-    return redirect("/admin/login?registered=true");
-  } catch (error) {
-    console.error("Admin registration error:", error);
-    return {
-      success: false,
-      error: "Error al registrar el administrador: " + error,
+
+    console.log("✅ Info del usuario obtenida del token:", infoUserData);
+
+    const userid: UserId = {
+      id: Number(infoUserData.id),
     };
+
+    // Formatear horarios: agregar segundos si no los tienen
+    const horarioInicio = formData.get("horario_inicio") as string;
+    const horarioFin = formData.get("horario_fin") as string;
+
+    const formatearHorario = (horario: string): string => {
+      // Si el horario ya tiene segundos (HH:mm:ss), devolverlo tal cual
+      if (horario.split(":").length === 3) {
+        return horario;
+      }
+      // Si solo tiene HH:mm, agregar :00
+      return `${horario}:00`;
+    };
+
+    // Usar el tipo de institución de la invitación
+    const institucionData: InstitutionCreateRequest = {
+      nombre: formData.get("nombreInstitucion") as string,
+      tipo: institutionType as InstitutionType, // VETERINARIA, REFUGIO o PROTECTORA
+      email: formData.get("emailInstitucion") as string,
+      descripcion: formData.get("descripcion") as string,
+      horario_inicio: formatearHorario(horarioInicio),
+      horario_fin: formatearHorario(horarioFin),
+      id_usuario: userid,
+    };
+
+    console.log("Datos de institución a enviar:", institucionData);
+
+    const res = await addInstitutionService(institucionData, cookie);
+    console.log("Respuesta de addInstitutionService:", res);
+
+    if (!res) {
+      return Response.json(
+        {
+          success: false,
+          error: "Error al registrar la institución",
+        },
+        { status: 400 }
+      );
+    }
+
+
+    const institutionData = await getInstitutionByIdUsuarioService(userid.id, cookie ) 
+
+
+    if(institutionType === "REFUGIO" || institutionType === "PROTECTORA"){ 
+
+
+    //  
+    }
+    // Si es veterinaria, crear también el registro de veterinario
+    if (institutionType === "VETERINARIA") {
+      console.log("🏥 Creando registro de veterinario...");
+
+      const institutionId = institutionData.id_institucion;
+
+      if (!institutionId) {
+        return Response.json(
+          {
+            success: false,
+            error: "Error al obtener el ID de la institución creada",
+          },
+          { status: 400 }
+        );
+      }
+
+      const institucionId: InstitutionId = {
+        id_institucion: institutionId,
+      };
+
+      const veterinarianData: VeterinarianCreateRequest = {
+        nombre: formData.get("nombreInstitucion") as string,
+        id_institucion: institucionId,
+      };
+
+      const vetResult = await createVeterinarianService(
+        veterinarianData,
+        cookie
+      );
+
+      if (!vetResult) {
+        return Response.json(
+          {
+            success: false,
+            error: "Error al registrar el veterinario",
+          },
+          { status: 400 }
+        );
+      }
+
+      console.log(" Veterinario registrado exitosamente");
+    }
+
+    console.log(" Registro completado, redirigiendo al login");
+    return redirect("/login?registered=true");
+  } catch (error) {
+    console.error(" Admin registration error:", error);
+    return Response.json(
+      {
+        success: false,
+        error:
+          "Error al registrar el administrador: " +
+          (error instanceof Error ? error.message : error),
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -175,7 +242,6 @@ type FormErrors = {
   password?: string;
   confirmPassword?: string;
   nombreInstitucion?: string;
-  tipoInstitucion?: string;
   emailInstitucion?: string;
   descripcion?: string;
   horario_inicio?: string;
@@ -189,15 +255,14 @@ type FormData = {
   password: string;
   confirmPassword: string;
   nombreInstitucion?: string;
-  tipoInstitucion?: string;
   emailInstitucion?: string;
   descripcion?: string;
   horario_inicio?: string;
   horario_fin?: string;
 };
 /**
-* Formulario de registro de administrador
-* */
+ * Formulario de registro de administrador
+ * */
 export default function AdminRegister() {
   const [formData, setFormData] = useState<FormData>({
     name: "",
@@ -205,7 +270,6 @@ export default function AdminRegister() {
     password: "",
     confirmPassword: "",
     nombreInstitucion: "",
-    tipoInstitucion: "",
     emailInstitucion: "",
     descripcion: "",
     horario_inicio: "",
@@ -250,14 +314,11 @@ export default function AdminRegister() {
       newErrors.confirmPassword = "Las contraseñas no coinciden";
     }
 
-    // Validaciones para instituciones (REFUGIO o PROTECTORA)
+    // Validaciones para instituciones (REFUGIO, PROTECTORA o VETERINARIA)
     if (role === "REFUGIO" || role === "PROTECTORA" || role === "VETERINARIA") {
       if (!formData.nombreInstitucion?.trim()) {
         newErrors.nombreInstitucion =
           "El nombre de la institución es requerido";
-      }
-      if (!formData.tipoInstitucion) {
-        newErrors.tipoInstitucion = "Debes seleccionar un tipo de institución";
       }
       if (!formData.emailInstitucion?.trim()) {
         newErrors.emailInstitucion = "El email de la institución es requerido";
@@ -324,9 +385,15 @@ export default function AdminRegister() {
               </p>
             </div>
 
-            {fetcher.data && !fetcher.data.success && (
+            {fetcher.data?.error && (
               <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">
                 {fetcher.data.error}
+              </div>
+            )}
+
+            {fetcher.data?.success && (
+              <div className="mb-4 p-3 bg-green-50 text-green-600 text-sm rounded-lg border border-green-100">
+                ¡Registro exitoso! Redirigiendo al login...
               </div>
             )}
 
@@ -435,12 +502,30 @@ export default function AdminRegister() {
                   </p>
                 )}
               </div>
-              {(role === "REFUGIO" || role === "PROTECTORA") && (
+              {(role === "REFUGIO" ||
+                role === "PROTECTORA" ||
+                role === "VETERINARIA") && (
                 <>
                   <div className="mt-4 p-4 bg-fuchsia-50/50 border border-fuchsia-200 rounded-xl space-y-3">
                     <h3 className="text-sm font-semibold text-fuchsia-900 mb-2">
                       Información de la Institución
                     </h3>
+
+                    <div className="mb-3 p-3 bg-fuchsia-100/50 rounded-lg">
+                      <p className="text-sm text-fuchsia-800">
+                        <span className="font-medium">
+                          Tipo de institución:
+                        </span>{" "}
+                        {role === "REFUGIO"
+                          ? "Refugio"
+                          : role === "PROTECTORA"
+                            ? "Protectora"
+                            : "Veterinaria"}
+                      </p>
+                      <p className="text-xs text-fuchsia-600 mt-1">
+                        Este tipo fue asignado en la invitación
+                      </p>
+                    </div>
 
                     <div className="space-y-1">
                       <label
@@ -467,37 +552,6 @@ export default function AdminRegister() {
                       {errors.nombreInstitucion && (
                         <p className="mt-1 text-sm text-red-500">
                           {errors.nombreInstitucion}
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="space-y-1">
-                      <label
-                        htmlFor="tipoInstitucion"
-                        className="block text-sm font-medium text-gray-700 mb-1"
-                      >
-                        Tipo de institución{" "}
-                        <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        id="tipoInstitucion"
-                        name="tipoInstitucion"
-                        value={formData.tipoInstitucion || ""}
-                        onChange={handleChange}
-                        className={`w-full px-4 py-2.5 rounded-xl border ${
-                          errors.tipoInstitucion
-                            ? "border-red-300"
-                            : "border-gray-200"
-                        } focus:border-fuchsia-500 focus:ring-2 focus:ring-fuchsia-100 outline-none transition-all bg-white text-gray-800`}
-                        disabled={isLoading}
-                      >
-                        <option value="">Selecciona un tipo</option>
-                        <option value="REFUGIO">Refugio</option>
-                        <option value="PROTECTORA">Protectora</option>
-                      </select>
-                      {errors.tipoInstitucion && (
-                        <p className="mt-1 text-sm text-red-500">
-                          {errors.tipoInstitucion}
                         </p>
                       )}
                     </div>
@@ -614,7 +668,6 @@ export default function AdminRegister() {
                         )}
                       </div>
                     </div>
-
                   </div>
                 </>
               )}

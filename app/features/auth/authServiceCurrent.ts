@@ -64,8 +64,21 @@ export async function fetchMe(
       headers: hd,
     });
 
+    // Verificar si hay contenido antes de parsear
+    const text = await res.text();
+
+    if (!text || text.trim() === "") {
+      console.error("Empty response from /me endpoint");
+      return {
+        status: "error",
+        message: "Empty response from server",
+        error: "No content received",
+      } as UserErrorResponse;
+    }
+
+    const data = JSON.parse(text);
+
     if (!res.ok) {
-      const data = await res.json();
       const err = {
         status: data.status,
         message: data.message,
@@ -74,8 +87,7 @@ export async function fetchMe(
 
       return err;
     } else {
-      const user = await res.json();
-      return user;
+      return data;
     }
   } catch (err) {
     console.error("Fetch me error:", err);

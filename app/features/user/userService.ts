@@ -106,3 +106,62 @@ export async function getAllUsersService(cookie?: string): Promise<any[]> {
     throw err;
   }
 }
+
+/**
+ * Busca usuarios por query (username, email, nombre)
+ * @param query - Texto de búsqueda
+ * @param cookie - Cookie de autenticación
+ * @returns Promise con array de usuarios que coinciden
+ * @throws Error si falla la petición
+ */
+export async function searchUsersService(
+  query: string,
+  cookie: string
+): Promise<any[]> {
+  try {
+    if (!query || query.trim().length === 0) {
+      return [];
+    }
+
+    const hd = new Headers();
+    hd.append("Content-Type", "application/json");
+    hd.append("Cookie", cookie);
+
+    console.log(`🔍 Buscando usuarios con query: "${query}"`);
+
+    const res = await fetch(
+      `${BASE_USER_URL}buscar?query=${encodeURIComponent(query)}`,
+      {
+        method: "GET",
+        headers: hd,
+      }
+    );
+
+    console.log(`📥 Status de búsqueda: ${res.status}`);
+
+    if (!res.ok) {
+      const text = await res.text();
+      let errorMessage = "Error al buscar usuarios";
+      try {
+        const errorData = text ? JSON.parse(text) : {};
+        errorMessage = errorData.message || errorMessage;
+      } catch {
+        errorMessage = text || errorMessage;
+      }
+      throw new Error(errorMessage);
+    }
+
+    const text = await res.text();
+    if (!text || text.trim() === "") {
+      console.log("⚠️ Respuesta vacía del servidor");
+      return [];
+    }
+
+    const data = JSON.parse(text);
+    console.log(`✅ Usuarios encontrados: ${data.length}`);
+    return data;
+  } catch (err) {
+    console.error("❌ Search users error:", err);
+    throw err;
+  }
+}

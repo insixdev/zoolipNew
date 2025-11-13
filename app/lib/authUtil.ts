@@ -155,8 +155,8 @@ export enum field {
 // y obtenemos el campo que queremos
 export function getUserFieldFromCookie(cookie: string, field: string) {
   if (cookie) {
-    const token = getTokenFromCookie(cookie)
-    if(token){
+    const token = getTokenFromCookie(cookie);
+    if (token) {
       const result = decodeClaims(token);
       if (result.valid) {
         return result.payload[field];
@@ -168,7 +168,6 @@ export function getUserFieldFromCookie(cookie: string, field: string) {
     }
   }
   return null;
-  
 }
 /**
  * Extracts user ID from the token payload
@@ -264,12 +263,17 @@ export function getRoleFromToken(payload: UserTokenPayload): string | null {
 export function getUserInfoFromToken(
   payload: UserTokenPayload
 ): { id: string; username: string; email: string; role: string } | null {
-  if (!payload?.id || !payload?.username || !payload?.email || !payload?.role) {
+  if (
+    !payload?.id_usuario ||
+    !payload?.sub ||
+    !payload?.email ||
+    !payload?.role
+  ) {
     return null;
   }
   return {
-    id: payload.id,
-    username: payload.username,
+    id: payload.id_usuario.toString(),
+    username: payload.sub, // 'sub' es el username en JWT
     email: payload.email,
     role: payload.role,
   };

@@ -1,64 +1,109 @@
-import { LoaderFunctionArgs } from "react-router";
+// Página de búsqueda de la comunidad
+import { LoaderFunctionArgs, useLoaderData } from "react-router";
+import { useState, useMemo } from "react";
 import { BarraBusqueda } from "~/components/community/buscar/BarraBusqueda";
 import { ResultadoBusqueda } from "~/components/community/buscar/ResultadoBusqueda";
 import { TrendingSidebar } from "~/components/community/shared/TrendingSidebar";
 import { requireAuth } from "~/lib/authGuard";
+import { usePostSearch } from "~/hooks/usePostSearch";
+import { Loader2 } from "lucide-react";
 
-// Loader para verificar autenticación
+// Loader para verificar autenticacion y obtener token
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireAuth(request);
-  return null;
+
+  // Obtener el token de las cookies del request
+  const cookieHeader = request.headers.get("Cookie");
+  let token = null;
+
+  if (cookieHeader) {
+    const cookies = cookieHeader.split(";");
+    for (const cookie of cookies) {
+      const [name, value] = cookie.trim().split("=");
+      if (name === "AUTH_TOKEN") {
+        token = value;
+        break;
+      }
+    }
+  }
+
+  return { token };
 }
 
 export default function CommunityBuscar() {
-  const searchResults = [
-    {
-      id: "1",
+  const { token } = useLoaderData<typeof loader>();
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const {
+    postResults,
+    userResults: rawUserResults,
+    isSearching,
+    error,
+    search,
+    isConnected,
+  } = usePostSearch(token);
+
+  // Formatear usuarios del WebSocket
+  const userResults = useMemo(() => {
+    return rawUserResults.map((user: any) => ({
+      id: user.id || user.id_usuario,
       type: "user" as const,
-      name: "María González",
-      username: "@maria_pets",
-      avatar: "https://i.pravatar.cc/150?img=1",
-      followers: "2.5k",
+      name: user.nombre || user.username,
+      username: `@${user.username}`,
+      avatar: `https://i.pravatar.cc/150?img=${user.id || 1}`,
+      followers: "0",
       isFollowing: false,
-      bio: "Amante de los Golden Retrievers 🐕",
-    },
-    {
-      id: "2",
+      bio: user.email || "",
+      role: user.role || user.rol,
+    }));
+  }, [rawUserResults]);
+
+  // Convertir los posts del WebSocket al formato de ResultadoBusqueda
+  const formattedPostResults = useMemo(() => {
+    return postResults.map((post) => ({
+      id: String(post.id_publicacion || post.idPublicacion || 0),
       type: "post" as const,
-      author: "Carlos Veterinario",
-      username: "@dr_carlos",
-      avatar: "https://i.pravatar.cc/150?img=12",
-      content: "Consejos importantes para la vacunación de cachorros",
-      image:
-        "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-      likes: 124,
-      comments: 23,
-      timestamp: "2h",
-    },
-    {
-      id: "3",
-      type: "user" as const,
-      name: "Refugio Esperanza",
-      username: "@refugio_esperanza",
-      avatar: "https://i.pravatar.cc/150?img=20",
-      followers: "15.2k",
-      isFollowing: true,
-      bio: "Refugio de animales • Adopciones responsables",
-    },
-    {
-      id: "4",
-      type: "post" as const,
-      author: "Ana Silva",
-      username: "@ana_cats",
-      avatar: "https://i.pravatar.cc/150?img=5",
-      content: "Mi gato Luna aprendió un nuevo truco! 🐱",
-      image:
-        "https://images.unsplash.com/photo-1574158622682-e40e69881006?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
-      likes: 89,
-      comments: 12,
-      timestamp: "4h",
-    },
-  ];
+      author: post.nombreUsuario || "Usuario",
+      username: `@${post.nombreUsuario || "usuario"}`,
+      avatar: `https://i.pravatar.cc/150?img=${post.id_publicacion || post.idPublicacion || 1}`,
+      content: post.contenido,
+      topico: post.topico,
+      likes: post.likes || 0,
+      comments: 0,
+      timestamp: formatTimestamp(
+        post.fecha_pregunta || post.fechaPregunta || ""
+      ),
+    }));
+  }, [postResults]);
+
+  // Combinar resultados de posts y usuarios
+  const allResults = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return [];
+    }
+
+    // Filtrar usuarios que coincidan con la búsqueda
+    const filteredUsers = userResults.filter(
+      (user) =>
+        user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        user.bio?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    // Combinar posts del WebSocket con usuarios filtrados
+    // Agregar prefijo al id para evitar colisiones
+    const postsWithPrefix = formattedPostResults.map((post) => ({
+      ...post,
+      id: `post-${post.id}`,
+    }));
+
+    const usersWithPrefix = filteredUsers.map((user) => ({
+      ...user,
+      id: `user-${user.id}`,
+    }));
+
+    return [...postsWithPrefix, ...usersWithPrefix];
+  }, [searchQuery, formattedPostResults, userResults]);
 
   const trendingTopics = [
     { tag: "#AdopcionResponsable", posts: "2.1k" },
@@ -68,17 +113,72 @@ export default function CommunityBuscar() {
     { tag: "#ConsejosVet", posts: "980" },
   ];
 
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    if (query.trim()) {
+      search(query); // Buscar posts Y usuarios por WebSocket
+    }
+  };
+
   return (
     <div className="w-full mx-auto md:pl-72 px-6 pt-6 pb-10 pr-12">
       {/* Barra de búsqueda */}
-      <BarraBusqueda />
+      <BarraBusqueda onSearch={handleSearch} />
+
+      {/* Estado de conexión */}
+      {!isConnected && (
+        <div className="mb-4 p-3 bg-yellow-50 text-yellow-700 text-sm rounded-lg border border-yellow-200">
+          Conectando al servidor de búsqueda...
+        </div>
+      )}
+
+      {/* Error */}
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-200">
+          {error}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-12">
         {/* Resultados principales */}
         <div className="xl:col-span-3 space-y-6 max-w-2xl">
-          {searchResults.map((result) => (
-            <ResultadoBusqueda key={result.id} result={result} />
-          ))}
+          {isSearching && (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="animate-spin text-rose-500" size={32} />
+              <span className="ml-3 text-gray-600">Buscando...</span>
+            </div>
+          )}
+
+          {!isSearching && searchQuery && allResults.length === 0 && (
+            <div className="text-center py-12 text-gray-500">
+              <p className="text-lg">No se encontraron resultados</p>
+              <p className="text-sm mt-2">
+                Intenta con otros términos de búsqueda
+              </p>
+            </div>
+          )}
+
+          {!isSearching && !searchQuery && (
+            <div className="text-center py-12 text-gray-500">
+              <p className="text-lg">Busca publicaciones y usuarios</p>
+              <p className="text-sm mt-2">
+                Escribe algo en la barra de búsqueda
+              </p>
+            </div>
+          )}
+
+          {!isSearching && allResults.length > 0 && (
+            <>
+              <div className="text-sm text-gray-600 mb-4">
+                {allResults.length} resultado
+                {allResults.length !== 1 ? "s" : ""} encontrado
+                {allResults.length !== 1 ? "s" : ""}
+              </div>
+              {allResults.map((result) => (
+                <ResultadoBusqueda key={result.id} result={result} />
+              ))}
+            </>
+          )}
         </div>
 
         {/* Sidebar con tendencias */}
@@ -88,4 +188,26 @@ export default function CommunityBuscar() {
       </div>
     </div>
   );
+}
+
+// Helper para formatear timestamp
+function formatTimestamp(dateString: string): string {
+  if (!dateString) return "Hace un momento";
+
+  try {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return "Ahora";
+    if (diffMins < 60) return `${diffMins}m`;
+    if (diffHours < 24) return `${diffHours}h`;
+    if (diffDays < 7) return `${diffDays}d`;
+    return date.toLocaleDateString();
+  } catch {
+    return "Hace un momento";
+  }
 }

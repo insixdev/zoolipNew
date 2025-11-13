@@ -79,22 +79,30 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
     return true;
   }
 
-  // revalidar solo en form de autenticación
+  // Revalidar después de acciones de autenticación
   if (formMethod && formMethod !== "GET") {
     const isAuthAction =
       nextUrl.pathname.includes("/login") ||
       nextUrl.pathname.includes("/register") ||
-      nextUrl.pathname.includes("community/profile");
-    nextUrl.pathname.includes("/community/crear");
+      nextUrl.pathname.includes("/logout");
     if (isAuthAction) {
-      console.log("Revalidando, mandando request al principal");
+      console.log("✅ Revalidando después de acción de autenticación");
       return true;
     }
   }
 
-  //noorevalidar en navegación normal - usar AuthProvider
-  // usando lo datos temporales de AuthProvider
-  console.log("NO: Usando AuthProvider como fuente, los  datos temporales");
+  // Revalidar cuando cambia la URL después del login
+  // Esto captura la navegación después de un login exitoso
+  if (
+    currentUrl.pathname.includes("/login") &&
+    !nextUrl.pathname.includes("/login")
+  ) {
+    console.log("✅ Revalidando: navegación desde login a otra ruta");
+    return true;
+  }
+
+  // No revalidar en navegación normal - usar AuthProvider
+  console.log("❌ NO revalidando: Usando datos de AuthProvider en memoria");
   return false;
 };
 
@@ -105,55 +113,44 @@ export const loader: LoaderFunction = async ({ request }) => {
   console.log(" ROOT LOADER EJECUTADO - URL:", url.pathname);
 
   // Estrategia adicional: verificar si es una navegación que realmente necesita datos del usuario
-  const publicRoutes = [
-    "/landing",
-    "/info/",
-    "/adopt/_index",
-    "/community/_index",
-  ];
+  const publicRoutes = ["/landing", "/info/", "/community"];
 
   const isPublicRoute = publicRoutes.some((route) =>
     url.pathname.includes(route)
   );
 
+  // Para rutas públicas, intentar cargar usuario si hay cookie, sino retornar null
   if (isPublicRoute) {
-    console.log(
-      "Ruta pública detectada, retornando usuario null sin llamada al servidor"
-    );
-    return new Response(JSON.stringify({ user: null, authError: null }), {
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
-  // Verificar si el cliente indica que ya tiene datos de usuario
-  const skipUserFetch = request.headers.get("X-Skip-User-Fetch");
-  if (skipUserFetch === "true") {
-    console.log(
-      " Cliente indica que ya tiene datos de usuario, saltando fetch"
-    );
-    return new Response(JSON.stringify({ user: null, authError: "xskip"}), {
-      headers: { "Content-Type": "application/json" },
-    });
+    const cookieHeader = request.headers.get("Cookie");
+    if (!cookieHeader) {
+      console.log("🌍 Ruta pública sin autenticación, retornando usuario null");
+      return new Response(JSON.stringify({ user: null, authError: null }), {
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    // Si hay cookie, continuar para cargar el usuario
+    console.log("🌍 Ruta pública con cookie, cargando usuario");
   }
 
   console.log("Cookie header:", request.headers.get("Cookie"));
 
-  const user = await getUserFromRequest(request); // obtiene
+  const userResponse = await getUserFromRequest(request); // obtiene
 
-  if(!isErrorUser(user)){
-    console.log("aver: ", user.message)
-    if (!isErrorUser(user)) {
-      console.log(
-        "enroot: user:",
-        user,
-        "error:",
-      );
-    }
-    return Response.json({ user: user, authError: "SUCCES"});
+  if (!isErrorUser(userResponse)) {
+    console.log("✅ Usuario autenticado:", userResponse.user?.username);
+    // Retornar solo el objeto User, no todo el UserResponseHandler
+    return Response.json({
+      user: userResponse.user,
+      authError: null,
+    });
   } else {
-    if (!user || user.status === "error" || user.message === "Invalid token") {
-      console.log("Token inválido, eliminando cookie y redirigiendo al login");
-      console.log("userRRRRRRRR", user);
+    if (
+      !userResponse ||
+      userResponse.status === "error" ||
+      userResponse.message === "Invalid token"
+    ) {
+      console.log("❌ Token inválido, eliminando cookie");
+      console.log("Error:", userResponse?.message);
 
       return Response.json(
         { authError: "Invalid token", user: null },
@@ -168,38 +165,14 @@ export const loader: LoaderFunction = async ({ request }) => {
         }
       );
     }
- 
-    // No pasar errores de autenticación al contexto
-    // Los errores del loader de root no deben mostrarse al usuario
-    // TODO: HACERLO MEJOR
-    console.log(
-      "Usuario se encontro en cache o gubo error :",
-      JSON.stringify(user)
-    );
 
-    let frontUser: User | null; // esta mal pero ahora esta mejor
+    // Otro tipo de error (no token inválido)
+    console.log("⚠️ Error al obtener usuario:", userResponse?.message);
 
-    try {
-      if(user.message){
-        
-      }
-     console.log("user: ", user)
-     return new Response(
-      JSON.stringify({
-        user: null,
-        authError: null, // No pasar el error al contexto
-      }),
-      { headers: { "Content-Type": "application/json" } }
-    );
-       
-      
-
-    } catch (error) {
-      console.error("Error al obtener el usuario:", error);
-
-      frontUser = null;
-    }
-
+    return Response.json({
+      user: null,
+      authError: null, // No pasar el error al contexto para no mostrar mensajes confusos
+    });
   }
 };
 
@@ -210,18 +183,17 @@ export default function App() {
     user: User | null;
     authError: { message: string; status: string } | null;
   }>();
-  console.log("initialUser: ", initialUser)
+  console.log("initialUser: ", initialUser);
   console.log("ERROR", authError);
 
   useEffect(() => {
-    if(initialUser){
-      console.log("initialUser: ", initialUser)
-
+    if (initialUser) {
+      console.log("initialUser: ", initialUser);
     }
-  }, [])
+  }, []);
 
   return (
-    <AuthProvider initialUser={initialUser} >
+    <AuthProvider initialUser={initialUser}>
       <SmartAuthWrapper>
         <InstitutionRequestProvider>
           <Outlet />

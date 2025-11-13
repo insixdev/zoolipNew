@@ -4,8 +4,10 @@ import { HacerPregunta } from "~/components/community/consultas/HacerPregunta";
 import { Pregunta } from "~/components/community/consultas/Pregunta";
 import { AuthRoleComponent } from "~/components/auth/AuthRoleComponent";
 import { USER_ROLES } from "~/lib/constants";
+import { useSmartAuth } from "~/features/auth/useSmartAuth";
 
 export default function CommunityConsultas() {
+  const { user } = useSmartAuth();
   const consultas = [
     {
       id: "1",
@@ -56,7 +58,7 @@ export default function CommunityConsultas() {
 
       {/* Nueva consulta - Solo para usuarios autenticados */}
       <AuthRoleComponent
-        allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.ADOPTANTE, USER_ROLES.USER]}
+        allowedRoles={[USER_ROLES.ADMIN, USER_ROLES.ADOPTANTE, USER_ROLES.USER, USER_ROLES.SYSTEM]}
         fallback={
           <div className="bg-gradient-to-br from-orange-50 to-rose-50 rounded-xl shadow-md border border-orange-200 p-8 mb-8 text-center">
             <MessageCircle className="mx-auto text-rose-400 mb-4" size={48} />
@@ -84,15 +86,33 @@ export default function CommunityConsultas() {
           </div>
         }
       >
+
         <HacerPregunta />
       </AuthRoleComponent>
 
       {/* Lista de consultas */}
-      <div className="space-y-8">
-        {consultas.map((consulta) => (
-          <Pregunta key={consulta.id} {...consulta} />
-        ))}
-      </div>
+     
+{/* Lista de consultas */}
+
+{user && consultas.length > 0 ? (
+  <div className="space-y-8">
+    {consultas.map((consulta) => (
+      <Pregunta key={consulta.id} {...consulta} />
+    ))}
+  </div>
+) : (
+  consultas.length === 0 && (
+    <div className="bg-gradient-to-br from-orange-50 to-rose-50 rounded-xl shadow-md text-black border border-orange-200 p-8 mb-8 text-center">
+    <p>No hay consultas disponibles.</p>
+    </div>
+  )
+)}
+
+{!user && (
+  <div className="bg-gradient-to-br from-white to-rose-50 rounded-xl text-black shadow-sm p-8 mb-8 text-center">
+  para ver las consultas debes iniciar sesion
+  </div>
+)}
     </div>
   );
 }

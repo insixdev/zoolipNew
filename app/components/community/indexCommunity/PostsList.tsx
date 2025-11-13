@@ -1,5 +1,6 @@
 import PostCard, { type Post } from "./PostCard";
 import type { Comment } from "../comentarios/CommentItem";
+import { useSmartAuth } from "~/features/auth/useSmartAuth";
 
 type PostsListProps = {
   posts: Post[];
@@ -28,6 +29,8 @@ export default function PostsList({
   onLikeComment,
 }: PostsListProps) {
   console.log("PostsList rendering with", posts.length, "posts");
+  const { user } = useSmartAuth();
+  if(user){
 
   if (!posts || posts.length === 0) {
     return (
@@ -36,6 +39,8 @@ export default function PostsList({
         <p className="text-sm mt-2">¡Sé el primero en crear una!</p>
       </div>
     );
+  }
+
   }
 
   return (

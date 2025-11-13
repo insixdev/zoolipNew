@@ -90,6 +90,8 @@ export default [
   route("api/post/actualizar", "routes/api/post/actualizarPost.ts"),
   route("api/post/eliminar", "routes/api/post/eliminarPost.ts"),
   route("api/post/obtenerTodas", "routes/api/post/obtenerTodas.ts"),
+  route("api/post/getByPostId", "routes/api/post/getByPostId.ts"),
+  route("api/post/updatePost", "routes/api/post/updatePost.ts"),
 
   // Pets API routes
   route("api/pets/crear", "routes/api/pets/CrearPet.ts"),

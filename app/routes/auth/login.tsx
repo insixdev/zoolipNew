@@ -1,5 +1,11 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useFetcher, Link, useSearchParams } from "react-router";
+import {
+  useNavigate,
+  useFetcher,
+  Link,
+  useSearchParams,
+  useRevalidator,
+} from "react-router";
 import { Navbar } from "~/components/layout/navbar";
 import GoogleButton from "~/components/ui/button/socialButton/GoogleButton";
 import { useAuth } from "~/features/auth/useAuth";
@@ -22,12 +28,13 @@ export default function Login() {
   const [errors, setErrors] = useState<LoginErrors>({});
   const navigate = useNavigate();
   const fetcher = useFetcher<{ status: string; message: string }>();
+  const revalidator = useRevalidator();
 
   const { authError, setAuthError } = useAuth();
   const [searchParams] = useSearchParams();
 
   const isLoading = fetcher.state === "submitting";
-  const redirectTo = searchParams.get("redirectTo") || "community/profile";
+  const redirectTo = searchParams.get("redirectTo") || "/community";
   const isRegistered = searchParams.get("registered") === "true";
 
   // Clear field-specific errors when user starts typing
@@ -57,9 +64,18 @@ export default function Login() {
         setErrors({});
         console.log("Login exitoso, redirigiendo...");
 
-        // Recargar la página para que el loader del root detecte el nuevo usuario
-        // y redirija al dashboard correcto según el rol
-        window.location.href = redirectTo.startsWith("/") ? redirectTo : "/";
+        // Usar window.location para forzar una recarga completa
+        // Esto asegura que el loader del root se ejecute con la nueva cookie
+        const finalRedirect = redirectTo.startsWith("/")
+          ? redirectTo
+          : `/${redirectTo}`;
+
+        console.log("Redirigiendo a:", finalRedirect);
+
+        // Pequeño delay para asegurar que la cookie se estableció
+        setTimeout(() => {
+          window.location.href = finalRedirect;
+        }, 100);
       } else if (fetcher.data.status === "error") {
         setErrors({
           general: fetcher.data.message || "Usuario o contraseña incorrectos",

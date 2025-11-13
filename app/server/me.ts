@@ -78,11 +78,15 @@ export async function getUserFromRequest(
 
   if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
     console.log(
-      "USANDO CACHE - No llamada al servidor, data:" +
-        JSON.stringify(cached.data)
+      "✅ USANDO CACHE - No llamada al servidor, usuario:",
+      cached.data.user?.username || "sin usuario"
     );
 
     return cached.data;
+  } else if (cached) {
+    console.log("⏰ Cache expirado, obteniendo datos frescos del servidor");
+  } else {
+    console.log("🆕 No hay cache, obteniendo datos del servidor");
   }
 
   // Verificar llamadas duplicadas muy rápidas
