@@ -6,7 +6,7 @@ import { AuthRoleComponent } from "~/components/auth/AuthRoleComponent";
 import { USER_ROLES } from "~/lib/constants";
 
 type CreatePostCardProps = {
-  onPostCreated?: () => void;
+  onPostCreated?: (data: { content: string; topico: string }) => void;
 };
 /**
  * es un componente de React que representa una tarjeta para crear un nuevo post en la comunidad
@@ -48,12 +48,17 @@ export default function CreatePostCard({ onPostCreated }: CreatePostCardProps) {
   if (fetcher.data?.status === "success" && fetcher.state === "idle") {
     // Limpiar el formulario
     if (content || topico) {
+      const postData = {
+        content,
+        topico,
+      };
+
       setContent("");
       setTopico("");
 
-      // Callback para recargar posts
+      // Callback para recargar posts con los datos del nuevo post
       if (onPostCreated) {
-        onPostCreated();
+        onPostCreated(postData);
       }
     }
   }
@@ -76,7 +81,6 @@ export default function CreatePostCard({ onPostCreated }: CreatePostCardProps) {
         allowedRoles={[
           USER_ROLES.ADMIN,
           USER_ROLES.VETERINARIA,
-          USER_ROLES.PROTECTORA,
           USER_ROLES.REFUGIO,
           USER_ROLES.ADOPTANTE,
           USER_ROLES.USER,

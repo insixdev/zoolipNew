@@ -25,13 +25,13 @@ export type UserIdPost = {
 export type PublicationCreateRequest = {
   id_usuario: UserIdPost;
   tipo: "CONSULTA" | "PUBLICACION";
-  imagen_url: string;
+  imagen_url: string | null; // null para consultas
   fecha_edicion: string;
   fecha_duda_resuelta: string;
   topico: string;
   contenido: string;
   likes: number;
-  fecha_pregunta: string;
+  fecha_pregunta: string; // Solo para consultas, vacío para publicaciones
 };
 
 /**
@@ -40,6 +40,7 @@ export type PublicationCreateRequest = {
 export type PublicationUpdateRequest = {
   id_publicacion: number;
   id_usuario: UserIdPost;
+  tipo?: "CONSULTA" | "PUBLICACION"; // Opcional para preservar el tipo
   topico: string;
   contenido: string;
   likes: number;
@@ -73,10 +74,14 @@ export type PublicationGetResponse = {
  */
 export type PublicationPublicGetResponse = {
   id_publicacion: number;
+  tipo?: "CONSULTA" | "PUBLICACION" | null; // Tipo de publicación
   topico: string;
   contenido: string;
   nombreUsuario: string;
+  idUsuario?: number; // ID del usuario para preservar en updates
+  rolUsuario?: string; // Rol del usuario para badge de verificado
   likes: number;
+  cantidadComentarios?: number; // Número de comentarios
   fecha_pregunta: string;
   fecha_duda_resuelta: string | null;
   fecha_edicion: string | null;

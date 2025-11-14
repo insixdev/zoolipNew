@@ -1,5 +1,11 @@
-import { MessageCircle } from "lucide-react";
-import { Link, LoaderFunctionArgs, useLoaderData } from "react-router";
+import { MessageCircle, Loader2 } from "lucide-react";
+import {
+  Link,
+  LoaderFunctionArgs,
+  useLoaderData,
+  useFetcher,
+  useRevalidator,
+} from "react-router";
 import { HacerPregunta } from "~/components/community/consultas/HacerPregunta";
 import { Pregunta } from "~/components/community/consultas/Pregunta";
 import { AuthRoleComponent } from "~/components/auth/AuthRoleComponent";
@@ -7,71 +13,415 @@ import { USER_ROLES } from "~/lib/constants";
 import { useSmartAuth } from "~/features/auth/useSmartAuth";
 import { getAllPublicPublicationsService } from "~/features/post/postService";
 import { postParseResponse } from "~/features/post/postResponseParse";
+import { useEffect, useRef, useState } from "react";
+
+import type { Comment } from "~/components/community/comentarios/CommentItem";
+import {
+  getUserCommentLikes,
+  addCommentLike,
+  removeCommentLike,
+  getUserLikes,
+  addLike,
+  removeLike,
+} from "~/lib/likeStorage";
+
+const ITEMS_PER_PAGE = 10;
 
 // Loader para obtener solo las consultas
 export async function loader({ request }: LoaderFunctionArgs) {
   const cookie = request.headers.get("Cookie");
 
   if (!cookie) {
-    return { consultas: [], isPublic: true };
+    return { consultas: [], isPublic: true, hasMore: false };
   }
 
   try {
     const fetchedPosts = await getAllPublicPublicationsService(cookie);
+    console.log(
+      "[CONSULTAS LOADER] Total posts fetched:",
+      fetchedPosts?.length || 0
+    );
+
     const allPosts = postParseResponse(fetchedPosts);
+    console.log("[CONSULTAS LOADER] Total posts parsed:", allPosts.length);
 
     // Filtrar solo consultas
+    // TEMPORAL: El backend está guardando tipo=null para TODO
+    // Solo mostramos posts con tipo explícito "CONSULTA"
+    // Los posts con null se muestran en /community (feed principal)
     const consultasOnly = allPosts.filter(
       (post) => post.publicationType === "CONSULTA"
     );
 
-    // Obtener el número de comentarios para cada consulta
-    const { getCommentsByPublicationService } = await import(
-      "~/features/post/comments/commentService"
+    console.log(
+      "[CONSULTAS LOADER] First 3 consultas:",
+      consultasOnly.slice(0, 3).map((c) => ({
+        id: c.id,
+        type: c.publicationType,
+        topico: c.topico,
+      }))
     );
 
-    const consultasWithCommentCount = await Promise.all(
-      consultasOnly.map(async (consulta) => {
-        try {
-          const comments = await getCommentsByPublicationService(
-            consulta.id,
-            cookie
-          );
-          return { ...consulta, comments: comments.length };
-        } catch (error) {
-          console.error(
-            `Error getting comments for consulta ${consulta.id}:`,
-            error
-          );
-          return { ...consulta, comments: 0 };
-        }
-      })
-    );
+    // Los posts ya vienen con el contador de comentarios del backend
+    // No necesitamos hacer peticiones adicionales aquí
 
-    return { consultas: consultasWithCommentCount };
+    // Retornar solo las primeras ITEMS_PER_PAGE consultas
+    const initialConsultas = consultasOnly.slice(0, ITEMS_PER_PAGE);
+    const hasMore = consultasOnly.length > ITEMS_PER_PAGE;
+
+    console.log("[CONSULTAS LOADER] Returning:", {
+      initialConsultas: initialConsultas.length,
+      hasMore,
+    });
+
+    return {
+      consultas: initialConsultas,
+      allConsultas: consultasOnly,
+      hasMore,
+    };
   } catch (error) {
-    console.error("Error loading consultas:", error);
-    return { consultas: [] };
+    return { consultas: [], allConsultas: [], hasMore: false };
   }
 }
 
 export default function CommunityConsultas() {
   const { user } = useSmartAuth();
   const loaderData = useLoaderData<typeof loader>();
-  const consultas = loaderData?.consultas ?? [];
+  const revalidator = useRevalidator();
+
+  console.log("[CONSULTAS COMPONENT] Loader data:", {
+    consultasCount: loaderData?.consultas?.length || 0,
+    hasMore: loaderData?.hasMore,
+    isPublic: loaderData?.isPublic,
+  });
+
+  // Helper para sincronizar consultas con localStorage
+  const syncConsultasWithLikes = (consultasToSync: any[]) => {
+    const userLikes = getUserLikes();
+    return consultasToSync.map((consulta) => ({
+      ...consulta,
+      isLiked: userLikes.has(consulta.id),
+    }));
+  };
+
+  const [displayedConsultas, setDisplayedConsultas] = useState(() => {
+    return syncConsultasWithLikes(loaderData?.consultas ?? []);
+  });
+  const [hasMore, setHasMore] = useState(true); // Siempre true al inicio
+  const [isLoading, setIsLoading] = useState(false);
+  const loadMoreFetcher = useFetcher();
+  const likeFetcher = useFetcher();
+
+  // Estados para comentarios
+  const [commentsMap, setCommentsMap] = useState<Record<string, Comment[]>>({});
+  const getByIdFetcher = useFetcher();
+  const createCommentFetcher = useFetcher();
+  const lastRequestedCommentsPostId = useRef<string | null>(null);
+  const lastCommentedPostId = useRef<string | null>(null);
+
+  // PostId que está cargando comentarios
+  const commentsLoadingPostId =
+    getByIdFetcher.state === "loading"
+      ? lastRequestedCommentsPostId.current
+      : null;
+
+  // Sincronizar consultas cuando cambian desde el loader
+  useEffect(() => {
+    if (loaderData?.consultas && loaderData.consultas.length > 0) {
+      setDisplayedConsultas(syncConsultasWithLikes(loaderData.consultas));
+    }
+  }, [loaderData?.consultas]);
+
+  // Manejar la respuesta del fetcher de cargar más
+  useEffect(() => {
+    if (loadMoreFetcher.data && loadMoreFetcher.state === "idle") {
+      const response = loadMoreFetcher.data as any;
+
+      // Si el token es inválido, limpiar todo y redirigir al login
+      if (response.status === "error" && response.code === "INVALID_TOKEN") {
+        console.log(
+          "Token inválido, limpiando sesión y redirigiendo al login..."
+        );
+        // Guardar preferencia de cookies antes de limpiar
+        const cookiesAccepted = localStorage.getItem("cookiesAccepted");
+        // Limpiar localStorage
+        localStorage.clear();
+        // Redirigir al login
+        window.location.href = "/login?redirectTo=/community/consultas";
+        return;
+      }
+
+      if (response.status === "success" && response.posts) {
+        // Filtrar solo consultas
+        const newConsultas = response.posts.filter(
+          (post: any) => post.publicationType === "CONSULTA"
+        );
+
+        console.log(" Nuevas consultas cargadas:", newConsultas.length);
+
+        if (newConsultas.length > 0) {
+          // Sincronizar nuevas consultas con likes de localStorage
+          const syncedNewConsultas = syncConsultasWithLikes(newConsultas);
+          setDisplayedConsultas((prev) => [...prev, ...syncedNewConsultas]);
+          // Si recibimos menos de 5 consultas, probablemente no hay más
+          setHasMore(newConsultas.length >= 5);
+        } else {
+          setHasMore(false);
+        }
+      } else {
+        console.log(" Respuesta inesperada del servidor");
+        setHasMore(false);
+      }
+
+      setIsLoading(false);
+    }
+  }, [loadMoreFetcher.data, loadMoreFetcher.state]);
+
+  // Cargar más consultas desde el backend
+  const handleLoadMore = () => {
+    if (isLoading || !hasMore || displayedConsultas.length === 0) return;
+
+    setIsLoading(true);
+
+    // Obtener el ID de la última consulta visible
+    const lastConsulta = displayedConsultas[displayedConsultas.length - 1];
+    const lastId = lastConsulta.id;
+
+    console.log("Cargando más consultas desde ID:", lastId);
+
+    // Llamar al endpoint con el ID de la última consulta
+    loadMoreFetcher.load(`/api/post/obtenerTodas?lastId=${lastId}`);
+  };
+
+  const parseConsultaContent = (content: string) => {
+    // Buscar la primera línea como título (hasta el primer salto de línea o punto)
+    const lines = content.split("\n");
+
+    if (lines.length > 1) {
+      // Si hay múltiples líneas, la primera es el título
+      return {
+        title: lines[0].trim(),
+        description: lines.slice(1).join("\n").trim(),
+      };
+    } else {
+      // Si es una sola línea, buscar el primer punto o tomar los primeros 100 caracteres
+      const firstSentenceEnd = content.indexOf(".");
+      if (firstSentenceEnd > 0 && firstSentenceEnd < 150) {
+        return {
+          title: content.substring(0, firstSentenceEnd + 1).trim(),
+          description: content.substring(firstSentenceEnd + 1).trim(),
+        };
+      } else {
+        // Si no hay punto o es muy largo, tomar los primeros 100 caracteres como título
+        return {
+          title:
+            content.substring(0, 100).trim() +
+            (content.length > 100 ? "..." : ""),
+          description:
+            content.length > 100 ? content.substring(100).trim() : "",
+        };
+      }
+    }
+  };
+
+  // Cargar comentarios cuando el fetcher trae data
+  useEffect(() => {
+    if (!getByIdFetcher.data) return;
+    const maybeData: any = getByIdFetcher.data;
+    const fetchedComments = maybeData?.comments ?? maybeData;
+
+    if (!Array.isArray(fetchedComments)) return;
+
+    const postId = lastRequestedCommentsPostId.current;
+    if (!postId) return;
+
+    console.log(
+      `[CONSULTAS] Loaded ${fetchedComments.length} comments for consulta ${postId}`
+    );
+
+    // Sincronizar comentarios con likes de localStorage
+    const userCommentLikes = getUserCommentLikes();
+    const commentsWithLikes = fetchedComments.map((comment: Comment) => ({
+      ...comment,
+      isLiked: userCommentLikes.has(parseInt(comment.id)),
+    }));
+
+    setCommentsMap((prev) => ({
+      ...(prev ?? {}),
+      [postId]: commentsWithLikes,
+    }));
+
+    lastRequestedCommentsPostId.current = null;
+  }, [getByIdFetcher.data]);
+
+  // Recargar comentarios después de crear uno
+  useEffect(() => {
+    if (
+      createCommentFetcher.state === "idle" &&
+      createCommentFetcher.data?.status === "success" &&
+      lastCommentedPostId.current
+    ) {
+      const postId = lastCommentedPostId.current;
+      lastRequestedCommentsPostId.current = postId;
+      getByIdFetcher.load(`/api/post/comentarios/${postId}`);
+      lastCommentedPostId.current = null;
+    }
+  }, [createCommentFetcher.state, createCommentFetcher.data]);
+
+  const handleLike = (consultaId: string) => {
+    const consultaIdNum = parseInt(consultaId);
+    const consulta = displayedConsultas.find(
+      (c) => c.id?.toString() === consultaId
+    );
+
+    if (!consulta) {
+      console.error("[LIKE] Consulta no encontrada:", consultaId);
+      return;
+    }
+
+    // Leer el estado actual desde localStorage (fuente de verdad)
+    const userLikes = getUserLikes();
+    const wasLiked = userLikes.has(consultaIdNum);
+    const newIsLiked = !wasLiked;
+
+    console.log(`[LIKE] Consulta ${consultaId}:`, {
+      wasLiked,
+      newIsLiked,
+      currentLikes: consulta.likes,
+    });
+
+    // Actualizar localStorage PRIMERO
+    if (newIsLiked) {
+      addLike(consultaIdNum);
+    } else {
+      removeLike(consultaIdNum);
+    }
+
+    // Actualizar UI optimistamente basado en localStorage
+    setDisplayedConsultas((prev) =>
+      prev.map((consulta) =>
+        consulta.id?.toString() === consultaId
+          ? {
+              ...consulta,
+              isLiked: newIsLiked,
+              likes: newIsLiked ? consulta.likes + 1 : consulta.likes - 1,
+            }
+          : consulta
+      )
+    );
+
+    // Enviar like al backend (solo para actualizar el contador)
+    const formData = new FormData();
+    formData.append("isLiked", wasLiked.toString());
+    formData.append("action", "toggle");
+
+    likeFetcher.submit(formData, {
+      method: "post",
+      action: `/api/post/like/${consultaId}`,
+    });
+  };
+
+  const handleComment = (consultaId: string) => {
+    console.log("Toggle comments for consulta:", consultaId);
+
+    if (commentsMap[consultaId]) {
+      console.log("Comments already loaded for consulta:", consultaId);
+      return;
+    }
+
+    lastRequestedCommentsPostId.current = consultaId;
+    getByIdFetcher.load(`/api/post/comentarios/${consultaId}`);
+  };
+
+  const handleAddComment = (consultaId: string, content: string) => {
+    console.log("🔵 [CONSULTA] handleAddComment called!");
+    console.log("🔵 [CONSULTA] ConsultaId:", consultaId);
+    console.log("🔵 [CONSULTA] Content:", content);
+
+    lastCommentedPostId.current = consultaId;
+
+    const formData = new FormData();
+    formData.append("id_publicacion", consultaId);
+    formData.append("contenido", content);
+
+    createCommentFetcher.submit(formData, {
+      method: "post",
+      action: "/api/comments/crear",
+    });
+
+    // Actualizar contador optimistamente
+    setDisplayedConsultas((prev) =>
+      prev.map((consulta) =>
+        consulta.id?.toString() === consultaId
+          ? { ...consulta, comments: consulta.comments + 1 }
+          : consulta
+      )
+    );
+  };
+
+  const handleLikeComment = (consultaId: string, commentId: string) => {
+    const commentIdNum = parseInt(commentId);
+    const comment = commentsMap[consultaId]?.find((c) => c.id === commentId);
+
+    if (!comment) {
+      console.error("[LIKE] Comentario no encontrado:", commentId);
+      return;
+    }
+
+    const wasLiked = comment.isLiked || false;
+
+    let shouldUpdate = false;
+    if (wasLiked) {
+      shouldUpdate = removeCommentLike(commentIdNum);
+    } else {
+      shouldUpdate = addCommentLike(commentIdNum);
+    }
+
+    if (!shouldUpdate) {
+      console.log(
+        "[LIKE] Estado del comentario ya sincronizado, no se requiere actualización"
+      );
+      return;
+    }
+
+    // Actualizar UI optimistamente
+    setCommentsMap((prev) => ({
+      ...prev,
+      [consultaId]: prev[consultaId]?.map((comment) =>
+        comment.id === commentId
+          ? {
+              ...comment,
+              isLiked: !comment.isLiked,
+              likes: comment.isLiked ? comment.likes - 1 : comment.likes + 1,
+            }
+          : comment
+      ),
+    }));
+  };
 
   // Convertir posts a formato de consulta para el componente Pregunta
-  const consultasFormateadas = consultas.map((consulta) => ({
-    id: consulta.id.toString(),
-    title: consulta.topico,
-    content: consulta.content,
-    author: consulta.author.username,
-    avatar: consulta.author.avatar,
-    timestamp: new Date(consulta.fecha_creacion).toLocaleDateString("es-ES"),
-    responses: consulta.comments,
-    likes: consulta.likes,
-    category: consulta.topico,
-  }));
+  const consultasFormateadas = displayedConsultas.map((consulta) => {
+    const { title, description } = parseConsultaContent(consulta.content);
+
+    return {
+      id: consulta.id.toString(),
+      title: title,
+      content: description,
+      author: consulta.author.username,
+      authorId: consulta.author.id, // ID del autor para link al perfil
+      avatar: consulta.author.avatar,
+      timestamp: consulta.fecha_creacion, // Pasar la fecha ISO completa
+      responses: consulta.comments,
+      likes: consulta.likes,
+      isLiked: consulta.isLiked || false,
+      category: consulta.topico,
+    };
+  });
+
+  console.log(
+    "🎨 [CONSULTAS COMPONENT] Consultas formateadas:",
+    consultasFormateadas.length
+  );
 
   return (
     <div className="mx-auto max-w-7xl md:pl-64 px-4 pt-8 pb-10">
@@ -97,7 +447,6 @@ export default function CommunityConsultas() {
           USER_ROLES.SYSTEM,
           USER_ROLES.VETERINARIA,
           USER_ROLES.REFUGIO,
-          USER_ROLES.PROTECTORA,
         ]}
         fallback={
           <div className="bg-gradient-to-br from-orange-50 to-rose-50 rounded-xl shadow-md border border-orange-200 p-8 mb-8 text-center">
@@ -126,7 +475,13 @@ export default function CommunityConsultas() {
           </div>
         }
       >
-        <HacerPregunta />
+        <HacerPregunta
+          onPostCreated={(newConsulta) => {
+            console.log(" Nueva consulta creada, recargando página...");
+            // Recargar la página para obtener datos actualizados
+            window.location.reload();
+          }}
+        />
       </AuthRoleComponent>
 
       {/* Lista de consultas */}
@@ -134,11 +489,51 @@ export default function CommunityConsultas() {
       {/* Lista de consultas */}
 
       {user && consultasFormateadas.length > 0 ? (
-        <div className="space-y-8">
-          {consultasFormateadas.map((consulta) => (
-            <Pregunta key={consulta.id} {...consulta} />
-          ))}
-        </div>
+        <>
+          <div className="space-y-8">
+            {consultasFormateadas.map((consulta) => (
+              <Pregunta
+                key={consulta.id}
+                {...consulta}
+                comments={commentsMap[consulta.id] || []}
+                commentsLoading={commentsLoadingPostId === consulta.id}
+                isSubmittingComment={
+                  createCommentFetcher.state === "submitting"
+                }
+                onComment={handleComment}
+                onAddComment={handleAddComment}
+                onLikeComment={handleLikeComment}
+                onLike={handleLike}
+              />
+            ))}
+          </div>
+
+          {/* Botón para cargar más */}
+          <div className="py-8 flex justify-center">
+            {hasMore ? (
+              <button
+                onClick={handleLoadMore}
+                disabled={isLoading}
+                className="px-8 py-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-lg hover:from-rose-600 hover:to-pink-700 transition-all shadow-md hover:shadow-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="animate-spin" size={20} />
+                    Cargando...
+                  </>
+                ) : (
+                  <>Cargar más consultas</>
+                )}
+              </button>
+            ) : (
+              displayedConsultas.length > 0 && (
+                <div className="text-center text-gray-500 text-sm">
+                  No hay más consultas para mostrar
+                </div>
+              )
+            )}
+          </div>
+        </>
       ) : (
         consultasFormateadas.length === 0 &&
         user && (

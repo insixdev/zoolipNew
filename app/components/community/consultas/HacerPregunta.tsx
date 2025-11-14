@@ -2,7 +2,11 @@ import { MessageCircle } from "lucide-react";
 import { useFetcher } from "react-router";
 import { useState, useEffect } from "react";
 
-export function HacerPregunta() {
+type HacerPreguntaProps = {
+  onPostCreated?: (data: { contenido: string; topico: string }) => void;
+};
+
+export function HacerPregunta({ onPostCreated }: HacerPreguntaProps = {}) {
   const fetcher = useFetcher();
   const [titulo, setTitulo] = useState("");
   const [contenido, setContenido] = useState("");
@@ -13,11 +17,22 @@ export function HacerPregunta() {
   // Limpiar el formulario después de enviar exitosamente
   useEffect(() => {
     if (fetcher.data?.status === "success") {
+      console.log("Consulta publicada exitosamente, recargando lista...");
+
+      // Guardar los datos antes de limpiar
+      const consultaData = {
+        contenido: `${titulo}\n\n${contenido}`,
+        topico: categoria || "General",
+      };
+
       setTitulo("");
       setContenido("");
       setCategoria("");
+
+      // Llamar al callback con los datos de la consulta
+      onPostCreated?.(consultaData);
     }
-  }, [fetcher.data]);
+  }, [fetcher.data, onPostCreated]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

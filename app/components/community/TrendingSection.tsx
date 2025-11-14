@@ -4,6 +4,7 @@ import { TrendingSidebar } from "~/components/community/shared/TrendingSidebar";
 type Post = {
   id: number;
   topico: string;
+  publicationType?: string;
   [key: string]: any;
 };
 
@@ -27,25 +28,41 @@ export default function TrendingSection({
     return null;
   }
 
-  // Extraer y contar tópicos de los posts
-  const topicCounts = posts.reduce(
+  // Extraer y contar tópicos de los posts, separando por tipo
+  const topicData = posts.reduce(
     (acc, post) => {
       if (post.topico) {
         const topic = post.topico.startsWith("#")
           ? post.topico
           : `#${post.topico}`;
-        acc[topic] = (acc[topic] || 0) + 1;
+
+        if (!acc[topic]) {
+          acc[topic] = { total: 0, consultas: 0, publicaciones: 0 };
+        }
+
+        acc[topic].total += 1;
+
+        if (post.publicationType === "CONSULTA") {
+          acc[topic].consultas += 1;
+        } else {
+          acc[topic].publicaciones += 1;
+        }
       }
       return acc;
     },
-    {} as Record<string, number>
+    {} as Record<
+      string,
+      { total: number; consultas: number; publicaciones: number }
+    >
   );
 
   // Convertir a array y ordenar por cantidad de posts
-  const trendingTopics = Object.entries(topicCounts)
-    .map(([tag, count]) => ({
+  const trendingTopics = Object.entries(topicData)
+    .map(([tag, data]) => ({
       tag,
-      posts: count,
+      posts: data.total,
+      consultas: data.consultas,
+      publicaciones: data.publicaciones,
     }))
     .sort((a, b) => b.posts - a.posts)
     .slice(0, 5); // Top 5 tópicos

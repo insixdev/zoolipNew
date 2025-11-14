@@ -57,7 +57,6 @@ export function AdminSidebar({ adminRole }: AdminSidebarProps) {
           },
         ];
 
-      case ADMIN_ROLES.PROTECTORA:
       case ADMIN_ROLES.REFUGIO:
         return [
           { to: "/admin", icon: Home, label: "Dashboard" },
@@ -92,7 +91,6 @@ export function AdminSidebar({ adminRole }: AdminSidebarProps) {
         </h2>
         <p className="text-sm text-gray-500 mt-1">
           {adminRole === ADMIN_ROLES.VETERINARIO && "Veterinaria"}
-          {adminRole === ADMIN_ROLES.PROTECTORA && "Protectora"}
           {adminRole === ADMIN_ROLES.REFUGIO && "Refugio"}
           {adminRole === ADMIN_ROLES.ADMINISTRADOR && "Administrador"}
           {adminRole === ADMIN_ROLES.SYSTEM && "Sistema"}

@@ -4,13 +4,20 @@ type LoadMoreButtonProps = {
   onClick: () => void;
   isLoading?: boolean;
   hasMore?: boolean;
+  isAuthenticated?: boolean;
 };
 
 export default function LoadMoreButton({
   onClick,
   isLoading = false,
   hasMore = true,
+  isAuthenticated = true,
 }: LoadMoreButtonProps) {
+  // No mostrar nada si el usuario no está autenticado
+  if (!isAuthenticated) {
+    return null;
+  }
+
   if (!hasMore) {
     return (
       <div className="text-center py-8">

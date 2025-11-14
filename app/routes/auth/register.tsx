@@ -26,7 +26,7 @@ export async function action({ request }: ActionFunctionArgs) {
     username: formData.get("name") as string,
     email: formData.get("email") as string,
     password: formData.get("password") as string,
-    rol: "ROLE_USER",
+    rol: "ROLE_USER", // El backend necesita el prefijo ROLE_ para guardar en BD
   };
 
   console.log("Data:", userData);

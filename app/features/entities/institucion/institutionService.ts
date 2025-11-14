@@ -168,7 +168,7 @@ export async function getInstitutionByIdUsuarioService(
     console.log(`[INSTITUTION] Institucion obtenida:`, data);
     return data;
   } catch (err) {
-    console.error("❌ Get institution by id usuario error:", err);
+    console.error("Get institution by id usuario error:", err);
     throw err;
   }
 }

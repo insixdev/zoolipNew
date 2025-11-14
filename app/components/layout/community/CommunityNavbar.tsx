@@ -153,7 +153,6 @@ export default function CommunityNavbar({
               USER_ROLES.SYSTEM,
               USER_ROLES.VETERINARIA,
               USER_ROLES.REFUGIO,
-              USER_ROLES.PROTECTORA,
             ]}
           >
             <NavItem
@@ -196,7 +195,6 @@ export default function CommunityNavbar({
               USER_ROLES.USER,
               USER_ROLES.VETERINARIA,
               USER_ROLES.REFUGIO,
-              USER_ROLES.PROTECTORA,
             ]}
           >
             <Link
@@ -229,7 +227,6 @@ export default function CommunityNavbar({
               USER_ROLES.USER,
               USER_ROLES.VETERINARIA,
               USER_ROLES.REFUGIO,
-              USER_ROLES.PROTECTORA,
             ]}
           >
             <div className="relative" ref={notificationsRef}>

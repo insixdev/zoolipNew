@@ -1,46 +1,143 @@
-import { handleFetchResponse } from "~/lib/tokenErrorHandler";
+// Servicio para gestión de usuarios
 
-/** URL base del backend de usuarios */
-const BASE_USER_URL = "http://localhost:3050/api/usuario/";
-
-export interface UserProfile {
-  id_usuario: number;
+export type UsuarioDTO = {
+  id: number;
   nombre: string;
   email: string;
-  imagen_url?: string;
-  biografia?: string;
+  rol: string;
   fecha_registro?: string;
-  // Agregar más campos según tu UsuarioDto
+  activo?: boolean;
+};
+
+const BASE_URL = process.env.BASE_AUTH_URL || "http://localhost:3050/api/auth";
+
+/**
+ * Obtiene todos los usuarios (accounts)
+ */
+export async function getAllUsersService(
+  cookie: string
+): Promise<UsuarioDTO[]> {
+  try {
+    const headers = new Headers();
+    headers.append("Content-Type", "application/json");
+    headers.append("Cookie", cookie);
+
+    const url = `${BASE_URL}/accounts`.replace(/([^:]\/)\/+/g, "$1");
+    console.log("👥 [USER SERVICE] Fetching all users from:", url);
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers,
+    });
+
+    console.log("👥 [USER SERVICE] Response status:", response.status);
+
+    if (response.status === 204) {
+      console.log("👥 [USER SERVICE] No users found (204)");
+      return [];
+    }
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("👥 [USER SERVICE] Error response:", errorText);
+      throw new Error(`Error ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log("👥 [USER SERVICE] Users loaded:", data.length);
+    return data;
+  } catch (error) {
+    console.error("👥 [USER SERVICE] Error fetching users:", error);
+    throw error;
+  }
 }
 
 /**
- * Obtiene el perfil de un usuario por su ID
- * @param userId - ID del usuario
- * @param cookie - Cookie de autenticación
- * @returns Promise con los datos del usuario
+ * Obtiene un usuario por ID
  */
 export async function getUserByIdService(
-  userId: number,
+  id: number,
   cookie: string
-): Promise<UserProfile> {
+): Promise<UsuarioDTO> {
   try {
-    const hd = new Headers();
-    hd.append("Content-Type", "application/json");
-    hd.append("Cookie", cookie);
+    const headers = new Headers();
+    headers.append("Content-Type", "application/json");
+    headers.append("Cookie", cookie);
 
-    const url = `${BASE_USER_URL}getUsuarioById?id_usuario=${userId}`;
-    console.log(`[USER] Fetching user profile from: ${url}`);
-
-    const res = await fetch(url, {
+    const response = await fetch(`${BASE_URL}/user/${id}`, {
       method: "GET",
-      headers: hd,
+      headers,
     });
 
-    console.log(`[USER] Response status: ${res.status}`);
+    if (!response.ok) {
+      throw new Error(`Error ${response.status}: ${response.statusText}`);
+    }
 
-    return await handleFetchResponse<UserProfile>(res);
-  } catch (err) {
-    console.error("[USER] Get user by id error:", err);
-    throw err;
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("Error fetching user by id:", error);
+    throw error;
+  }
+}
+
+/**
+ * Actualiza un usuario
+ */
+export async function updateUserService(
+  user: Partial<UsuarioDTO>,
+  cookie: string
+): Promise<any> {
+  try {
+    const headers = new Headers();
+    headers.append("Content-Type", "application/json");
+    headers.append("Cookie", cookie);
+
+    const response = await fetch(`${BASE_URL}/update`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(user),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Error al actualizar usuario");
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Error updating user:", error);
+    throw error;
+  }
+}
+
+/**
+ * Elimina un usuario
+ */
+export async function deleteUserService(
+  id: number,
+  cookie: string
+): Promise<any> {
+  try {
+    const headers = new Headers();
+    headers.append("Content-Type", "application/json");
+    headers.append("Cookie", cookie);
+
+    const response = await fetch(`${BASE_URL}/delete/${id}`, {
+      method: "DELETE",
+      headers,
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.message || "Error al eliminar usuario");
+    }
+
+    return data;
+  } catch (error) {
+    console.error("Error deleting user:", error);
+    throw error;
   }
 }

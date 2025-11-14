@@ -97,7 +97,6 @@ export default function Login() {
               if (
                 userRole === "ROLE_VETERINARIA" ||
                 userRole === "ROLE_REFUGIO" ||
-                userRole === "ROLE_PROTECTORA" ||
                 userRole === "ROLE_ADMINISTRADOR" ||
                 userRole === "ROLE_SYSTEM"
               ) {

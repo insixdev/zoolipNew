@@ -88,6 +88,19 @@ export default function CommunityTrendingView() {
 
   const currentHashtag = `#${hashtag}`;
 
+  // Recargar posts cuando cambia el hashtag
+  useEffect(() => {
+    const userLikes = getUserLikes();
+    setPostsList(
+      posts.map((post) => ({
+        ...post,
+        isLiked: userLikes.has(post.id),
+      }))
+    );
+    // Limpiar comentarios cuando cambia el hashtag
+    setCommentsMap({});
+  }, [hashtag, posts]);
+
   useEffect(() => {
     if (!getByIdFetcher.data) return;
     const maybeData: any = getByIdFetcher.data;

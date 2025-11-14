@@ -1,13 +1,7 @@
 import { Link, useLocation } from "react-router";
-import {
-  Home,
-  MessageCircle,
-  Heart,
-  Settings,
-  Bookmark,
-  FileText,
-} from "lucide-react";
+import { Home, MessageCircle, Heart, Settings, FileText } from "lucide-react";
 import { cn } from "~/lib/generalUtil";
+import { useSmartAuth } from "~/features/auth/useSmartAuth";
 
 export type AdoptSidebarProps = {
   className?: string;
@@ -19,26 +13,29 @@ const menuItems = [
     label: "Inicio",
     path: "/adopt",
     icon: Home,
+    requiresAuth: false,
+    requiresAdoptante: false,
   },
   {
     label: "Mis Adopciones",
     path: "/adopt/mis-adopciones",
     icon: Heart,
+    requiresAuth: true,
+    requiresAdoptante: true, // Solo para adoptantes
   },
   {
     label: "Chat",
     path: "/adopt/chatAdopt",
     icon: MessageCircle,
-  },
-  {
-    label: "Favoritos",
-    path: "/adopt/favoritos",
-    icon: Bookmark,
+    requiresAuth: true,
+    requiresAdoptante: false,
   },
   {
     label: "Solicitudes",
     path: "/adopt/solicitudes",
     icon: FileText,
+    requiresAuth: true,
+    requiresAdoptante: false,
   },
 ];
 
@@ -47,6 +44,7 @@ export default function AdoptSidebar({
   onlyForUsers = true,
 }: AdoptSidebarProps) {
   const location = useLocation();
+  const { user } = useSmartAuth();
 
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -72,15 +70,14 @@ export default function AdoptSidebar({
           {menuItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
-            // items that require auth for adopt section
-            const requiresAuth = [
-              "/adopt/mis-adopciones",
-              "/adopt/chatAdopt",
-              "/adopt/favoritos",
-              "/adopt/solicitudes",
-            ].includes(item.path);
 
-            if (requiresAuth && onlyForUsers) {
+            // Si requiere ser adoptante y el usuario no lo es, no mostrar
+            if (item.requiresAdoptante && user?.rol !== "ADOPTANTE") {
+              return null;
+            }
+
+            // Si requiere autenticación y no hay usuario, mostrar deshabilitado
+            if (item.requiresAuth && onlyForUsers) {
               return (
                 <li key={item.path}>
                   <div
@@ -89,7 +86,7 @@ export default function AdoptSidebar({
                     aria-disabled="true"
                   >
                     <Icon size={20} className="text-gray-400" />
-                    <span className="text-sm">{item.label} perras</span>
+                    <span className="text-sm">{item.label}</span>
                   </div>
                 </li>
               );

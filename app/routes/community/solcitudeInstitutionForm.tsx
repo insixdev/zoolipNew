@@ -1,5 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { useFetcher, type ActionFunction, useNavigate } from "react-router";
+import {
+  useFetcher,
+  type ActionFunction,
+  useNavigate,
+  type LoaderFunctionArgs,
+  redirect,
+} from "react-router";
 import { useInstitutionRequest } from "~/context/InstitutionRequestContext";
 import {
   FaBuilding,
@@ -11,6 +17,7 @@ import {
 } from "react-icons/fa";
 import { createInstitutionSolicitudService } from "~/features/entities/institucion/institutionSolicitudService";
 import { solicitudeSuccesInstitutionEmail } from "~/features/solicitudes/solicitudesEmail";
+import { getMe } from "~/server/me";
 
 type FormState = {
   nombre_institucion: string;
@@ -26,6 +33,40 @@ type ActionData = {
   error?: string;
   id_solicitud?: number;
 };
+
+/**
+ * Loader para verificar acceso - solo usuarios no autenticados o usuarios sin rol de institución
+ */
+export async function loader({ request }: LoaderFunctionArgs) {
+  const cookie = request.headers.get("Cookie") || "";
+
+  try {
+    const user = await getMe(cookie);
+
+    // Bloquear acceso si el usuario ya es una institución (REFUGIO, VETERINARIA, ADMINISTRADOR)
+    const institutionRoles = [
+      "ROLE_REFUGIO",
+      "ROLE_VETERINARIA",
+      "ROLE_ADMINISTRADOR",
+    ];
+
+    if (user && institutionRoles.includes(user.rol)) {
+      console.log(
+        "🚫 Usuario con rol",
+        user.rol,
+        "no puede acceder al formulario de solicitud (ya es institución)"
+      );
+      return redirect("/community");
+    }
+
+    // Permitir acceso si no está autenticado o si es ROLE_USER o ROLE_ADOPTANTE
+    return { allowed: true };
+  } catch (error) {
+    // Si hay error al obtener usuario (no autenticado), permitir acceso
+    console.log("✅ Usuario no autenticado, permitir acceso al formulario");
+    return { allowed: true };
+  }
+}
 
 /**
  * Server action para crear solicitud de institución

@@ -31,6 +31,7 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
+    console.log("bodyregister", body);
     const response = await fetch(`${SPRING_API_URL}/register`, {
       method: 'POST',
       headers: { 

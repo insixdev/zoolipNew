@@ -1,14 +1,18 @@
 // Página de búsqueda de la comunidad
-import { LoaderFunctionArgs, useLoaderData } from "react-router";
-import { useState, useMemo } from "react";
+import { LoaderFunctionArgs, useLoaderData, useFetcher } from "react-router";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { BarraBusqueda } from "~/components/community/buscar/BarraBusqueda";
 import { ResultadoBusqueda } from "~/components/community/buscar/ResultadoBusqueda";
-import { TrendingSidebar } from "~/components/community/shared/TrendingSidebar";
+import TrendingSection from "~/components/community/TrendingSection";
 import { requireAuth } from "~/lib/authGuard";
 import { usePostSearch } from "~/hooks/usePostSearch";
 import { Loader2 } from "lucide-react";
+import { getUserLikes, addLike, removeLike } from "~/lib/likeStorage";
+import { getAllPublicPublicationsService } from "~/features/post/postService";
+import { postParseResponse } from "~/features/post/postResponseParse";
+import type { Post } from "~/components/community/indexCommunity/PostCard";
 
-// Loader para verificar autenticacion y obtener token
+// Loader para verificar autenticacion y obtener token y posts para tendencias
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireAuth(request);
 
@@ -27,12 +31,25 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
   }
 
-  return { token };
+  // Cargar posts para las tendencias
+  let posts: Post[] = [];
+  try {
+    const fetchedPost = await getAllPublicPublicationsService(
+      cookieHeader || ""
+    );
+    posts = postParseResponse(fetchedPost);
+  } catch (error) {
+    console.error("Error loading posts for trending:", error);
+  }
+
+  return { token, posts };
 }
 
 export default function CommunityBuscar() {
-  const { token } = useLoaderData<typeof loader>();
+  const { token, posts } = useLoaderData<typeof loader>();
   const [searchQuery, setSearchQuery] = useState("");
+  const [commentsMap, setCommentsMap] = useState<Record<string, any[]>>({});
+  const [postsState, setPostsState] = useState<any[]>([]);
 
   const {
     postResults,
@@ -42,6 +59,10 @@ export default function CommunityBuscar() {
     search,
     isConnected,
   } = usePostSearch(token);
+
+  const likeFetcher = useFetcher();
+  const commentFetcher = useFetcher();
+  const getCommentsFetcher = useFetcher();
 
   // Formatear usuarios del WebSocket
   const userResults = useMemo(() => {
@@ -64,15 +85,18 @@ export default function CommunityBuscar() {
       id: String(post.id_publicacion || post.idPublicacion || 0),
       type: "post" as const,
       author: post.nombreUsuario || "Usuario",
+      authorId: post.id_usuario || post.idUsuario,
       username: `@${post.nombreUsuario || "usuario"}`,
       avatar: `https://i.pravatar.cc/150?img=${post.id_publicacion || post.idPublicacion || 1}`,
       content: post.contenido,
       topico: post.topico,
+      publicationType: post.tipo as "CONSULTA" | "PUBLICACION",
       likes: post.likes || 0,
       comments: 0,
       timestamp: formatTimestamp(
         post.fecha_pregunta || post.fechaPregunta || ""
       ),
+      role: post.rolUsuario || post.rol_usuario,
     }));
   }, [postResults]);
 
@@ -105,20 +129,139 @@ export default function CommunityBuscar() {
     return [...postsWithPrefix, ...usersWithPrefix];
   }, [searchQuery, formattedPostResults, userResults]);
 
-  const trendingTopics = [
-    { tag: "#AdopcionResponsable", posts: "2.1k" },
-    { tag: "#CuidadoVeterinario", posts: "1.8k" },
-    { tag: "#EntrenamientoCanino", posts: "1.5k" },
-    { tag: "#GatosRescatados", posts: "1.2k" },
-    { tag: "#ConsejosVet", posts: "980" },
-  ];
-
   const handleSearch = (query: string) => {
     setSearchQuery(query);
     if (query.trim()) {
       search(query); // Buscar posts Y usuarios por WebSocket
     }
   };
+
+  // Sincronizar posts con likes de localStorage
+  useEffect(() => {
+    const userLikes = getUserLikes();
+    const postsWithLikes = formattedPostResults.map((post) => ({
+      ...post,
+      isLiked: userLikes.has(parseInt(post.id.replace("post-", ""))),
+    }));
+    setPostsState(postsWithLikes);
+  }, [formattedPostResults]);
+
+  // Manejar likes
+  const handleLike = (postId: string) => {
+    const cleanId = postId.replace("post-", "");
+    const postIdNum = parseInt(cleanId);
+    const post = postsState.find((p) => p.id === postId);
+
+    if (!post) return;
+
+    const wasLiked = post.isLiked || false;
+
+    // Actualizar localStorage
+    if (wasLiked) {
+      removeLike(postIdNum);
+    } else {
+      addLike(postIdNum);
+    }
+
+    // Actualizar UI optimistamente
+    setPostsState((prev) =>
+      prev.map((p) =>
+        p.id === postId
+          ? {
+              ...p,
+              isLiked: !p.isLiked,
+              likes: p.isLiked ? p.likes - 1 : p.likes + 1,
+            }
+          : p
+      )
+    );
+
+    // Enviar like al backend
+    const formData = new FormData();
+    formData.append("isLiked", wasLiked.toString());
+    formData.append("action", "toggle");
+
+    likeFetcher.submit(formData, {
+      method: "post",
+      action: `/api/post/like/${cleanId}`,
+    });
+  };
+
+  // Manejar comentarios
+  const handleComment = (postId: string) => {
+    const cleanId = postId.replace("post-", "");
+
+    // Si ya tenemos comentarios, no hacer nada
+    if (commentsMap[postId]) {
+      return;
+    }
+
+    // Cargar comentarios
+    getCommentsFetcher.load(`/api/post/comentarios/${cleanId}`);
+  };
+
+  // Manejar agregar comentario
+  const handleAddComment = (postId: string, content: string) => {
+    const cleanId = postId.replace("post-", "");
+
+    const formData = new FormData();
+    formData.append("id_publicacion", cleanId);
+    formData.append("contenido", content);
+
+    commentFetcher.submit(formData, {
+      method: "post",
+      action: "/api/comments/crear",
+    });
+
+    // Actualizar contador optimistamente
+    setPostsState((prev) =>
+      prev.map((p) =>
+        p.id === postId ? { ...p, comments: p.comments + 1 } : p
+      )
+    );
+  };
+
+  // Manejar compartir
+  const handleShare = (postId: string) => {
+    console.log("Share post:", postId);
+    alert("Funcionalidad de compartir próximamente");
+  };
+
+  // Manejar guardar
+  const handleBookmark = (postId: string) => {
+    console.log("Bookmark post:", postId);
+    // Actualizar UI optimistamente
+    setPostsState((prev) =>
+      prev.map((p) => (p.id === postId ? { ...p, isSaved: !p.isSaved } : p))
+    );
+  };
+
+  // Manejar like de comentario
+  const handleLikeComment = (postId: string, commentId: string) => {
+    console.log("Like comment:", commentId, "on post:", postId);
+  };
+
+  // Actualizar comentarios cuando se cargan
+  useEffect(() => {
+    if (getCommentsFetcher.data) {
+      const maybeData: any = getCommentsFetcher.data;
+      const fetchedComments = maybeData?.comments ?? maybeData;
+
+      if (Array.isArray(fetchedComments)) {
+        // Encontrar el postId correspondiente
+        const postId = postsState.find(
+          (p) => getCommentsFetcher.state === "idle"
+        )?.id;
+
+        if (postId) {
+          setCommentsMap((prev) => ({
+            ...prev,
+            [postId]: fetchedComments,
+          }));
+        }
+      }
+    }
+  }, [getCommentsFetcher.data]);
 
   return (
     <div className="w-full mx-auto md:pl-72 px-6 pt-6 pb-10 pr-12">
@@ -174,16 +317,33 @@ export default function CommunityBuscar() {
                 {allResults.length !== 1 ? "s" : ""} encontrado
                 {allResults.length !== 1 ? "s" : ""}
               </div>
-              {allResults.map((result) => (
-                <ResultadoBusqueda key={result.id} result={result} />
-              ))}
+              {allResults.map((result) => {
+                // Buscar el post con estado actualizado
+                const postWithState = postsState.find(
+                  (p) => p.id === result.id
+                );
+                const resultWithState = postWithState || result;
+
+                return (
+                  <ResultadoBusqueda
+                    key={result.id}
+                    result={resultWithState}
+                    comments={commentsMap[result.id]}
+                    onLike={handleLike}
+                    onComment={handleComment}
+                    onBookmark={handleBookmark}
+                    onAddComment={handleAddComment}
+                    onLikeComment={handleLikeComment}
+                  />
+                );
+              })}
             </>
           )}
         </div>
 
         {/* Sidebar con tendencias */}
         <div className="xl:col-span-2">
-          <TrendingSidebar trendingTopics={trendingTopics} />
+          <TrendingSection posts={posts} isPublic={false} />
         </div>
       </div>
     </div>

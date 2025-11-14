@@ -33,12 +33,11 @@ export async function registerService(user): Promise<UserResponse> {
 }
 
 /** Función para hacer login */
-export async function loginService(user: UserRequest) {
+export async function loginService(user: UserRequest, cookie: string) {
   try {
     const res = await fetch(`${BASE_AUTH_URL}login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      credentials: "include",
       body: JSON.stringify(user),
     });
 
@@ -57,7 +56,7 @@ export async function fetchMe(
     const hd = new Headers();
     hd.append("Content-Type", "application/json");
     hd.append("Cookie", cookie);
-    console.log("hd", Object.fromEntries(hd.entries()), hd);
+    console.log("hdENFETCHME", Object.fromEntries(hd.entries()), hd);
 
     const res = await fetch(`${BASE_AUTH_URL}me`, {
       method: "GET",

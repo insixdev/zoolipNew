@@ -2,9 +2,9 @@
  * User roles and their corresponding dashboard routes
  */
 export enum UserRole {
-  ADMIN = 'ROLE_ADMINISTRADOR',
-  USER = 'ROLE_USER',
-  ADOPTER = 'ROLE_ADOPTER'
+  ADMIN = "ROLE_ADMINISTRADOR",
+  USER = "ROLE_USER",
+  ADOPTER = "ROLE_ADOPTANTE",
 }
 
 /**
@@ -14,13 +14,13 @@ export enum UserRole {
  */
 export function getDashboardRouteByRole(role: string): string {
   const routes: Record<string, string> = {
-    [UserRole.ADMIN]: '/admin',
-    [UserRole.ADOPTER]: '/adopt',
-    [UserRole.USER]: '/community',
+    [UserRole.ADMIN]: "/admin",
+    [UserRole.ADOPTER]: "/adopt",
+    [UserRole.USER]: "/community",
   };
 
   // Default route for unknown roles or unauthenticated users
-  return routes[role] || '/landing';
+  return routes[role] || "/landing";
 }
 
 /**
@@ -29,7 +29,10 @@ export function getDashboardRouteByRole(role: string): string {
  * @param allowedRoles - Array of roles that have access
  * @returns boolean indicating if access is granted
  */
-export function hasRoleAccess(userRole: string, allowedRoles: string[]): boolean {
+export function hasRoleAccess(
+  userRole: string,
+  allowedRoles: string[]
+): boolean {
   if (!userRole) return false;
   return allowedRoles.includes(userRole);
 }

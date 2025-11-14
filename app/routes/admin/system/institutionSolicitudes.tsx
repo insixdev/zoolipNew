@@ -53,64 +53,106 @@ export async function action({ request }: { request: Request }) {
     );
   }
 
-  const actionType = formData.get("_action");
-  const solicitudId = formData.get("solicitudId");
+  const id = formData.get("id");
+  const actionType = formData.get("action");
+
+  console.log("📋 [INSTITUTION ACTION] Processing:", { id, actionType });
 
   try {
-    if (actionType === "accept") {
-      // Aquí llamarías al servicio para aceptar la solicitud
-      console.log("Aceptando solicitud:", solicitudId);
+    // Obtener la solicitud del loader data para tener email y nombre
+    const { getAllInstitutionSolicitudesService } = await import(
+      "~/features/entities/institucion/institutionSolicitudService"
+    );
+    const solicitudes = await getAllInstitutionSolicitudesService(cookieHeader);
+    const solicitud = solicitudes.find(
+      (s: any) => String(s.idSolicitud) === String(id)
+    );
 
-      // Ejemplo de llamada al backend
-      const response = await fetch(
-        `http://localhost:3050/api/institucion/solicitud/${solicitudId}/aceptar`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Cookie: cookieHeader,
-          },
-        }
+    if (!solicitud) {
+      return Response.json(
+        { success: false, error: "Solicitud no encontrada" },
+        { status: 404 }
+      );
+    }
+
+    if (actionType === "accept") {
+      console.log("✅ Aceptando solicitud:", id);
+
+      // 1. Generar token de invitación
+      const { addInvite } = await import(
+        "~/features/admin/adminRegisterInvitation"
+      );
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7); // Expira en 7 días
+
+      // Determinar el tipo basado en tipoSolicitud
+      const tipo =
+        solicitud.tipoSolicitud === "REFUGIO"
+          ? "ROLE_REFUGIO"
+          : "ROLE_VETERINARIA";
+
+      const token = addInvite(
+        solicitud.emailContacto,
+        tipo,
+        expiresAt.getTime()
       );
 
-      if (!response.ok) {
-        throw new Error("Error al aceptar solicitud");
-      }
+      // 2. Generar link de invitación
+      const inviteLink = `${new URL(request.url).origin}/admin-register/invite/${token}`;
+
+      console.log("🔗 Link de invitación generado:", inviteLink);
+
+      // 3. Enviar email con el link
+      const { solicitudAceptadaConInvitacionEmail } = await import(
+        "~/features/solicitudes/solicitudesEmail"
+      );
+      const emailResult = await solicitudAceptadaConInvitacionEmail(
+        solicitud.emailContacto,
+        solicitud.nombreInstitucion,
+        inviteLink
+      );
+
+      console.log("📧 Resultado del email:", emailResult);
+
+      // 4. TODO: Actualizar estado en el backend si tienes endpoint
+      // await updateInstitutionSolicitudStatus(id, "ACEPTADA", cookieHeader);
 
       return Response.json({
         success: true,
-        message: "Solicitud aceptada correctamente",
+        message: "Solicitud aceptada y email enviado correctamente",
+        inviteLink,
       });
     } else if (actionType === "reject") {
-      // Aquí llamarías al servicio para rechazar la solicitud
-      console.log("Rechazando solicitud:", solicitudId);
+      console.log("❌ Rechazando solicitud:", id);
 
-      const response = await fetch(
-        `http://localhost:3050/api/institucion/solicitud/${solicitudId}/rechazar`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Cookie: cookieHeader,
-          },
-        }
+      // 1. Enviar email de rechazo
+      const { solicitudRechazadaEmail } = await import(
+        "~/features/solicitudes/solicitudesEmail"
+      );
+      const emailResult = await solicitudRechazadaEmail(
+        solicitud.emailContacto,
+        solicitud.nombreInstitucion
       );
 
-      if (!response.ok) {
-        throw new Error("Error al rechazar solicitud");
-      }
+      console.log("📧 Resultado del email:", emailResult);
+
+      // 2. TODO: Actualizar estado en el backend si tienes endpoint
+      // await updateInstitutionSolicitudStatus(id, "RECHAZADA", cookieHeader);
 
       return Response.json({
         success: true,
-        message: "Solicitud rechazada correctamente",
+        message: "Solicitud rechazada y email enviado correctamente",
       });
     }
 
     return Response.json({ success: false, error: "Acción no válida" });
-  } catch (error) {
-    console.error("Error procesando solicitud:", error);
+  } catch (error: any) {
+    console.error("❌ Error procesando solicitud:", error);
     return Response.json(
-      { success: false, error: "Error al procesar solicitud" },
+      {
+        success: false,
+        error: error.message || "Error al procesar solicitud",
+      },
       { status: 500 }
     );
   }
@@ -122,13 +164,14 @@ export default function InstitutionSolicitudes() {
   const [requests, setRequests] = useState<InstitutionRequest[]>(
     loaderData && loaderData.length
       ? loaderData.map((d: any) => ({
-          id: String(d.id_solicitud || d.id || d._id || ""),
-          nombreInstitucion: d.nombre_institucion || d.nombre || "-",
-          contacto: d.email_contacto || d.contacto || "-",
-          telefono: d.telefono_contacto || d.telefono || "-",
-          mensaje: d.razon_solicitud || d.mensaje || "",
-          submittedAt: d.fecha_creacion || d.submittedAt || "-",
-          status: (d.estado || d.status || "PENDIENTE").toLowerCase(),
+          id: String(d.idSolicitud || d.id_solicitud || d.id || ""),
+          nombreInstitucion: d.nombreInstitucion || d.nombre_institucion || "-",
+          contacto: d.emailContacto || d.email_contacto || "-",
+          telefono: d.telefonoContacto || d.telefono_contacto || "-",
+          mensaje: d.razonSolicitud || d.razon_solicitud || "",
+          submittedAt:
+            d.fecha_creacion || d.submittedAt || new Date().toISOString(),
+          status: (d.estadoSolicitud || d.estado || "SOLICITADA").toLowerCase(),
         }))
       : []
   );
@@ -136,6 +179,29 @@ export default function InstitutionSolicitudes() {
     Record<string, "accept" | "reject" | "">
   >({});
   const [processing, setProcessing] = useState<Record<string, boolean>>({});
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "Fecha no disponible";
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString("es-MX", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return dateString;
+    }
+  };
+
+  const getTypeIcon = (nombre: string) => {
+    const nombreLower = nombre.toLowerCase();
+    if (nombreLower.includes("refugio")) return "R";
+    if (nombreLower.includes("veterinaria")) return "V";
+    return "I";
+  };
 
   const handleChangeAction = (id: string, value: string) => {
     setSelectedAction((s) => ({ ...s, [id]: (value as any) || "" }));
@@ -170,9 +236,9 @@ export default function InstitutionSolicitudes() {
     form.append("action", action);
 
     try {
+      // Usar el action de la misma página
       fetcher.submit(form, {
         method: "post",
-        action: "/api/admin/institution/handleRequest",
       });
 
       // simulate server response delay briefly (UI-friendly). If the API returns an error,
@@ -214,70 +280,136 @@ export default function InstitutionSolicitudes() {
         </div>
       }
     >
-      <div className="max-w-4xl mx-auto p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-semibold text-gray-800">
-            Solicitudes de Instituciones
-          </h1>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => window.history.back()}
-              className="px-3 py-2 bg-gray-100 text-gray-800 rounded-md hover:bg-gray-200"
-            >
-              ← Volver
-            </button>
-            <a
-              href="/admin/system"
-              className="px-3 py-2 bg-rose-600 text-white rounded-md hover:bg-rose-700"
-            >
-              Ir a Sistema
-            </a>
+      <div className="max-w-6xl mx-auto p-6">
+        {/* Header mejorado */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Solicitudes de Instituciones
+              </h1>
+              <p className="text-gray-600 mt-2">
+                Gestiona las solicitudes de refugios y veterinarias
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => window.history.back()}
+                className="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+              >
+                ← Volver
+              </button>
+              <a
+                href="/admin/system"
+                className="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition-colors font-medium shadow-sm"
+              >
+                Ir a Sistema
+              </a>
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="flex gap-4">
+            <div className="bg-white px-4 py-3 rounded-lg border border-gray-200 shadow-sm">
+              <span className="text-2xl font-bold text-gray-900">
+                {requests.length}
+              </span>
+              <span className="text-sm text-gray-600 ml-2">Total</span>
+            </div>
+            <div className="bg-yellow-50 px-4 py-3 rounded-lg border border-yellow-200 shadow-sm">
+              <span className="text-2xl font-bold text-yellow-800">
+                {
+                  requests.filter(
+                    (r) => r.status === "solicitada" || r.status === "pending"
+                  ).length
+                }
+              </span>
+              <span className="text-sm text-yellow-700 ml-2">Pendientes</span>
+            </div>
+            <div className="bg-green-50 px-4 py-3 rounded-lg border border-green-200 shadow-sm">
+              <span className="text-2xl font-bold text-green-800">
+                {
+                  requests.filter(
+                    (r) => r.status === "aceptada" || r.status === "accepted"
+                  ).length
+                }
+              </span>
+              <span className="text-sm text-green-700 ml-2">Aceptadas</span>
+            </div>
           </div>
         </div>
 
         {requests.length === 0 ? (
-          <div className="p-8 text-center border rounded-lg bg-white">
-            <p className="text-gray-600">No hay solicitudes pendientes.</p>
+          <div className="p-12 text-center border-2 border-dashed rounded-2xl bg-white">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <FaBuilding className="text-gray-400 text-2xl" />
+            </div>
+            <p className="text-gray-600 text-lg">
+              No hay solicitudes registradas
+            </p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {requests.map((req) => (
               <div
                 key={req.id}
-                className="bg-white border rounded-lg p-4 shadow-sm"
+                className="bg-white border-2 border-gray-200 rounded-2xl p-6 shadow-md hover:shadow-lg transition-all duration-300"
               >
-                <div className="flex items-start justify-between gap-4">
+                <div className="flex items-start justify-between gap-6">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                      <FaBuilding className="text-2xl text-rose-600" />
-                      <div>
-                        <p className="font-medium text-gray-900">
+                    {/* Header con icono y nombre */}
+                    <div className="flex items-start gap-4 mb-4">
+                      <div className="w-14 h-14 bg-gradient-to-br from-rose-500 to-pink-500 rounded-xl flex items-center justify-center text-2xl font-bold text-white shadow-md">
+                        {getTypeIcon(req.nombreInstitucion)}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold text-gray-900 mb-1">
                           {req.nombreInstitucion}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          Enviado: {req.submittedAt}
-                        </p>
+                        </h3>
+                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                          <svg
+                            className="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            />
+                          </svg>
+                          <span>{formatDate(req.submittedAt)}</span>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm text-gray-700">
+                    <div className="mt-3 space-y-2 text-sm text-gray-700">
                       <div className="flex items-center gap-2">
                         <FaEnvelope className="text-rose-400" />
+                        <span className="font-medium">Email:</span>
                         <span>{req.contacto}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <FaPhone className="text-rose-400" />
+                        <span className="font-medium">Teléfono:</span>
                         <span>{req.telefono}</span>
                       </div>
-                      <div className="col-span-1 sm:col-span-3 mt-2">
-                        <p className="text-sm text-gray-600">{req.mensaje}</p>
-                      </div>
+                      {req.mensaje && (
+                        <div className="mt-2 p-3 bg-gray-50 rounded-lg">
+                          <p className="text-sm font-medium text-gray-700 mb-1">
+                            Razón de solicitud:
+                          </p>
+                          <p className="text-sm text-gray-600">{req.mensaje}</p>
+                        </div>
+                      )}
                     </div>
                   </div>
 
                   <div className="w-44 flex flex-col items-end gap-2">
                     <div className="w-full">
-                      <label className="block text-xs text-gray-500 mb-1">
+                      <label className="block text-xs text-gray-900 font-medium mb-1">
                         Acción
                       </label>
                       <select
@@ -285,7 +417,7 @@ export default function InstitutionSolicitudes() {
                         onChange={(e) =>
                           handleChangeAction(req.id, e.target.value)
                         }
-                        className="w-full px-3 py-2 border rounded-md"
+                        className="w-full px-3 py-2 border rounded-md text-gray-900"
                       >
                         <option value="">Seleccionar...</option>
                         <option value="accept">Aceptar</option>
@@ -311,28 +443,6 @@ export default function InstitutionSolicitudes() {
                           </>
                         )}
                       </button>
-
-                      <button
-                        onClick={() => {
-                          // Navegar al detalle de la solicitud
-                          window.location.href = `/admin/system/institutionSolicitudes/${req.id}`;
-                        }}
-                        className="px-3 py-2 border rounded-md text-gray-700 hover:bg-gray-50"
-                      >
-                        Entrar
-                      </button>
-                    </div>
-
-                    <div className="w-full text-right text-xs">
-                      <span
-                        className={`inline-block px-2 py-0.5 rounded-full ${req.status === "accepted" ? "bg-green-100 text-green-800" : req.status === "rejected" ? "bg-red-100 text-red-800" : "bg-yellow-50 text-yellow-800"}`}
-                      >
-                        {req.status === "accepted"
-                          ? "Aceptada"
-                          : req.status === "rejected"
-                            ? "Rechazada"
-                            : "Pendiente"}
-                      </span>
                     </div>
                   </div>
                 </div>

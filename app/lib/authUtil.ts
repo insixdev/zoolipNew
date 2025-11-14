@@ -19,10 +19,23 @@ export function verifyToken(token: string): boolean {
 /**
  * Función interna para decodificar y verificar el JWT
  */
-function decodeJwt(token: string): any {
+function decodeJwt(token: string): UserTokenPayload {
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    return decoded;
+    if (typeof decoded === "string") {
+      throw new Error("Token invalid");
+    }
+
+    // Parsear el role para limpiar duplicados (ROLE_ROLE_USER -> ROLE_USER)
+    if (decoded.role && typeof decoded.role === "string") {
+      // Si el role empieza con "ROLE_ROLE_", quitamos el primer "ROLE_"
+      if (decoded.role.startsWith("ROLE_ROLE_")) {
+        decoded.role = decoded.role.replace("ROLE_ROLE_", "ROLE_");
+        console.log(`[JWT] Role corregido: ${decoded.role}`);
+      }
+    }
+
+    return decoded as UserTokenPayload;
   } catch (error: any) {
     console.error("Error verifying token:", error.message);
     throw error;
@@ -81,8 +94,13 @@ export function decodeClaims(token: string): TokenValidationResult {
   }
 
   try {
-    const payload = decodeJwt(token) as UserTokenPayload;
-    console.log("decomde", payload);
+    const payload = decodeJwt(token);
+    console.log("[JWT] Token decodificado:", {
+      id_usuario: payload.id_usuario,
+      sub: payload.sub,
+      email: payload.email,
+      role: payload.role,
+    });
 
     if (!payload) {
       return {

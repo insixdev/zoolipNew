@@ -12,25 +12,83 @@ import {
   type LoaderFunctionArgs,
 } from "react-router";
 import { getAllInstitutionsService } from "~/features/entities/institucion/institutionService";
+import { useSmartAuth } from "~/features/auth/useSmartAuth";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const cookieHeader = request.headers.get("Cookie") || "";
 
+  // Si no hay cookie, retornar sin instituciones (modo público)
+  if (!cookieHeader) {
+    return { institutions: [], isPublic: true };
+  }
+
   try {
     const institutions = await getAllInstitutionsService(cookieHeader);
-    return { institutions };
+    return { institutions, isPublic: false };
   } catch (error) {
     console.error("Error loading institutions:", error);
-    return { institutions: [] };
+    return { institutions: [], isPublic: false };
   }
 }
 
 export default function CommunityRefugios() {
-  const { institutions } = useLoaderData<typeof loader>();
+  const { institutions, isPublic } = useLoaderData<typeof loader>();
+  const { user } = useSmartAuth();
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [selectedSpecialty, setSelectedSpecialty] = useState("all");
+
+  // Vista simplificada para usuarios no autenticados
+  if (!user || isPublic) {
+    return (
+      <div className="mx-auto max-w-7xl md:pl-64 px-4 pt-8 pb-10">
+        <PageHeader
+          title="Refugios y Organizaciones"
+          description="Conoce los refugios y organizaciones que trabajan incansablemente por el bienestar animal"
+          icon={Heart}
+          compact={true}
+          gradient={true}
+        />
+
+        {/* Mensaje para usuarios no autenticados */}
+        <div className="max-w-3xl mx-auto mt-12">
+          <div className="bg-gradient-to-br from-orange-50 to-rose-50 border-2 border-rose-200 rounded-2xl p-12 text-center shadow-lg">
+            <div className="w-20 h-20 bg-gradient-to-br from-rose-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+              <Heart className="text-white" size={40} />
+            </div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+              Descubre Refugios y Organizaciones
+            </h2>
+            <p className="text-lg text-gray-700 mb-8 leading-relaxed">
+              Inicia sesión para explorar refugios, veterinarias y
+              organizaciones que trabajan por el bienestar animal. Conecta con
+              ellos y descubre cómo puedes ayudar.
+            </p>
+            <div className="flex gap-4 justify-center mb-8">
+              <a
+                href="/login?redirectTo=/community/refugios"
+                className="px-8 py-4 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-xl hover:from-rose-600 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl font-semibold text-lg"
+              >
+                Iniciar sesión
+              </a>
+              <a
+                href="/register"
+                className="px-8 py-4 border-2 border-rose-500 text-rose-600 rounded-xl hover:bg-rose-50 transition-all font-semibold text-lg"
+              >
+                Registrarse
+              </a>
+            </div>
+          </div>
+
+          {/* Call to action para registrar refugio */}
+          <div className="mt-12">
+            <RegistrarRefugioCTA />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Convertir instituciones del backend al formato de Refugio
   const refugios: Refugio[] = institutions.map((inst) => ({

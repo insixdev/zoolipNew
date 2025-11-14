@@ -1,5 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/Avatar";
-import { Heart, MoreHorizontal } from "lucide-react";
+import { Heart, MoreHorizontal, BadgeCheck } from "lucide-react";
+import { Link } from "react-router";
+import { ADMIN_ROLES } from "~/lib/constants";
 
 export type Comment = {
   id: string;
@@ -8,6 +10,8 @@ export type Comment = {
     name: string;
     username: string;
     avatar: string;
+    userId?: number; // ID del usuario para navegar a su perfil
+    role?: string; // Rol del usuario (REFUGIO, VETERINARIA, etc.)
   };
   timestamp: string;
   likes: number;
@@ -20,20 +24,94 @@ type CommentItemProps = {
 };
 
 export default function CommentItem({ comment, onLike }: CommentItemProps) {
+  const hasUserId =
+    comment.author.userId !== undefined && comment.author.userId !== null;
+  const profileLink = hasUserId
+    ? `/community/profile/${comment.author.userId}`
+    : "#";
+
+  // Verificar si es una institución verificada
+  const isVerified =
+    comment.author.role === ADMIN_ROLES.REFUGIO ||
+    comment.author.role === ADMIN_ROLES.VETERINARIO;
+
+  // Obtener el badge de institución
+  const getInstitutionBadge = () => {
+    if (comment.author.role === ADMIN_ROLES.REFUGIO) {
+      return {
+        label: "Refugio",
+        bgColor: "bg-green-100",
+        textColor: "text-green-700",
+        borderColor: "border-green-200",
+      };
+    }
+    if (comment.author.role === ADMIN_ROLES.VETERINARIO) {
+      return {
+        label: "Veterinaria",
+        bgColor: "bg-blue-100",
+        textColor: "text-blue-700",
+        borderColor: "border-blue-200",
+      };
+    }
+    return null;
+  };
+
+  const institutionBadge = getInstitutionBadge();
+
+  console.log(
+    `[COMMENT ITEM] Rendering comment from ${comment.author.name}, userId: ${comment.author.userId}, role: ${comment.author.role}, hasUserId: ${hasUserId}`
+  );
+
   return (
     <div className="flex gap-3 py-3">
-      <Avatar className="w-8 h-8 flex-shrink-0">
-        <AvatarImage src={comment.author.avatar} alt={comment.author.name} />
-        <AvatarFallback>{comment.author.name[0]}</AvatarFallback>
-      </Avatar>
+      {hasUserId ? (
+        <Link
+          to={profileLink}
+          className="flex-shrink-0"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Avatar className="w-8 h-8 hover:ring-2 hover:ring-rose-300 transition-all cursor-pointer">
+            <AvatarImage
+              src={comment.author.avatar}
+              alt={comment.author.name}
+            />
+            <AvatarFallback>{comment.author.name[0]}</AvatarFallback>
+          </Avatar>
+        </Link>
+      ) : (
+        <Avatar className="w-8 h-8 flex-shrink-0">
+          <AvatarImage src={comment.author.avatar} alt={comment.author.name} />
+          <AvatarFallback>{comment.author.name[0]}</AvatarFallback>
+        </Avatar>
+      )}
 
       <div className="flex-1 min-w-0">
         <div className="bg-gray-50 rounded-2xl px-4 py-2.5">
           <div className="flex items-center justify-between mb-1">
-            <div className="flex items-center gap-2">
-              <p className="font-semibold text-gray-900 text-sm">
-                {comment.author.name}
-              </p>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {hasUserId ? (
+                <Link
+                  to={profileLink}
+                  className="font-semibold text-gray-900 text-sm hover:text-rose-600 transition-colors"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {comment.author.name}
+                </Link>
+              ) : (
+                <p className="font-semibold text-gray-900 text-sm">
+                  {comment.author.name}
+                </p>
+              )}
+              {isVerified && (
+                <BadgeCheck size={14} className="text-blue-500 fill-blue-500" />
+              )}
+              {institutionBadge && (
+                <span
+                  className={`px-1.5 py-0.5 ${institutionBadge.bgColor} ${institutionBadge.textColor} text-xs font-semibold rounded-full border ${institutionBadge.borderColor}`}
+                >
+                  {institutionBadge.label}
+                </span>
+              )}
               <span className="text-xs text-gray-500">{comment.timestamp}</span>
             </div>
             <button className="p-1 hover:bg-gray-200 rounded-full transition-colors">

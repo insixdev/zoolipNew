@@ -134,7 +134,6 @@ export function AdminOnly({
         USER_ROLES.ADMIN,
         USER_ROLES.VETERINARIA,
         USER_ROLES.REFUGIO,
-        USER_ROLES.PROTECTORA,
         USER_ROLES.SYSTEM,
       ]}
       fallback={fallback}
@@ -189,7 +188,6 @@ export function AnyOnly({ children, fallback = null }) {
         USER_ROLES.ADMIN,
         USER_ROLES.VETERINARIA,
         USER_ROLES.REFUGIO,
-        USER_ROLES.PROTECTORA,
         USER_ROLES.SYSTEM,
       ]}
       fallback={fallback}

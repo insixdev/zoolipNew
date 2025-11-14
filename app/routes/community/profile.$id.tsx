@@ -1,8 +1,14 @@
 import { LoaderFunctionArgs, useLoaderData, Link } from "react-router";
 import { getUserByIdService, UserProfile } from "~/features/user/userService";
 import { getUserFieldFromCookie, field } from "~/lib/authUtil";
-import { Settings, Grid, Bookmark } from "lucide-react";
+import { Settings, Grid, Bookmark, Heart, Dog } from "lucide-react";
 import { useState } from "react";
+import { getMascotasByInstitucionService } from "~/features/adoption/adoptionService";
+import type { MascotaDTO } from "~/features/adoption/types";
+import { ADMIN_ROLES } from "~/lib/constants";
+import { getPublicationsByUserService } from "~/features/post/postService";
+import { postParseResponse } from "~/features/post/postResponseParse";
+import type { Post } from "~/components/community/indexCommunity/PostCard";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const cookie = request.headers.get("Cookie");
@@ -29,23 +35,100 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     // Obtener los datos del usuario desde el backend
     const user = await getUserByIdService(parseInt(userId), cookie);
 
-    return { user, isOwnProfile };
+    // Si el usuario es un refugio, cargar sus mascotas
+    let mascotas: MascotaDTO[] = [];
+    if (user.id_institucion) {
+      try {
+        console.log(
+          `[PROFILE] Usuario es refugio, cargando mascotas de institución: ${user.id_institucion}`
+        );
+        mascotas = await getMascotasByInstitucionService(
+          user.id_institucion,
+          cookie
+        );
+        console.log(`[PROFILE] Mascotas cargadas: ${mascotas.length}`);
+      } catch (error) {
+        console.error("[PROFILE] Error cargando mascotas:", error);
+        // No fallar si no se pueden cargar las mascotas
+      }
+    }
+    // Si es adoptante y es su propio perfil, cargar sus mascotas adoptadas
+    else if (isOwnProfile && user.rol === "ADOPTANTE") {
+      try {
+        console.log(
+          `[PROFILE] Usuario es adoptante, cargando mascotas adoptadas`
+        );
+        const { getMisMascotasService } = await import(
+          "~/features/adoption/adoptionService"
+        );
+        mascotas = await getMisMascotasService(cookie);
+        console.log(`[PROFILE] Mascotas adoptadas: ${mascotas.length}`);
+      } catch (error) {
+        console.error("[PROFILE] Error cargando mascotas adoptadas:", error);
+        // No fallar si no se pueden cargar las mascotas
+      }
+    }
+
+    // Obtener las publicaciones del usuario
+    let userPosts: Post[] = [];
+    try {
+      console.log(`[PROFILE] Cargando publicaciones del usuario: ${userId}`);
+      const publicationsFromBackend = await getPublicationsByUserService(
+        parseInt(userId),
+        cookie
+      );
+
+      // Parsear las publicaciones al formato del frontend
+      userPosts = postParseResponse(publicationsFromBackend);
+
+      // Filtrar solo PUBLICACIONES (no CONSULTAS)
+      userPosts = userPosts.filter(
+        (post) => post.publicationType === "PUBLICACION"
+      );
+
+      console.log(`[PROFILE] Publicaciones cargadas: ${userPosts.length}`);
+    } catch (error) {
+      console.error("[PROFILE] Error cargando publicaciones:", error);
+      // No fallar si no se pueden cargar las publicaciones
+    }
+
+    return { user, isOwnProfile, mascotas, userPosts };
   } catch (err) {
     console.error("Error al cargar perfil:", err);
+
+    // Si es error 403, probablemente el usuario tiene un rol incorrecto en la BD
+    if (err instanceof Error && err.message.includes("403")) {
+      throw new Response(
+        "Error de permisos. El usuario puede tener un rol incorrecto en la base de datos. " +
+          "Intenta re-registrarte o contacta al administrador.",
+        { status: 403 }
+      );
+    }
+
     throw new Response("Error al cargar perfil", { status: 500 });
   }
 }
 
 export default function UserProfile() {
-  const { user, isOwnProfile } = useLoaderData<{
+  const { user, isOwnProfile, mascotas, userPosts } = useLoaderData<{
     user: UserProfile;
     isOwnProfile: boolean;
+    mascotas: MascotaDTO[];
+    userPosts: Post[];
   }>();
 
-  const [activeTab, setActiveTab] = useState<"posts" | "saved">("posts");
+  const [activeTab, setActiveTab] = useState<"posts" | "saved" | "mascotas">(
+    "posts"
+  );
 
-  // Datos de ejemplo para publicaciones (0 por defecto)
-  const publicaciones = 0;
+  // Número de publicaciones del usuario
+  const publicaciones = userPosts?.length || 0;
+
+  // Verificar si es un refugio o adoptante
+  const isRefugio =
+    user.id_institucion !== null && user.id_institucion !== undefined;
+  const isAdoptante = user.rol === "ADOPTANTE";
+  const showMascotas = isRefugio || (isAdoptante && isOwnProfile);
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -123,6 +206,16 @@ export default function UserProfile() {
                     </span>
                     <span className="text-sm text-gray-600">publicaciones</span>
                   </div>
+                  {showMascotas && (
+                    <div className="text-center">
+                      <span className="block text-lg font-semibold text-gray-900">
+                        {mascotas?.length || 0}
+                      </span>
+                      <span className="text-sm text-gray-600">
+                        {isRefugio ? "mascotas" : "adoptadas"}
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Bio */}
@@ -164,6 +257,19 @@ export default function UserProfile() {
                   <Grid size={16} />
                   PUBLICACIONES
                 </button>
+                {showMascotas && (
+                  <button
+                    onClick={() => setActiveTab("mascotas")}
+                    className={`flex items-center gap-2 py-4 text-sm font-medium transition-colors ${
+                      activeTab === "mascotas"
+                        ? "text-gray-900 border-b-2 border-gray-900"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
+                  >
+                    <Dog size={16} />
+                    {isRefugio ? "MASCOTAS" : "MIS MASCOTAS"}
+                  </button>
+                )}
                 {isOwnProfile && (
                   <button
                     onClick={() => setActiveTab("saved")}
@@ -185,19 +291,40 @@ export default function UserProfile() {
           <div className="p-6">
             {activeTab === "posts" && (
               <div>
-                {publicaciones > 0 ? (
-                  <div className="grid grid-cols-3 gap-1">
-                    {/* Publicaciones de ejemplo */}
-                    {Array.from({ length: publicaciones }).map((_, i) => (
+                {userPosts && userPosts.length > 0 ? (
+                  <div className="space-y-6">
+                    {userPosts.map((post) => (
                       <div
-                        key={i}
-                        className="aspect-square bg-gray-200 rounded-sm overflow-hidden group cursor-pointer"
+                        key={post.id}
+                        className="bg-white rounded-xl shadow-md border border-gray-100 p-6 hover:shadow-lg transition-all"
                       >
-                        <img
-                          src={`https://picsum.photos/300/300?random=${i + 1}`}
-                          alt={`Publicación ${i + 1}`}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                        />
+                        <div className="flex items-start gap-4">
+                          <img
+                            src={user.avatar}
+                            alt={user.nombre}
+                            className="w-12 h-12 rounded-full"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h3 className="font-semibold text-gray-900">
+                                {user.nombre}
+                              </h3>
+                              <span className="text-sm text-gray-500">
+                                {new Date(
+                                  post.fecha_creacion
+                                ).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <p className="text-gray-800 mb-3">{post.content}</p>
+                            <div className="flex items-center gap-4 text-sm text-gray-500">
+                              <span className="flex items-center gap-1">
+                                <Heart size={16} />
+                                {post.likes} me gusta
+                              </span>
+                              <span>{post.comments} comentarios</span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -208,7 +335,7 @@ export default function UserProfile() {
                     </div>
                     <h3 className="text-xl font-light text-gray-900 mb-2">
                       {isOwnProfile
-                        ? "Comparte fotos"
+                        ? "Comparte tus publicaciones"
                         : "Sin publicaciones aún"}
                     </h3>
                     <p className="text-sm text-gray-500">
@@ -240,6 +367,86 @@ export default function UserProfile() {
                 <p className="text-sm text-gray-500">
                   Cuando guardes publicaciones, aparecerán aquí.
                 </p>
+              </div>
+            )}
+
+            {activeTab === "mascotas" && showMascotas && (
+              <div>
+                {mascotas && mascotas.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {mascotas.map((mascota) => (
+                      <Link
+                        key={mascota.id}
+                        to={`/adopt/${mascota.id}`}
+                        className="group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+                      >
+                        <div className="aspect-square overflow-hidden bg-gray-100">
+                          <img
+                            src={
+                              mascota.imagen_url ||
+                              `https://images.unsplash.com/photo-1560807707-8cc77767d783?w=400&h=400&fit=crop`
+                            }
+                            alt={mascota.nombre}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                          />
+                        </div>
+                        <div className="p-4">
+                          <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                            {mascota.nombre}
+                          </h3>
+                          <p className="text-sm text-gray-600 mb-2">
+                            {mascota.raza} • {mascota.edad}{" "}
+                            {mascota.edad === 1 ? "año" : "años"}
+                          </p>
+                          {mascota.descripcion && (
+                            <p className="text-sm text-gray-500 line-clamp-2">
+                              {mascota.descripcion}
+                            </p>
+                          )}
+                          <div className="mt-3 flex items-center gap-2">
+                            <Heart
+                              size={16}
+                              className="text-rose-500 fill-rose-500"
+                            />
+                            <span className="text-sm text-gray-600">
+                              {isRefugio
+                                ? "Disponible para adopción"
+                                : "Tu mascota adoptada"}
+                            </span>
+                          </div>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-16">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                      <Dog size={24} className="text-gray-400" />
+                    </div>
+                    <h3 className="text-xl font-light text-gray-900 mb-2">
+                      {isRefugio
+                        ? isOwnProfile
+                          ? "Aún no has registrado mascotas"
+                          : "Este refugio no tiene mascotas registradas"
+                        : "Aún no has adoptado ninguna mascota"}
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      {isRefugio
+                        ? isOwnProfile
+                          ? "Las mascotas que registres aparecerán aquí."
+                          : "Las mascotas disponibles aparecerán aquí."
+                        : "Cuando adoptes una mascota, aparecerá aquí."}
+                    </p>
+                    {isOwnProfile && (
+                      <Link
+                        to={isRefugio ? "/admin/mascotas" : "/adopt"}
+                        className="mt-4 inline-block px-6 py-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-xl hover:from-rose-600 hover:to-pink-700 transition-all shadow-md hover:shadow-lg font-semibold"
+                      >
+                        {isRefugio ? "Registrar mascota" : "Explorar mascotas"}
+                      </Link>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -33,7 +33,7 @@ interface AdminGuardProps {
 
 /**
  * Componente para verificar roles de administrador y mostrar/ocultar contenido condicionalmente
- * Este componente verifica el campo "tipo" del usuario (VETERINARIA, PROTECTORA, REFUGIO, ADMINISTRADOR)
+ * Este componente verifica el campo "tipo" del usuario (VETERINARIA, REFUGIO, ADMINISTRADOR)
  *
  * Uso:
  * ```tsx
@@ -42,8 +42,8 @@ interface AdminGuardProps {
  * </AdminGuard>
  *
  * <AdminGuard
- *   allowedAdminRoles={[ADMIN_ROLES.REFUGIO, ADMIN_ROLES.PROTECTORA]}
- *   fallback={<p>Solo para refugios y protectoras</p>}
+ *   allowedAdminRoles={[ADMIN_ROLES.REFUGIO]}
+ *   fallback={<p>Solo para refugios</p>}
  * >
  *   <AnimalManagement />
  * </AdminGuard>
@@ -127,26 +127,6 @@ export function VeterinariaOnly({
 }
 
 /**
- * Componente específico para contenido solo de PROTECTORA
- */
-export function ProtectoraOnly({
-  children,
-  fallback = null,
-}: {
-  children: ReactNode;
-  fallback?: ReactNode;
-}) {
-  return (
-    <AdminGuard
-      allowedAdminRoles={[ADMIN_ROLES.PROTECTORA]}
-      fallback={fallback}
-    >
-      {children}
-    </AdminGuard>
-  );
-}
-
-/**
  * Componente específico para contenido solo de REFUGIO
  */
 export function RefugioOnly({
@@ -174,17 +154,14 @@ export function AdministradorOnly({
   fallback?: ReactNode;
 }) {
   return (
-    <AdminGuard
-      allowedAdminRoles={[ADMIN_ROLES.SYSTEM]}
-      fallback={fallback}
-    >
+    <AdminGuard allowedAdminRoles={[ADMIN_ROLES.SYSTEM]} fallback={fallback}>
       {children}
     </AdminGuard>
   );
 }
 
 /**
- * Componente para contenido de cualquier tipo de organización (REFUGIO, PROTECTORA, VETERINARIA)
+ * Componente para contenido de cualquier tipo de organización (REFUGIO, VETERINARIA)
  * Excluye ADMINISTRADOR
  */
 export function OrganizacionRoles({
@@ -196,11 +173,7 @@ export function OrganizacionRoles({
 }) {
   return (
     <AdminGuard
-      allowedAdminRoles={[
-        ADMIN_ROLES.REFUGIO,
-        ADMIN_ROLES.PROTECTORA,
-        ADMIN_ROLES.VETERINARIO,
-      ]}
+      allowedAdminRoles={[ADMIN_ROLES.REFUGIO, ADMIN_ROLES.VETERINARIO]}
       fallback={fallback}
     >
       {children}
@@ -222,7 +195,6 @@ export function AnyAdminRole({
     <AdminGuard
       allowedAdminRoles={[
         ADMIN_ROLES.REFUGIO,
-        ADMIN_ROLES.PROTECTORA,
         ADMIN_ROLES.VETERINARIO,
         ADMIN_ROLES.ADMINISTRADOR,
         ADMIN_ROLES.SYSTEM,

@@ -39,6 +39,21 @@ export function parseCommentsResponse(
         // Obtener el nombre del usuario
         const userName = c.nombreUsuario || c.nombre_usuario || "Usuario";
 
+        // Obtener el ID del usuario (puede ser null)
+        const userId = c.id_usuario || c.idUsuario || null;
+
+        // Obtener el rol del usuario (puede ser null)
+        const userRole = c.rolUsuario || c.rol_usuario || null;
+
+        // Log para debug - ver qué datos llegan del backend
+        console.log(`[COMMENT PARSE] Comment data:`, {
+          commentId,
+          userName,
+          userId,
+          userRole,
+          rawData: c,
+        });
+
         // Crear el comentario parseado
         const parsedComment: Comment = {
           id: commentId.toString(),
@@ -47,6 +62,10 @@ export function parseCommentsResponse(
             name: userName,
             username: userName.toLowerCase(),
             avatar: `https://i.pravatar.cc/150?u=${userName}`,
+            // Solo incluir userId si no es null
+            ...(userId !== null && { userId: userId }),
+            // Solo incluir role si no es null
+            ...(userRole !== null && { role: userRole }),
           },
           timestamp: c.fecha_comentario
             ? formatTimestamp(c.fecha_comentario)

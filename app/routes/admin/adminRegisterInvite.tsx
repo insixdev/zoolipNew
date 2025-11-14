@@ -60,11 +60,11 @@ export async function loader({ params, request }) {
 export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
 
-  // El tipo de institución viene de la invitación (VETERINARIA, REFUGIO, PROTECTORA)
+  // El tipo de institución viene de la invitación (VETERINARIA, REFUGIO)
   const institutionType = formData.get("role") as string;
 
   // Validar el tipo de institución
-  const validTypes = ["ROLE_PROTECTORA", "ROLE_VETERINARIA", "ROLE_REFUGIO"];
+  const validTypes = ["ROLE_VETERINARIA", "ROLE_REFUGIO"];
   if (!validTypes.includes(institutionType)) {
     return Response.json(
       {
@@ -144,12 +144,10 @@ export async function action({ request }: ActionFunctionArgs) {
       return `${horario}:00`;
     };
     let role: string;
-    if(institutionType === "ROLE_VETERINARIA"){
-      role = "VETERINARIA"
-    } else if (institutionType === "ROLE_PROTECTORA"){
-      role = "PROTECTORA"
-    } else if (institutionType === "ROLE_REFUGIO"){
-      role = "REFUGIO"
+    if (institutionType === "ROLE_VETERINARIA") {
+      role = "VETERINARIA";
+    } else if (institutionType === "ROLE_REFUGIO") {
+      role = "REFUGIO";
     } else {
       return Response.json(
         {
@@ -163,7 +161,7 @@ export async function action({ request }: ActionFunctionArgs) {
     // Usar el tipo de institución de la invitación
     const institucionData: InstitutionCreateRequest = {
       nombre: formData.get("nombreInstitucion") as string,
-      tipo: role as InstitutionType, // VETERINARIA, REFUGIO o PROTECTORA
+      tipo: role as InstitutionType, // VETERINARIA o REFUGIO
       email: formData.get("emailInstitucion") as string,
       descripcion: formData.get("descripcion") as string,
       horario_inicio: formatearHorario(horarioInicio),
@@ -186,17 +184,13 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
+    const institutionData = await getInstitutionByIdUsuarioService(
+      userid.id,
+      cookie
+    );
 
-    const institutionData = await getInstitutionByIdUsuarioService(userid.id, cookie ) 
-
-
-    if(institutionType === "ROLE_REFUGIO" || institutionType === "ROLE_PROTECTORA"){ 
-
-
-    }
     // Si es veterinaria, crear también el registro de veterinario
     if (institutionType === "ROLE_VETERINARIA") {
-
       const institutionId = institutionData.id_institucion;
 
       if (!institutionId) {
@@ -331,7 +325,11 @@ export default function AdminRegister() {
     }
 
     // Validaciones para instituciones (REFUGIO, PROTECTORA o VETERINARIA)
-    if (role === "ROLE_REFUGIO" || role === "ROLE_PROTECTORA" || role === "ROLE_VETERINARIA") {
+    if (
+      role === "ROLE_REFUGIO" ||
+      role === "ROLE_PROTECTORA" ||
+      role === "ROLE_VETERINARIA"
+    ) {
       if (!formData.nombreInstitucion?.trim()) {
         newErrors.nombreInstitucion =
           "El nombre de la institución es requerido";

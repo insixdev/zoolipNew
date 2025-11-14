@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { Link } from "react-router";
+import { Link, useLoaderData, type LoaderFunctionArgs } from "react-router";
 import CommunityNavbar from "~/components/layout/community/CommunityNavbar";
 import SidebarContainer from "~/components/layout/sidebar/SidebarContainer";
 import {
@@ -12,8 +12,40 @@ import {
   RotateCcw,
   Settings,
 } from "lucide-react";
+import { getAllMascotasService } from "~/features/adoption/adoptionService";
+import type { MascotaDTO } from "~/features/adoption/types";
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  const cookie = request.headers.get("Cookie") || "";
+
+  try {
+    console.log("🐕 [ADOPT] Loading mascotas...");
+    const mascotas = await getAllMascotasService(cookie);
+    console.log("🐕 [ADOPT] Mascotas loaded:", mascotas.length);
+    return { mascotas };
+  } catch (error) {
+    console.error("🐕 [ADOPT] Error loading mascotas:", error);
+    return { mascotas: [] };
+  }
+}
+
+type Pet = {
+  id: string;
+  name: string;
+  age: string;
+  breed: string;
+  gender: string;
+  location: string;
+  image: string;
+  description: string;
+  personality: string[];
+  vaccinated: boolean;
+  sterilized: boolean;
+  weight: string;
+};
 
 export default function Adopt() {
+  const { mascotas } = useLoaderData<typeof loader>();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -22,100 +54,122 @@ export default function Adopt() {
   const [passedPets, setPassedPets] = useState<string[]>([]);
   const cardRef = useRef<HTMLDivElement>(null);
 
-  const pets = [
-    {
-      id: "max",
-      name: "Max",
-      age: "2 años",
-      breed: "Labrador Mix",
-      gender: "Macho",
-      location: "Ciudad de México",
-      image:
-        "https://images.unsplash.com/photo-1587300003388-59208cc962cb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
-      description: "Perro muy cariñoso y juguetón",
-      personality: ["Juguetón", "Cariñoso", "Energético"],
-      vaccinated: true,
-      sterilized: true,
-      weight: "25 kg",
-    },
-    {
-      id: "luna",
-      name: "Luna",
-      age: "1 año",
-      breed: "Golden Retriever",
-      gender: "Hembra",
-      location: "Guadalajara",
-      image:
-        "https://images.unsplash.com/photo-1552053831-71594a27632d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80",
-      description: "Muy tranquila y perfecta para familias",
-      personality: ["Tranquila", "Familiar", "Obediente"],
-      vaccinated: true,
-      sterilized: false,
-      weight: "20 kg",
-    },
-    {
-      id: "rocky",
-      name: "Rocky",
-      age: "3 años",
-      breed: "Pastor Alemán",
-      gender: "Macho",
-      location: "Monterrey",
-      image:
-        "https://images.unsplash.com/photo-1561037404-61cd46aa615b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80",
-      description: "Guardián leal y protector",
-      personality: ["Protector", "Leal", "Inteligente"],
-      vaccinated: true,
-      sterilized: true,
-      weight: "35 kg",
-    },
-    {
-      id: "bella",
-      name: "Bella",
-      age: "6 meses",
-      breed: "Mestizo",
-      gender: "Hembra",
-      location: "Puebla",
-      image:
-        "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80",
-      description: "Cachorra llena de energía",
-      personality: ["Energética", "Curiosa", "Sociable"],
-      vaccinated: false,
-      sterilized: false,
-      weight: "8 kg",
-    },
-    {
-      id: "charlie",
-      name: "Charlie",
-      age: "4 años",
-      breed: "Beagle",
-      gender: "Macho",
-      location: "Tijuana",
-      image:
-        "https://images.unsplash.com/photo-1544717297-fa95b6ee9643?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80",
-      description: "Perfecto para apartamentos",
-      personality: ["Tranquilo", "Adaptable", "Amigable"],
-      vaccinated: true,
-      sterilized: true,
-      weight: "15 kg",
-    },
-    {
-      id: "mia",
-      name: "Mía",
-      age: "2 años",
-      breed: "Husky Siberiano",
-      gender: "Hembra",
-      location: "Querétaro",
-      image:
-        "https://images.unsplash.com/photo-1605568427561-40dd23c2acea?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80",
-      description: "Activa y aventurera",
-      personality: ["Aventurera", "Activa", "Independiente"],
-      vaccinated: true,
-      sterilized: true,
-      weight: "22 kg",
-    },
-  ];
+  // Convertir mascotas del backend al formato de la UI
+  const pets: Pet[] = mascotas.map((mascota) => ({
+    id: mascota.id.toString(),
+    name: mascota.nombre,
+    age: `${mascota.edad} ${mascota.edad === 1 ? "año" : "años"}`,
+    breed: mascota.raza,
+    gender: mascota.sexo || "Desconocido",
+    location: "México", // TODO: Agregar ubicación en el backend
+    image:
+      mascota.imagen_url ||
+      "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=800&h=800&fit=crop",
+    description: mascota.descripcion || "Sin descripción disponible",
+    personality: [], // TODO: Agregar personalidad en el backend
+    vaccinated: true, // TODO: Agregar en el backend
+    sterilized: true, // TODO: Agregar en el backend
+    weight: "N/A", // TODO: Agregar en el backend
+  }));
 
-  const currentPet = pets[currentIndex];
+  // Fallback a datos de ejemplo si no hay mascotas del backend
+  const petsToShow =
+    pets.length > 0
+      ? pets
+      : [
+          {
+            id: "max",
+            name: "Max",
+            age: "2 años",
+            breed: "Labrador Mix",
+            gender: "Macho",
+            location: "Ciudad de México",
+            image:
+              "https://images.unsplash.com/photo-1587300003388-59208cc962cb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80",
+            description: "Perro muy cariñoso y juguetón",
+            personality: ["Juguetón", "Cariñoso", "Energético"],
+            vaccinated: true,
+            sterilized: true,
+            weight: "25 kg",
+          },
+          {
+            id: "luna",
+            name: "Luna",
+            age: "1 año",
+            breed: "Golden Retriever",
+            gender: "Hembra",
+            location: "Guadalajara",
+            image:
+              "https://images.unsplash.com/photo-1552053831-71594a27632d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80",
+            description: "Muy tranquila y perfecta para familias",
+            personality: ["Tranquila", "Familiar", "Obediente"],
+            vaccinated: true,
+            sterilized: false,
+            weight: "20 kg",
+          },
+          {
+            id: "rocky",
+            name: "Rocky",
+            age: "3 años",
+            breed: "Pastor Alemán",
+            gender: "Macho",
+            location: "Monterrey",
+            image:
+              "https://images.unsplash.com/photo-1561037404-61cd46aa615b?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80",
+            description: "Guardián leal y protector",
+            personality: ["Protector", "Leal", "Inteligente"],
+            vaccinated: true,
+            sterilized: true,
+            weight: "35 kg",
+          },
+          {
+            id: "bella",
+            name: "Bella",
+            age: "6 meses",
+            breed: "Mestizo",
+            gender: "Hembra",
+            location: "Puebla",
+            image:
+              "https://images.unsplash.com/photo-1583337130417-3346a1be7dee?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80",
+            description: "Cachorra llena de energía",
+            personality: ["Energética", "Curiosa", "Sociable"],
+            vaccinated: false,
+            sterilized: false,
+            weight: "8 kg",
+          },
+          {
+            id: "charlie",
+            name: "Charlie",
+            age: "4 años",
+            breed: "Beagle",
+            gender: "Macho",
+            location: "Tijuana",
+            image:
+              "https://images.unsplash.com/photo-1544717297-fa95b6ee9643?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80",
+            description: "Perfecto para apartamentos",
+            personality: ["Tranquilo", "Adaptable", "Amigable"],
+            vaccinated: true,
+            sterilized: true,
+            weight: "15 kg",
+          },
+          {
+            id: "mia",
+            name: "Mía",
+            age: "2 años",
+            breed: "Husky Siberiano",
+            gender: "Hembra",
+            location: "Querétaro",
+            image:
+              "https://images.unsplash.com/photo-1605568427561-40dd23c2acea?ixlib=rb-4.0.3&auto=format&fit=crop&w=1470&q=80",
+            description: "Activa y aventurera",
+            personality: ["Aventurera", "Activa", "Independiente"],
+            vaccinated: true,
+            sterilized: true,
+            weight: "22 kg",
+          },
+        ];
+
+  const currentPet = petsToShow[currentIndex];
 
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
@@ -165,7 +219,7 @@ export default function Adopt() {
   };
 
   const nextPet = () => {
-    if (currentIndex < pets.length - 1) {
+    if (currentIndex < petsToShow.length - 1) {
       setCurrentIndex(currentIndex + 1);
     }
   };
@@ -174,7 +228,7 @@ export default function Adopt() {
     if (currentIndex > 0) {
       setCurrentIndex(currentIndex - 1);
       // Remover de las listas si estaba ahí
-      const prevPet = pets[currentIndex - 1];
+      const prevPet = petsToShow[currentIndex - 1];
       setLikedPets(likedPets.filter((id) => id !== prevPet.id));
       setPassedPets(passedPets.filter((id) => id !== prevPet.id));
     }
@@ -191,7 +245,7 @@ export default function Adopt() {
     };
   };
 
-  if (currentIndex >= pets.length) {
+  if (currentIndex >= petsToShow.length) {
     return (
       <div className="min-h-screen bg-gray-100 relative">
         <CommunityNavbar />
@@ -257,11 +311,11 @@ export default function Adopt() {
         {/* Card Stack Container */}
         <div className="max-w-sm mx-auto relative h-[600px]">
           {/* Next card (background) */}
-          {currentIndex + 1 < pets.length && (
+          {currentIndex + 1 < petsToShow.length && (
             <div className="absolute inset-0 bg-white rounded-3xl shadow-lg transform scale-95 opacity-50">
               <img
-                src={pets[currentIndex + 1].image}
-                alt={pets[currentIndex + 1].name}
+                src={petsToShow[currentIndex + 1].image}
+                alt={petsToShow[currentIndex + 1].name}
                 className="w-full h-full object-cover rounded-3xl"
               />
             </div>
@@ -446,13 +500,15 @@ export default function Adopt() {
         <div className="max-w-sm mx-auto mt-6">
           <div className="flex items-center justify-center gap-2 text-sm text-gray-600">
             <span>
-              {currentIndex + 1} de {pets.length}
+              {currentIndex + 1} de {petsToShow.length}
             </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
             <div
               className="bg-orange-500 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${((currentIndex + 1) / pets.length) * 100}%` }}
+              style={{
+                width: `${((currentIndex + 1) / petsToShow.length) * 100}%`,
+              }}
             />
           </div>
         </div>

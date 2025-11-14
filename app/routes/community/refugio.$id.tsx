@@ -13,6 +13,7 @@ import {
   FaUsers,
 } from "react-icons/fa";
 import { getInstitutionByIdService } from "~/features/entities/institucion/institutionService";
+import { getMascotasByInstitucionService } from "~/features/adoption/adoptionService";
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
   const institutionId = params.id;
@@ -23,19 +24,38 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   }
 
   try {
+    console.log("🏠 [REFUGIO] Loading institution ID:", institutionId);
+
+    // Cargar institución
     const institution = await getInstitutionByIdService(
       Number(institutionId),
       cookieHeader
     );
-    return { institution };
+
+    console.log("🏠 [REFUGIO] Institution loaded:", institution);
+
+    // Cargar mascotas (si falla, devolver array vacío)
+    let mascotas = [];
+    try {
+      mascotas = await getMascotasByInstitucionService(
+        Number(institutionId),
+        cookieHeader
+      );
+      console.log("🐕 [REFUGIO] Mascotas loaded:", mascotas.length);
+    } catch (mascotasError) {
+      console.warn("⚠️ [REFUGIO] Error loading mascotas:", mascotasError);
+      // No lanzar error, solo devolver array vacío
+    }
+
+    return { institution, mascotas };
   } catch (error) {
-    console.error("Error loading institution:", error);
+    console.error("❌ [REFUGIO] Error loading institution:", error);
     throw new Response("Institución no encontrada", { status: 404 });
   }
 }
 
 export default function RefugioDetails() {
-  const { institution } = useLoaderData<typeof loader>();
+  const { institution, mascotas } = useLoaderData<typeof loader>();
 
   return (
     <div className="min-h-screen bg-gray-50 md:pl-64">
@@ -127,18 +147,66 @@ export default function RefugioDetails() {
               </div>
             </div>
 
-            {/* Available Pets Section - Placeholder */}
+            {/* Available Pets Section */}
             <div className="bg-white shadow rounded-lg p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">
                 Mascotas disponibles para adopción
               </h2>
-              <div className="text-center py-8 text-gray-500">
-                <FaPaw className="mx-auto h-12 w-12 text-gray-400 mb-3" />
-                <p>
-                  Próximamente podrás ver las mascotas disponibles de esta
-                  institución
-                </p>
-              </div>
+              {mascotas.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <FaPaw className="mx-auto h-12 w-12 text-gray-400 mb-3" />
+                  <p>No hay mascotas disponibles en este momento</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {mascotas.map((mascota) => (
+                    <Link
+                      key={mascota.id}
+                      to={`/adopt/mascota/${mascota.id}`}
+                      className="group relative bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300"
+                    >
+                      <div className="aspect-w-16 aspect-h-12 bg-gray-200">
+                        <img
+                          src={
+                            mascota.imagen_url ||
+                            "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400&h=300&fit=crop"
+                          }
+                          alt={mascota.nombre}
+                          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                      <div className="p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="text-lg font-semibold text-gray-900 group-hover:text-rose-600 transition-colors">
+                            {mascota.nombre}
+                          </h3>
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                              mascota.sexo === "Macho"
+                                ? "bg-blue-100 text-blue-800"
+                                : "bg-pink-100 text-pink-800"
+                            }`}
+                          >
+                            {mascota.sexo || "N/A"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm text-gray-600">
+                          <span>
+                            {mascota.edad} {mascota.edad === 1 ? "año" : "años"}
+                          </span>
+                          <span>•</span>
+                          <span>{mascota.raza}</span>
+                        </div>
+                        {mascota.descripcion && (
+                          <p className="mt-2 text-sm text-gray-500 line-clamp-2">
+                            {mascota.descripcion}
+                          </p>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 

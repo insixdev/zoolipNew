@@ -57,7 +57,10 @@ export async function action({ request }) {
   const id: UserIdPost = {
     id: Number(userIdFormCookie),
   };
+
   const now = toLocalISOString(new Date(Date.now()));
+
+  const isConsulta = postValidation.post.tipo === "CONSULTA";
 
   const postRequest: PublicationCreateRequest = {
     id_usuario: id,
@@ -65,14 +68,18 @@ export async function action({ request }) {
     contenido: postValidation.post.contenido,
     likes: 0,
     // Solo incluir imagen_url si NO es una consulta
-    imagen_url: postValidation.post.tipo === "CONSULTA" ? null : "",
-    fecha_pregunta: now,
+    imagen_url: isConsulta ? null : "",
+    // Solo incluir fecha_pregunta si ES una consulta
+    fecha_pregunta: isConsulta ? now : "",
     fecha_edicion: "",
     fecha_duda_resuelta: "",
-    tipo: postValidation.post.tipo || "PUBLICACION",
+    tipo: postValidation.post.tipo,
   };
 
   console.log("Creating post with data:", postRequest);
+  console.log(
+    `[CREATE POST] Tipo: ${postRequest.tipo}, fecha_pregunta: ${postRequest.fecha_pregunta}`
+  );
 
   try {
     const postRes = await createPublicationService(postRequest, cookie);

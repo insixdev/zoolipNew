@@ -8,9 +8,11 @@ import {
   Bookmark,
   MoreHorizontal,
   Loader2,
+  BadgeCheck,
 } from "lucide-react";
 import CommentsSection from "../comentarios/CommentsSection";
 import type { Comment } from "../comentarios/CommentItem";
+import { ADMIN_ROLES } from "~/lib/constants";
 
 type PostAuthor = {
   username: string;
@@ -75,6 +77,34 @@ export default function PostCard({
 
   const postId = post.id.toString();
 
+  // Verificar si el autor es una institución verificada
+  const isVerified =
+    post.author.role === ADMIN_ROLES.REFUGIO ||
+    post.author.role === ADMIN_ROLES.VETERINARIO;
+
+  // Obtener el tipo de institución
+  const getInstitutionBadge = () => {
+    if (post.author.role === ADMIN_ROLES.REFUGIO) {
+      return {
+        label: "Refugio",
+        bgColor: "bg-green-100",
+        textColor: "text-green-700",
+        borderColor: "border-green-200",
+      };
+    }
+    if (post.author.role === ADMIN_ROLES.VETERINARIO) {
+      return {
+        label: "Veterinaria",
+        bgColor: "bg-blue-100",
+        textColor: "text-blue-700",
+        borderColor: "border-blue-200",
+      };
+    }
+    return null;
+  };
+
+  const institutionBadge = getInstitutionBadge();
+
   const handleCommentClick = () => {
     const newShowState = !showComments;
     setShowComments(newShowState);
@@ -114,9 +144,29 @@ export default function PostCard({
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-semibold text-gray-900 text-sm hover:underline">
-                    {post.author.username}
-                  </p>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <p className="font-semibold text-gray-900 text-sm hover:underline">
+                      {post.author.username}
+                    </p>
+                    {isVerified && (
+                      <BadgeCheck
+                        size={16}
+                        className="text-blue-500 fill-blue-500"
+                      />
+                    )}
+                    {institutionBadge && (
+                      <span
+                        className={`px-2 py-0.5 ${institutionBadge.bgColor} ${institutionBadge.textColor} text-xs font-semibold rounded-full border ${institutionBadge.borderColor}`}
+                      >
+                        {institutionBadge.label}
+                      </span>
+                    )}
+                    {post.publicationType === "CONSULTA" && (
+                      <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-semibold rounded-full border border-purple-200">
+                        Consulta
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-gray-500">
                     {post.author.username} · {post.fecha_creacion}
                   </p>
@@ -134,9 +184,29 @@ export default function PostCard({
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-semibold text-gray-900 text-sm">
-                    {post.author.username}
-                  </p>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <p className="font-semibold text-gray-900 text-sm">
+                      {post.author.username}
+                    </p>
+                    {isVerified && (
+                      <BadgeCheck
+                        size={16}
+                        className="text-blue-500 fill-blue-500"
+                      />
+                    )}
+                    {institutionBadge && (
+                      <span
+                        className={`px-2 py-0.5 ${institutionBadge.bgColor} ${institutionBadge.textColor} text-xs font-semibold rounded-full border ${institutionBadge.borderColor}`}
+                      >
+                        {institutionBadge.label}
+                      </span>
+                    )}
+                    {post.publicationType === "CONSULTA" && (
+                      <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-xs font-semibold rounded-full border border-purple-200">
+                        Consulta
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-gray-500">
                     {post.author.username} · {post.fecha_creacion}
                   </p>

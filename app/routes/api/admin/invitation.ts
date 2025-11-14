@@ -11,7 +11,6 @@ export async function action({ request }: ActionFunctionArgs) {
   try {
     const formData = await request.formData();
 
-    const nombre = formData.get("nombre") as string;
     const email = formData.get("email") as string;
     const tipo = formData.get("tipo") as string;
     const organizacion = formData.get("organizacion") as string;

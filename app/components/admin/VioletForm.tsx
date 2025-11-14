@@ -270,7 +270,6 @@ export default function VioletForm() {
               >
                 <option value="">Selecciona un tipo</option>
                 <option value={ADMIN_ROLES.VETERINARIO}>Veterinaria</option>
-                <option value={ADMIN_ROLES.PROTECTORA}>Protectora</option>
                 <option value={ADMIN_ROLES.REFUGIO}>Refugio</option>
                 <option value={ADMIN_ROLES.ADMINISTRADOR}>
                   Administrador del Sistema

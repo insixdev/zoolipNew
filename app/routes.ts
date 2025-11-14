@@ -63,7 +63,6 @@ export default [
     index("routes/adopt/_index.tsx"), // /adopt
     route("mis-adopciones", "routes/adopt/mis-adopciones.tsx"), // /adopt/mis-adopciones
     route("chatAdopt", "routes/adopt/chatAdopt.tsx"), // /adopt/chatAdopt
-    route("favoritos", "routes/adopt/favoritos.tsx"), // /adopt/favoritos
     route("solicitudes", "routes/adopt/solicitudes.tsx"), // /adopt/solicitudes
     //route(":petId", "routes/adopt/[petId].tsx"), // /adopt/max, /adopt/luna, etc.
   ]),
@@ -122,6 +121,9 @@ export default [
   route("api/donations/crear", "routes/api/donations/crear.ts"),
   route("api/donations/actualizar", "routes/api/donations/actualizar.ts"),
   route("api/donations/eliminar", "routes/api/donations/eliminar.ts"),
+
+  // Adoption API routes
+  route("api/adoption/solicitar", "routes/api/adoption/solicitar.ts"),
 
   // User API routes
   route("api/user/update", "routes/api/user/update.ts"),

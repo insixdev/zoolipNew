@@ -55,14 +55,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
 
     // Filtrar solo publicaciones (no consultas)
+    // TEMPORAL: El backend está guardando tipo=null para TODO
+    // Mostramos posts con tipo "PUBLICACION" O null (asumiendo que son publicaciones)
+    // Solo excluimos posts con tipo explícito "CONSULTA"
     const publicacionesOnly = posts.filter(
-      (post) => post.publicationType !== "CONSULTA"
+      (post) => post.publicationType === "PUBLICACION"
     );
 
-    console.log(
-      "AFTERfilter - Publicaciones only:",
-      publicacionesOnly.length
-    );
+    console.log("AFTERfilter - Publicaciones only:", publicacionesOnly.length);
     console.log(
       " Filtred postss",
       publicacionesOnly.map((p) => ({ id: p.id, type: p.publicationType }))
@@ -97,6 +97,7 @@ export default function CommunityIndex() {
 
   const [commentsMap, setCommentsMap] = useState<Record<string, Comment[]>>({});
   const [visiblePostsCount, setVisiblePostsCount] = useState(POSTS_PER_PAGE);
+  const [hasMoreFromServer, setHasMoreFromServer] = useState(true);
 
   // useLoaderData puede devolver undefined en SSR si el loader no se ejecutó
   const loaderData = useLoaderData<typeof loader>();
@@ -165,12 +166,23 @@ export default function CommunityIndex() {
 
     // Actualizar el contador de comentarios del post y sincronizar likes
     setPostsList((prev) => {
+      console.log(
+        `[COMMENTS] Updating post ${postId} comment count to ${fetchedComments.length}`
+      );
+      console.log(`[COMMENTS] Posts before update:`, prev.length);
+
       const updated = prev.map((post) =>
         post.id?.toString() === postId
           ? { ...post, comments: fetchedComments.length }
           : post
       );
-      return syncPostsWithLikes(updated);
+
+      console.log(`[COMMENTS] Posts after update:`, updated.length);
+
+      const synced = syncPostsWithLikes(updated);
+      console.log(`[COMMENTS] Posts after sync:`, synced.length);
+
+      return synced;
     });
 
     lastRequestedCommentsPostId.current = null;
@@ -198,7 +210,17 @@ export default function CommunityIndex() {
   }, []);
 
   const visiblePosts = postsList.slice(0, visiblePostsCount);
-  const hasMore = visiblePostsCount < postsList.length;
+
+  console.log("📊 [RENDER] postsList length:", postsList.length);
+  console.log("📊 [RENDER] visiblePostsCount:", visiblePostsCount);
+  console.log("📊 [RENDER] visiblePosts length:", visiblePosts.length);
+  console.log(
+    "📊 [RENDER] Post IDs:",
+    postsList.map((p) => p.id)
+  );
+
+  // hasMore es true si hay más posts locales O si el último fetch trajo datos
+  const hasMore = visiblePostsCount < postsList.length || hasMoreFromServer;
   // PostId que está cargando comentarios (si getByIdFetcher está en loading)
   const commentsLoadingPostId =
     getByIdFetcher.state === "loading"
@@ -318,18 +340,21 @@ export default function CommunityIndex() {
     console.log("🔵 [COMMENT] Fetcher state:", createCommentFetcher.state);
 
     // Actualizar contador de comentarios optimistamente
-    setPostsList((prev) =>
-      prev.map((post) =>
+    setPostsList((prev) => {
+      console.log("🔵 [COMMENT] Updating comment count optimistically");
+      console.log("🔵 [COMMENT] Posts before:", prev.length);
+
+      const updated = prev.map((post) =>
         post.id?.toString() === postId
           ? { ...post, comments: post.comments + 1 }
           : post
-      )
-    );
+      );
 
-    // Disparar recarga de comentarios desde el servidor después del optimistic update
-    lastRequestedCommentsPostId.current = postId;
-    console.log("🔵 [COMMENT] Recargando comentarios para post:", postId);
-    getByIdFetcher.load(`/api/post/comentarios/${postId}`);
+      console.log("🔵 [COMMENT] Posts after:", updated.length);
+      return updated;
+    });
+
+    // NO recargar aquí - el useEffect se encargará cuando el fetcher termine
   };
   // es cuando le damos like a un comentario
   const handleLikeComment = (postId: string, commentId: string) => {
@@ -377,21 +402,77 @@ export default function CommunityIndex() {
     console.log("[LIKE] Like de comentario actualizado (solo local por ahora)");
   };
 
+  // Manejar la respuesta del fetcher de cargar más
+  useEffect(() => {
+    if (loadMoreFetcher.data && loadMoreFetcher.state === "idle") {
+      const response = loadMoreFetcher.data as any;
+
+      // Si el token es inválido, limpiar todo y redirigir al login
+      if (response.status === "error" && response.code === "INVALID_TOKEN") {
+        console.log(
+          "Token inválido, limpiando sesión y redirigiendo al login..."
+        );
+        // Guardar preferencia de cookies antes de limpiar
+        const cookiesAccepted = localStorage.getItem("cookiesAccepted");
+        // Limpiar localStorage
+        localStorage.clear();
+        // Restaurar preferencia de cookies
+        if (cookiesAccepted) {
+          localStorage.setItem("cookiesAccepted", cookiesAccepted);
+        }
+        // Redirigir al login
+        window.location.href = "/login?redirectTo=/community";
+        return;
+      }
+
+      if (response.status === "success" && response.posts) {
+        // Filtrar solo publicaciones (no consultas)
+        const newPosts = response.posts.filter(
+          (post: any) => post.publicationType !== "CONSULTA"
+        );
+
+        console.log("📥 Nuevas publicaciones cargadas:", newPosts.length);
+
+        if (newPosts.length > 0) {
+          setPostsList((prev) => syncPostsWithLikes([...prev, ...newPosts]));
+          setVisiblePostsCount((prev) => prev + newPosts.length);
+          // Si recibimos menos de 5 publicaciones, probablemente no hay más
+          setHasMoreFromServer(newPosts.length >= 5);
+        } else {
+          setHasMoreFromServer(false);
+        }
+      } else {
+        setHasMoreFromServer(false);
+      }
+    }
+  }, [loadMoreFetcher.data, loadMoreFetcher.state]);
+
   const handleLoadMore = () => {
     console.log("Loading more posts...");
-    // Incrementar el número de posts visibles
-    setVisiblePostsCount((prev) =>
-      Math.min(prev + POSTS_PER_PAGE, postsList.length)
-    );
 
-    // TODO: Si quieres cargar desde el servidor:
-    // loadMoreFetcher.load("/api/post/obtenerTodas");
+    // Si ya mostramos todos los posts locales, cargar desde el servidor
+    if (visiblePostsCount >= postsList.length && postsList.length > 0) {
+      const lastPost = postsList[postsList.length - 1];
+      const lastId = lastPost.id;
+
+      console.log(
+        "🔄 Cargando más publicaciones desde el servidor, lastId:",
+        lastId
+      );
+      loadMoreFetcher.load(`/api/post/obtenerTodas?lastId=${lastId}`);
+    } else {
+      // Incrementar el número de posts visibles
+      setVisiblePostsCount((prev) =>
+        Math.min(prev + POSTS_PER_PAGE, postsList.length)
+      );
+    }
   };
 
-  const handlePostCreated = () => {
-    console.log("Post created! Reloading posts...");
-    // Recargar la página para obtener los posts actualizados
-    window.location.reload();
+  const handlePostCreated = (newPost: Partial<Post>) => {
+    console.log("Post created! Loading new posts from server...");
+
+    // Cargar posts desde el servidor sin recargar la página
+    loadMoreFetcher.load("/api/post/obtenerTodas");
   };
 
   return (
@@ -450,6 +531,7 @@ export default function CommunityIndex() {
                   onClick={handleLoadMore}
                   isLoading={loadMoreFetcher.state === "loading"}
                   hasMore={hasMore}
+                  isAuthenticated={!isPublic}
                 />
               </>
             )}

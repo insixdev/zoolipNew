@@ -22,8 +22,6 @@ async function fetchInstitutionServiceForRole(id: number, cookie) {
       return { institution: "ROLE_REFUGIO" };
     } else if (data.tipo == "VETERINARIA") {
       return { institution: "ROLE_VETERINARIA" };
-    } else if (data.tipo == "PROTECTORA") {
-      return { institution: "ROLE_PROTECTORA" };
     } else {
       return { institution: null };
     }
@@ -176,10 +174,6 @@ export async function getUserFromRequest(
 
     if (jwtPayload.valid) {
       let role = jwtPayload.payload.role; // default role
-
-      if (role && role.startsWith("ROLE_ROLE_")) {
-        role = role.replace("ROLE_ROLE_", "ROLE_");
-      }
 
       // Si es ROLE_ADMINISTRADOR, verificar el tipo de institución
       if (role === "ROLE_ADMINISTRADOR") {

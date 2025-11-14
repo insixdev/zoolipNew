@@ -32,6 +32,7 @@ export async function createPublicationService(
       headers: hd,
       body: JSON.stringify(publication),
     });
+    console.log(res);
 
     return await handleFetchResponse<PublicationResponse>(res);
   } catch (err) {
@@ -283,6 +284,75 @@ export async function removeFavPublicationService(
 }
 
 /**
+ * Obtiene publicaciones con paginación
+ * @param lastPublicationId - ID de la última publicación visible (para cargar las siguientes)
+ * @param cookie - Cookie de autenticación
+ * @returns Promise con array de publicaciones
+ * @throws Error si falla la petición
+ */
+export async function getPublicationsWithPaginationService(
+  lastPublicationId: number,
+  cookie: string
+): Promise<PublicationPublicGetResponse[]> {
+  try {
+    const hd = new Headers();
+    hd.append("Cookie", cookie);
+    hd.append("Content-Type", "application/json");
+
+    const url = `${BASE_PUBLICATION_URL}obtenerTodas?id_publicacion=${lastPublicationId}`;
+    console.log("Fetching paginated publications from:", url);
+
+    const res = await fetch(url, {
+      method: "GET",
+      headers: hd,
+    });
+
+    console.log("Pagination response status:", res.status);
+
+    // Si obtenemos 403, el token es inválido o expiró
+    // Lanzar error especial para que el frontend maneje la redirección
+    if (res.status === 403) {
+      console.log(
+        "403 Forbidden - token inválido o expirado, lanzando error para logout"
+      );
+      throw new Error("TOKEN_INVALID_403");
+    }
+
+    if (!res.ok) {
+      const text = await res.text();
+      let errorMessage = "Error al obtener publicaciones paginadas";
+      try {
+        const errorData = JSON.parse(text);
+        errorMessage = errorData.message || errorMessage;
+      } catch {
+        errorMessage = text || errorMessage;
+      }
+      console.error("Pagination error:", errorMessage);
+      // Devolver array vacío en lugar de lanzar error
+      return [];
+    }
+
+    const text = await res.text();
+    if (!text || text.trim() === "") {
+      console.log("Empty pagination response, returning empty array");
+      return [];
+    }
+
+    const data = JSON.parse(text);
+    console.log(
+      "Paginated data length:",
+      Array.isArray(data) ? data.length : "not array"
+    );
+
+    return data;
+  } catch (err) {
+    console.error("Get paginated publications error:", err);
+    // Devolver array vacío en lugar de lanzar error para no romper la UI
+    return [];
+  }
+}
+
+/**
  * Obtiene publicaciones públicas (últimas 10)
  * @param cookie - Cookie de autenticación
  * @returns Promise con array de publicaciones públicas
@@ -338,16 +408,66 @@ export async function getAllPublicPublicationsService(
       "Parsed data length:",
       Array.isArray(data) ? data.length : "not array"
     );
+    console.log("Parsed data:", data);
 
     if (Array.isArray(data) && data.length > 0) {
-      console.log(
-        JSON.stringify(data[0], null, 2)
-      );
+      console.log(JSON.stringify(data[0], null, 2));
     }
 
     return data;
   } catch (err) {
     console.error("Get public publications error:", err);
     throw err;
+  }
+}
+
+/**
+ * Obtiene todas las publicaciones de un usuario específico
+ * @param userId - ID del usuario
+ * @param cookie - Cookie de autenticación
+ * @returns Promise con array de publicaciones del usuario
+ * @throws Error si falla la petición
+ */
+export async function getPublicationsByUserService(
+  userId: number,
+  cookie: string
+): Promise<PublicationPublicGetResponse[]> {
+  try {
+    const hd = new Headers();
+    hd.append("Cookie", cookie);
+    hd.append("Content-Type", "application/json");
+
+    const url = `${BASE_PUBLICATION_URL}obtenerPorUsuario?id_usuario=${userId}`;
+    console.log(`[POST SERVICE] Fetching user publications from: ${url}`);
+
+    const res = await fetch(url, {
+      method: "GET",
+      headers: hd,
+    });
+
+    console.log(`[POST SERVICE] Response status: ${res.status}`);
+
+    // Si no hay publicaciones, devolver array vacío
+    if (res.status === 204 || !res.ok) {
+      console.log(`[POST SERVICE] No publications found for user ${userId}`);
+      return [];
+    }
+
+    const text = await res.text();
+    if (!text || text.trim() === "") {
+      console.log("[POST SERVICE] Empty response, returning empty array");
+      return [];
+    }
+
+    const data = JSON.parse(text);
+    console.log(
+      `[POST SERVICE] User publications loaded: ${Array.isArray(data) ? data.length : 0}`
+    );
+
+    return Array.isArray(data) ? data : [];
+  } catch (err) {
+    console.error("[POST SERVICE] Get user publications error:", err);
+    // Devolver array vacío en lugar de lanzar error
+    return [];
   }
 }

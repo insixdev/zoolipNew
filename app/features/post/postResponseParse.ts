@@ -51,16 +51,18 @@ export function postParseResponse(post: PublicationPublicGetResponse[]) {
           isSaved: false,
           isLiked: false,
           shares: 0,
-          comments: 0, // getComentarioById
+          // Leer el número de comentarios del backend
+          comments: p.cantidadComentarios ?? p.cantidad_comentarios ?? 0,
           author: {
             username: p.nombreUsuario || p.nombre_usuario || "Usuario",
             avatar:
               "https://i.pravatar.cc/150?img=" +
               (p.id_publicacion || p.idPublicacion || 1),
             id: p.id_usuario || p.idUsuario || undefined,
+            role: p.rolUsuario || p.rol_usuario || undefined,
           },
           type: "text", // por ahora
-          publicationType: p.tipo || "PUBLICACION", // Tipo de publicación (CONSULTA o PUBLICACION)
+          publicationType: p.tipo, // Tipo de publicación (CONSULTA, PUBLICACION, o null)
         };
         return postFront;
       });

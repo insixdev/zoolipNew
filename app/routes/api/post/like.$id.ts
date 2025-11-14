@@ -43,7 +43,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    console.log(`[LIKE] Likes actuales: ${post.likes}`);
+    console.log(`[LIKE] Post encontrado:`, {
+      id: post.id_publicacion,
+      tipo: post.tipo,
+      likes: post.likes,
+      idUsuario: post.idUsuario,
+    });
 
     // Calcular nuevo número de likes basado en el estado
     let newLikes = post.likes;
@@ -58,27 +63,32 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
 
     // Actualizar con el nuevo contador de likes
+    // IMPORTANTE: Incluir TODOS los campos para no perder datos
     const updatedPublication = {
       id_publicacion: parseInt(id),
       topico: post.topico,
       contenido: post.contenido,
       likes: newLikes,
       fecha_edicion: new Date().toISOString(),
+      // Preservar el tipo de publicación (CONSULTA, POST, etc.)
+      ...(post.tipo && { tipo: post.tipo }),
+      // Preservar el usuario
       ...(post.idUsuario && {
         id_usuario: { id: post.idUsuario },
       }),
     };
 
-    console.log(`[LIKE] Actualizando a ${updatedPublication.likes} likes`);
+    console.log(`[LIKE] Actualizando publicación:`, updatedPublication);
 
     await updatePublicationService(updatedPublication, cookieHeader);
 
     console.log(`[LIKE] Like actualizado exitosamente`);
 
+    // Solo devolver el contador de likes, NO el estado isLiked
+    // El frontend maneja isLiked con localStorage
     return Response.json({
       success: true,
       likes: newLikes,
-      isLiked: !isLiked,
     });
   } catch (error) {
     console.error("[LIKE] Error:", error);
