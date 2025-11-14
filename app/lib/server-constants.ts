@@ -13,7 +13,7 @@ export const JWT_SECRET =
     }
     // Solo para desarrollo - generar una clave temporal
     console.warn(
-      "⚠️ Using default JWT_SECRET for development. Set JWT_SECRET environment variable for production."
+      " Using default JWT_SECRET for development. Set JWT_SECRET environment variable for production."
     );
 
     return "dev-jwt-secret-zoolip-2024-change-in-production";

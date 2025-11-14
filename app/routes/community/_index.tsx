@@ -16,6 +16,15 @@ import { getAllPublicPublicationsService } from "~/features/post/postService";
 import { postParseResponse } from "~/features/post/postResponseParse";
 import { AuthRoleComponent } from "~/components/auth/AuthRoleComponent";
 import { USER_ROLES } from "~/lib/constants";
+import {
+  getUserLikes,
+  getUserCommentLikes,
+  addLike,
+  removeLike,
+  addCommentLike,
+  removeCommentLike,
+  hasCommentLike,
+} from "~/lib/likeStorage";
 const POSTS_PER_PAGE = 5; // Número de posts a mostrar por página
 
 // loader para cargar las post inciciales
@@ -26,19 +35,55 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // Permitir acceso sin cookie (modo público)
   // Si no hay cookie, simplemente retornar posts vacíos o públicos
   if (!cookie) {
-    console.log("⚠️ Acceso público a community - sin autenticación");
     return { posts: [], isPublic: true };
   }
 
   try {
     console.log("Calling getAllPublicPublicationsService...");
     const fetchedPost = await getAllPublicPublicationsService(cookie);
-    console.log("fetchedPost received:", fetchedPost);
 
     const posts: Post[] = postParseResponse(fetchedPost);
-    console.log("posts parsed:", posts.length);
 
-    return { posts };
+    console.log(
+      "LER Posts types:",
+      posts.map((p) => ({ id: p.id, type: p.publicationType }))
+    );
+
+    // Obtener el número de comentarios para cada post
+    const { getCommentsByPublicationService } = await import(
+      "~/features/post/comments/commentService"
+    );
+
+    // Filtrar solo publicaciones (no consultas)
+    const publicacionesOnly = posts.filter(
+      (post) => post.publicationType !== "CONSULTA"
+    );
+
+    console.log(
+      "AFTERfilter - Publicaciones only:",
+      publicacionesOnly.length
+    );
+    console.log(
+      " Filtred postss",
+      publicacionesOnly.map((p) => ({ id: p.id, type: p.publicationType }))
+    );
+
+    const postsWithCommentCount = await Promise.all(
+      publicacionesOnly.map(async (post) => {
+        try {
+          const comments = await getCommentsByPublicationService(
+            post.id,
+            cookie
+          );
+          return { ...post, comments: comments.length };
+        } catch (error) {
+          console.error(`Error getting comments for post ${post.id}:`, error);
+          return { ...post, comments: 0 };
+        }
+      })
+    );
+
+    return { posts: postsWithCommentCount };
   } catch (error) {
     console.error("Error loading posts:", error);
     // Devolver array vacío en caso de error
@@ -57,14 +102,37 @@ export default function CommunityIndex() {
   const loaderData = useLoaderData<typeof loader>();
 
   const posts = loaderData?.posts ?? [];
+  const isPublic = loaderData?.isPublic ?? false;
 
-  const [postsList, setPostsList] = useState<Post[]>(posts);
+  // Helper para sincronizar posts con localStorage
+  const syncPostsWithLikes = (postsToSync: Post[]): Post[] => {
+    const userLikes = getUserLikes();
+    return postsToSync.map((post) => ({
+      ...post,
+      isLiked: userLikes.has(post.id),
+    }));
+  };
+
+  const [postsList, setPostsList] = useState<Post[]>(() => {
+    // Marcar posts con like del usuario al cargar
+    return syncPostsWithLikes(posts);
+  });
+
+  // Sincronizar posts cuando cambian desde el loader
+  useEffect(() => {
+    if (posts.length > 0) {
+      setPostsList(syncPostsWithLikes(posts));
+    }
+  }, [posts]);
+
   const likeFetcher = useFetcher();
+  const createCommentFetcher = useFetcher();
 
   const getByIdFetcher = useFetcher();
   const loadMoreFetcher = useFetcher();
   // ref para mapear la última petición de comentarios al postId correspondiente
   const lastRequestedCommentsPostId = useRef<string | null>(null);
+  const lastCommentedPostId = useRef<string | null>(null);
 
   // Cuando el fetcher de getByIdFetcher trae data, la volcamos en commentsMap
   useEffect(() => {
@@ -78,9 +146,50 @@ export default function CommunityIndex() {
     const postId = lastRequestedCommentsPostId.current;
     if (!postId) return;
 
-    setCommentsMap((prev) => ({ ...(prev ?? {}), [postId]: fetchedComments }));
+    console.log(
+      `[COMMENTS] Loaded ${fetchedComments.length} comments for post ${postId}`
+    );
+
+    // Sincronizar comentarios con likes de localStorage
+    const userCommentLikes = getUserCommentLikes();
+    const commentsWithLikes = fetchedComments.map((comment: Comment) => ({
+      ...comment,
+      isLiked: userCommentLikes.has(parseInt(comment.id)),
+    }));
+
+    // Actualizar el mapa de comentarios
+    setCommentsMap((prev) => ({
+      ...(prev ?? {}),
+      [postId]: commentsWithLikes,
+    }));
+
+    // Actualizar el contador de comentarios del post y sincronizar likes
+    setPostsList((prev) => {
+      const updated = prev.map((post) =>
+        post.id?.toString() === postId
+          ? { ...post, comments: fetchedComments.length }
+          : post
+      );
+      return syncPostsWithLikes(updated);
+    });
+
     lastRequestedCommentsPostId.current = null;
   }, [getByIdFetcher.data]);
+
+  // Recargar comentarios después de crear uno
+  useEffect(() => {
+    if (
+      createCommentFetcher.state === "idle" &&
+      createCommentFetcher.data?.status === "success" &&
+      lastCommentedPostId.current
+    ) {
+      // Recargar comentarios del post
+      const postId = lastCommentedPostId.current;
+      lastRequestedCommentsPostId.current = postId;
+      getByIdFetcher.load(`/api/post/comentarios/${postId}`);
+      lastCommentedPostId.current = null;
+    }
+  }, [createCommentFetcher.state, createCommentFetcher.data]);
 
   // Cargar publicaciones desde el servidor
   useEffect(() => {
@@ -97,7 +206,31 @@ export default function CommunityIndex() {
       : null;
 
   const handleLike = (postId: string) => {
-    console.log("Like post:", postId);
+    const postIdNum = parseInt(postId);
+    const post = postsList.find((p) => p.id?.toString() === postId);
+
+    if (!post) {
+      console.error("[LIKE] Post no encontrado:", postId);
+      return;
+    }
+
+    const wasLiked = post.isLiked || false;
+
+    // Verificar y actualizar localStorage
+    let shouldUpdate = false;
+    if (wasLiked) {
+      shouldUpdate = removeLike(postIdNum);
+    } else {
+      shouldUpdate = addLike(postIdNum);
+    }
+
+    // Solo actualizar si el estado cambió realmente
+    if (!shouldUpdate) {
+      console.log(
+        "[LIKE] Estado ya sincronizado, no se requiere actualización"
+      );
+      return;
+    }
 
     // Actualizar UI optimistamente
     setPostsList((prev) =>
@@ -105,7 +238,6 @@ export default function CommunityIndex() {
         post.id?.toString() === postId
           ? {
               ...post,
-              // alternar el flag booleano y ajustar el contador usando el flag previo
               isLiked: !post.isLiked,
               likes: post.isLiked ? post.likes - 1 : post.likes + 1,
             }
@@ -113,32 +245,29 @@ export default function CommunityIndex() {
       )
     );
 
-    // TODO: Conectar con API cuando esté disponible
-    // const formData = new FormData();
-    // formData.append("id_publicacion", postId);
-    // likeFetcher.submit(formData, {
-    //   method: "post",
-    //   action: "/api/post/like",
-    // });
+    // Enviar like al backend con el estado actual
+    const formData = new FormData();
+    formData.append("isLiked", wasLiked.toString());
+    formData.append("action", "toggle");
+
+    likeFetcher.submit(formData, {
+      method: "post",
+      action: `/api/post/like/${postId}`,
+    });
   };
 
   const handleComment = (postId: string) => {
     console.log("Toggle comments for post:", postId);
+
+    // Si ya tenemos comentarios cargados, no hacer nada
+    if (commentsMap[postId]) {
+      console.log("Comments already loaded for post:", postId);
+      return;
+    }
+
     // Guardamos el postId solicitado para poder mapear la respuesta del fetcher
     lastRequestedCommentsPostId.current = postId;
-    getByIdFetcher.submit(
-      { id_publicacion: postId },
-      { method: "post", action: "/api/post/getByPostId" }
-    );
-
-    // Aseguramos que exista una entrada en el mapa para evitar errores de render
-    setCommentsMap((prev) => {
-      const curr = prev ?? {};
-      return {
-        ...curr,
-        [postId]: curr[postId] ?? [],
-      };
-    });
+    getByIdFetcher.load(`/api/post/comentarios/${postId}`);
   };
 
   const handleShare = (postId: string) => {
@@ -163,28 +292,32 @@ export default function CommunityIndex() {
   };
 
   const handleAddComment = (postId: string, content: string) => {
-    console.log("Add comment to post:", postId, content);
+    console.log("🔵 [COMMENT] handleAddComment called!");
+    console.log("🔵 [COMMENT] PostId:", postId);
+    console.log("🔵 [COMMENT] Content:", content);
 
-    // Agregar comentario localmente (optimistic update)
-    const newComment: Comment = {
-      id: `c${Date.now()}`,
-      content,
-      author: {
-        name: "Tu",
-        username: "@tu",
-        avatar: "https://i.pravatar.cc/150?img=33",
-      },
-      timestamp: "Ahora",
-      likes: 0,
-      isLiked: false,
-    };
+    // Guardar el postId para recargar comentarios después
+    lastCommentedPostId.current = postId;
 
-    setCommentsMap((prev) => ({
-      ...prev,
-      [postId]: [...(prev[postId] || []), newComment],
-    }));
+    // Enviar comentario al backend
+    const formData = new FormData();
+    formData.append("id_publicacion", postId);
+    formData.append("contenido", content);
 
-    // Actualizar contador de comentarios
+    console.log("🔵 [COMMENT] Submitting to /api/comments/crear");
+    console.log("🔵 [COMMENT] FormData:", {
+      id_publicacion: postId,
+      contenido: content,
+    });
+
+    createCommentFetcher.submit(formData, {
+      method: "post",
+      action: "/api/comments/crear",
+    });
+
+    console.log("🔵 [COMMENT] Fetcher state:", createCommentFetcher.state);
+
+    // Actualizar contador de comentarios optimistamente
     setPostsList((prev) =>
       prev.map((post) =>
         post.id?.toString() === postId
@@ -195,16 +328,36 @@ export default function CommunityIndex() {
 
     // Disparar recarga de comentarios desde el servidor después del optimistic update
     lastRequestedCommentsPostId.current = postId;
-    getByIdFetcher.submit(
-      { id_publicacion: postId },
-      { method: "post", action: "/api/post/getByPostId" }
-    );
-
-    // La API ya se llama desde CommentInput.tsx
+    console.log("🔵 [COMMENT] Recargando comentarios para post:", postId);
+    getByIdFetcher.load(`/api/post/comentarios/${postId}`);
   };
   // es cuando le damos like a un comentario
   const handleLikeComment = (postId: string, commentId: string) => {
-    console.log("Like comment:", commentId, "on post:", postId);
+    const commentIdNum = parseInt(commentId);
+    const comment = commentsMap[postId]?.find((c) => c.id === commentId);
+
+    if (!comment) {
+      console.error("[LIKE] Comentario no encontrado:", commentId);
+      return;
+    }
+
+    const wasLiked = comment.isLiked || false;
+
+    // Verificar y actualizar localStorage
+    let shouldUpdate = false;
+    if (wasLiked) {
+      shouldUpdate = removeCommentLike(commentIdNum);
+    } else {
+      shouldUpdate = addCommentLike(commentIdNum);
+    }
+
+    // Solo actualizar si el estado cambió realmente
+    if (!shouldUpdate) {
+      console.log(
+        "[LIKE] Estado del comentario ya sincronizado, no se requiere actualización"
+      );
+      return;
+    }
 
     // Actualizar UI optimistamente
     setCommentsMap((prev) => ({
@@ -220,7 +373,8 @@ export default function CommunityIndex() {
       ),
     }));
 
-    // TODO: Conectar con API cuando esté disponible
+    // TODO: Conectar con API de likes de comentarios cuando esté disponible
+    console.log("[LIKE] Like de comentario actualizado (solo local por ahora)");
   };
 
   const handleLoadMore = () => {
@@ -240,8 +394,6 @@ export default function CommunityIndex() {
     window.location.reload();
   };
 
-  const isPublic = loaderData?.isPublic ?? false;
-
   return (
     <div className="w-full mx-auto md:pl-72 px-6 pt-6 pb-10 pr-12">
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-12">
@@ -251,7 +403,7 @@ export default function CommunityIndex() {
           {isPublic && (
             <div className="bg-gradient-to-r from-orange-50 to-rose-50 border border-orange-200 rounded-2xl p-6 shadow-sm">
               <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                ¡Únete a nuestra comunidad! 
+                ¡Únete a nuestra comunidad!
               </h3>
               <p className="text-gray-600 mb-4">
                 Inicia sesión para crear publicaciones, comentar y conectar con
@@ -284,6 +436,9 @@ export default function CommunityIndex() {
                   posts={visiblePosts}
                   commentsMap={commentsMap}
                   commentsLoadingPostId={commentsLoadingPostId}
+                  isSubmittingComment={
+                    createCommentFetcher.state === "submitting"
+                  }
                   onLike={handleLike}
                   onComment={handleComment}
                   onShare={handleShare}
@@ -303,7 +458,7 @@ export default function CommunityIndex() {
 
         {/* Sidebar */}
         <div className="xl:col-span-2 space-y-6">
-          <TrendingSection />
+          <TrendingSection posts={postsList} isPublic={isPublic} />
         </div>
       </div>
     </div>

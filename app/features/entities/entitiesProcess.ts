@@ -4,13 +4,10 @@ import { adminRegister } from "../admin/adminService";
 import { loginService, registerService } from "../auth/authServiceCurrent";
 import { UserAppRegister } from "./User";
 
-export async function registrarAdminProcess(userData ) {
+export async function registrarAdminProcess(userData) {
   // Primero lo registramos como usuario admin
   try {
-    console.log(
-      " Iniciando proceso de registro de admin:",
-      userData.username
-    );
+    console.log(" Iniciando proceso de registro de admin:", userData.username);
 
     const res = await adminRegister(userData);
     console.log(" Respuesta de adminRegister:", res);
@@ -47,7 +44,7 @@ export async function registrarAdminProcess(userData ) {
       };
     }
 
-    console.log("✅ Login exitoso, cookie obtenida");
+    console.log("[AUTH] Login exitoso, cookie obtenida");
     return cookie;
   } catch (error) {
     console.error("❌ Error en registrarAdminProcess:", error);

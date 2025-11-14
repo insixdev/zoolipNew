@@ -114,15 +114,47 @@ export async function getPublicationByIdService(
     hd.append("Content-Type", "application/json");
     hd.append("Cookie", cookie);
 
-    const res = await fetch(`${BASE_PUBLICATION_URL}obtenerPorId`, {
+    const url = `${BASE_PUBLICATION_URL}obtenerPorId?id_publicacion=${id}`;
+    console.log(`[POST] Fetching publication from: ${url}`);
+    console.log(`[POST] Full cookie: ${cookie}`);
+    console.log(`[POST] Headers:`, {
+      "Content-Type": hd.get("Content-Type"),
+      Cookie: hd.get("Cookie"),
+    });
+
+    const res = await fetch(url, {
       method: "GET",
       headers: hd,
-      body: JSON.stringify(id),
     });
+
+    console.log(`[POST] Response status: ${res.status} ${res.statusText}`);
+
+    // Si obtenemos 403, intentar obtener desde el endpoint público
+    if (res.status === 403) {
+      console.log(
+        "[POST] 403 error, trying to fetch from public endpoint instead"
+      );
+      const publicRes = await fetch(
+        `${BASE_PUBLICATION_URL}obtenerPublicacionesPublicas`,
+        {
+          method: "GET",
+          headers: hd,
+        }
+      );
+
+      if (publicRes.ok) {
+        const allPosts = await publicRes.json();
+        const post = allPosts.find((p: any) => p.id_publicacion === id);
+        if (post) {
+          console.log("[POST] Found post in public endpoint");
+          return post;
+        }
+      }
+    }
 
     return await handleFetchResponse<PublicationGetResponse>(res);
   } catch (err) {
-    console.error("Get publication by id error:", err);
+    console.error("[POST] Get publication by id error:", err);
     throw err;
   }
 }
@@ -306,6 +338,13 @@ export async function getAllPublicPublicationsService(
       "Parsed data length:",
       Array.isArray(data) ? data.length : "not array"
     );
+
+    if (Array.isArray(data) && data.length > 0) {
+      console.log(
+        JSON.stringify(data[0], null, 2)
+      );
+    }
+
     return data;
   } catch (err) {
     console.error("Get public publications error:", err);

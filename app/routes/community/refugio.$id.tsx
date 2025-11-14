@@ -1,0 +1,214 @@
+import { type LoaderFunctionArgs } from "react-router";
+import { useLoaderData, Link } from "react-router";
+import {
+  FaArrowLeft,
+  FaMapMarkerAlt,
+  FaPhone,
+  FaEnvelope,
+  FaGlobe,
+  FaClock,
+  FaPaw,
+  FaHeart,
+  FaHome,
+  FaUsers,
+} from "react-icons/fa";
+import { getInstitutionByIdService } from "~/features/entities/institucion/institutionService";
+
+export async function loader({ params, request }: LoaderFunctionArgs) {
+  const institutionId = params.id;
+  const cookieHeader = request.headers.get("Cookie") || "";
+
+  if (!institutionId) {
+    throw new Response("ID de institución no proporcionado", { status: 400 });
+  }
+
+  try {
+    const institution = await getInstitutionByIdService(
+      Number(institutionId),
+      cookieHeader
+    );
+    return { institution };
+  } catch (error) {
+    console.error("Error loading institution:", error);
+    throw new Response("Institución no encontrada", { status: 404 });
+  }
+}
+
+export default function RefugioDetails() {
+  const { institution } = useLoaderData<typeof loader>();
+
+  return (
+    <div className="min-h-screen bg-gray-50 md:pl-64">
+      {/* Header */}
+      <div className="bg-white shadow">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <Link
+            to="/community/refugios"
+            className="inline-flex items-center text-rose-600 hover:text-rose-800 mb-4"
+          >
+            <FaArrowLeft className="mr-2" />
+            Volver a refugios
+          </Link>
+
+          <div className="flex flex-col md:flex-row gap-6">
+            <div className="flex-shrink-0">
+              <img
+                className="h-32 w-32 rounded-full ring-4 ring-white"
+                src={`https://i.pravatar.cc/150?img=${institution.id_institucion % 60}`}
+                alt={institution.nombre}
+              />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <h1 className="text-3xl font-bold text-gray-900">
+                  {institution.nombre}
+                </h1>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  Verificado
+                </span>
+              </div>
+              <p className="mt-2 text-gray-600">
+                {institution.descripcion || "Sin descripción disponible"}
+              </p>
+
+              <div className="mt-4 flex flex-wrap gap-4">
+                <div className="flex items-center text-sm text-gray-500">
+                  <FaEnvelope className="mr-1.5 h-4 w-4 flex-shrink-0 text-rose-500" />
+                  {institution.email}
+                </div>
+                <div className="flex items-center text-sm text-gray-500">
+                  <FaClock className="mr-1.5 h-4 w-4 flex-shrink-0 text-rose-500" />
+                  {institution.horario_Inicio} - {institution.horario_Fin}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* About Section */}
+            <div className="bg-white shadow rounded-lg p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">
+                Sobre nosotros
+              </h2>
+              <div className="space-y-4 text-gray-600">
+                <p>{institution.descripcion || "Sin descripción disponible"}</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 h-10 w-10 rounded-full bg-rose-100 flex items-center justify-center">
+                      <FaHome className="h-5 w-5 text-rose-600" />
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm font-medium text-gray-900">Tipo</p>
+                      <p className="text-sm text-gray-500">
+                        {institution.tipo}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start">
+                    <div className="flex-shrink-0 h-10 w-10 rounded-full bg-rose-100 flex items-center justify-center">
+                      <FaPaw className="h-5 w-5 text-rose-600" />
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm font-medium text-gray-900">
+                        Horario
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {institution.horario_Inicio} - {institution.horario_Fin}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Available Pets Section - Placeholder */}
+            <div className="bg-white shadow rounded-lg p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-6">
+                Mascotas disponibles para adopción
+              </h2>
+              <div className="text-center py-8 text-gray-500">
+                <FaPaw className="mx-auto h-12 w-12 text-gray-400 mb-3" />
+                <p>
+                  Próximamente podrás ver las mascotas disponibles de esta
+                  institución
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column */}
+          <div className="space-y-6">
+            {/* Contact Card */}
+            <div className="bg-white shadow rounded-lg p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Contacto
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <FaEnvelope className="h-5 w-5 text-rose-600" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-gray-900">Email</p>
+                    <a
+                      href={`mailto:${institution.email}`}
+                      className="text-sm text-rose-600 hover:text-rose-800"
+                    >
+                      {institution.email}
+                    </a>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <FaClock className="h-5 w-5 text-rose-600" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm font-medium text-gray-900">
+                      Horario de atención
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      {institution.horario_Inicio} - {institution.horario_Fin}
+                    </p>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-6">
+                <a
+                  href={`mailto:${institution.email}`}
+                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-rose-600 hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500"
+                >
+                  Contactar
+                </a>
+              </div>
+            </div>
+
+            {/* Info Card */}
+            <div className="bg-white shadow rounded-lg p-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Información
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span className="font-medium text-gray-700">
+                      Tipo de institución
+                    </span>
+                    <span className="font-semibold text-rose-600">
+                      {institution.tipo}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

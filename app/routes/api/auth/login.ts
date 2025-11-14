@@ -172,7 +172,7 @@ export async function action({ request }: ActionFunctionArgs) {
       status: "success",
       message: "Inicio de sesión exitoso",
     };
-    console.log("✅ LOGIN EXITOSO - Limpiando caché de usuario");
+    console.log("[LOGIN] Login exitoso - Limpiando cache de usuario");
     clearUserCache(); // Limpiar el caché
     const headers = new Headers();
     headers.append("Content-Type", "application/json");

@@ -17,7 +17,7 @@ export const ADMIN_ROLES = {
 export type AdminRole = (typeof ADMIN_ROLES)[keyof typeof ADMIN_ROLES];
 
 export const USER_ROLES = {
-  USER: "ROLE_ROLE_USER",
+  USER: "ROLE_USER",
   ADOPTANTE: "ROLE_ADOPTANTE",
   ADMIN: "ROLE_ADMINISTRADOR",
   VETERINARIA: "ROLE_VETERINARIA",

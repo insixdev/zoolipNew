@@ -39,6 +39,7 @@ export type PublicationCreateRequest = {
  */
 export type PublicationUpdateRequest = {
   id_publicacion: number;
+  id_usuario: UserIdPost;
   topico: string;
   contenido: string;
   likes: number;

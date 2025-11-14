@@ -5,7 +5,14 @@ import {
   Bookmark,
   MoreHorizontal,
 } from "lucide-react";
+import { Link } from "react-router";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+} from "~/components/ui/card";
 
 export type Post = {
   id: string;
@@ -49,11 +56,18 @@ export default function PostCard({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Avatar className="w-11 h-11">
-              <AvatarImage src={post.author.avatar} alt={post.author.username /*name*/} />
-              <AvatarFallback>{post.author.username /*name[0]*/}</AvatarFallback>
+              <AvatarImage
+                src={post.author.avatar}
+                alt={post.author.username /*name*/}
+              />
+              <AvatarFallback>
+                {post.author.username /*name[0]*/}
+              </AvatarFallback>
             </Avatar>
             <div>
-              <p className="font-semibold text-gray-900">{post.author.username /*name*/}</p>
+              <p className="font-semibold text-gray-900">
+                {post.author.username /*name*/}
+              </p>
               <p className="text-sm text-gray-500">
                 {post.author.username} · {post.fecha_creacion}
               </p>
@@ -67,6 +81,18 @@ export default function PostCard({
 
       {/* Post Content */}
       <CardContent className="pb-3">
+        {post.topico && (
+          <div className="mb-3">
+            <Link
+              to={`/community/hashtag/${post.topico.replace("#", "")}`}
+              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-rose-100 text-rose-700 hover:bg-rose-200 transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {post.topico}
+            </Link>
+          </div>
+        )}
+
         <p className="text-gray-800 whitespace-pre-wrap mb-3">{post.content}</p>
 
         {/* Post Image */}

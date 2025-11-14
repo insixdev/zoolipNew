@@ -6,6 +6,7 @@ type PostsListProps = {
   posts: Post[];
   commentsMap?: Record<string, Comment[]>;
   commentsLoadingPostId?: string | null;
+  isSubmittingComment?: boolean;
   onLike?: (postId: string) => void;
   onComment?: (postId: string) => void;
   onShare?: (postId: string) => void;
@@ -21,6 +22,7 @@ export default function PostsList({
   posts,
   commentsMap = {},
   commentsLoadingPostId,
+  isSubmittingComment = false,
   onLike,
   onComment,
   onShare,
@@ -30,17 +32,15 @@ export default function PostsList({
 }: PostsListProps) {
   console.log("PostsList rendering with", posts.length, "posts");
   const { user } = useSmartAuth();
-  if(user){
-
-  if (!posts || posts.length === 0) {
-    return (
-      <div className="text-center py-12 text-gray-500">
-        <p className="text-lg">No hay publicaciones aún</p>
-        <p className="text-sm mt-2">¡Sé el primero en crear una!</p>
-      </div>
-    );
-  }
-
+  if (user) {
+    if (!posts || posts.length === 0) {
+      return (
+        <div className="text-center py-12 text-gray-500">
+          <p className="text-lg">No hay publicaciones aún</p>
+          <p className="text-sm mt-2">¡Sé el primero en crear una!</p>
+        </div>
+      );
+    }
   }
 
   return (
@@ -57,6 +57,7 @@ export default function PostsList({
             post={post}
             postComments={commentsMap[post.id] || []}
             postCommentsLoading={commentsLoadingPostId === post.id?.toString()}
+            isSubmittingComment={isSubmittingComment}
             onLike={onLike}
             onComment={onComment}
             onShare={onShare}

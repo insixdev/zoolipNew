@@ -4,8 +4,15 @@ import { CommentCreateRequest } from "~/features/post/comments/types";
 import { field, getUserFieldFromCookie } from "~/lib/authUtil";
 
 export async function action({ request }: ActionFunctionArgs) {
+  console.log("🔴 [ENDPOINT] Request method:", request.method);
+
   const cookie = request.headers.get("Cookie");
-  if(!cookie) return Response.json({status: "error", message: "No hay cookie"}, {status: 401});
+
+  if (!cookie)
+    return Response.json(
+      { status: "error", message: "No hay cookie" },
+      { status: 401 }
+    );
 
   const userIdFromCookie = getUserFieldFromCookie(cookie, field.id);
 
@@ -20,9 +27,19 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const formData = await request.formData();
-  formData.get("")
+  console.log("🔴 [ENDPOINT] FormData entries:");
+  for (const [key, value] of formData.entries()) {
+    console.log(`🔴 [ENDPOINT]   ${key}:`, value);
+  }
+
+  const data = {
+    id_publicacion: formData.get("id_publicacion"),
+    contenido: formData.get("contenido"),
+  };
+  console.log("🔴 [ENDPOINT] Parsed data:", data);
 
   const commentValidation = commentCreateValidation(data, userIdFromCookie);
+  console.log("🔴 [ENDPOINT] Validation result:", commentValidation);
 
   if (!commentValidation.comment) {
     return Response.json(
@@ -46,15 +63,33 @@ export async function action({ request }: ActionFunctionArgs) {
     contenido: commentValidation.comment.contenido,
     fecha_comentario: new Date().toISOString(),
   } as CommentCreateRequest;
-
-  const commentRes = await createCommentService(commentRequest, cookie!);
-
-  console.log("Create comment response:", commentRes);
-
-  return Response.json(
-    { status: "success", message: "Comentario creado con éxito" },
-    { status: commentRes.httpCode }
+  console.log(
+    "🔴 [ENDPOINT] Calling createCommentService with:",
+    commentRequest
   );
+
+  try {
+    const commentRes = await createCommentService(commentRequest, cookie!);
+    console.log("🔴 [ENDPOINT] Create comment SUCCESS:", commentRes);
+
+    return Response.json(
+      {
+        status: "success",
+        message: "Comentario creado con éxito",
+        data: commentRes,
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("🔴 [ENDPOINT] Error creating comment:", error);
+    return Response.json(
+      {
+        status: "error",
+        message: "Error al crear comentario: " + error,
+      },
+      { status: 500 }
+    );
+  }
 }
 
 function commentCreateValidation(data: any, userId: string) {

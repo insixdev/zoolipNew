@@ -40,8 +40,8 @@ export default [
     route("buscar", "routes/community/buscar.tsx"), // /community/buscar
     route("consultas", "routes/community/consultas.tsx"), // /community/consultas
     route("profile", "routes/community/profile.tsx"),
-    route("crear", "routes/community/crear.tsx"), // /community/crear
     route("refugios", "routes/community/refugios.tsx"), // /community/refugios
+    route("refugio/:id", "routes/community/refugio.$id.tsx"), // /community/refugio/:id
     route("following", "routes/community/following.tsx"), // /community/following
     route("chatCommunity", "routes/community/chatCommunity.tsx"), // /community/chatCommunity
     route("hashtag/:hashtag", "routes/community/communityTrendingView.tsx"), // /community/hashtag/AdopcionResponsable
@@ -55,6 +55,7 @@ export default [
       "solcitudeInstitutionForm",
       "routes/community/solcitudeInstitutionForm.tsx"
     ), // /community/solcitudeInstitutionForm
+    route("profile/:id", "routes/community/profile.$id.tsx"), // /community/profile/:id
   ]),
 
   // Adopt nested routes
@@ -97,6 +98,8 @@ export default [
   route("api/post/obtenerTodas", "routes/api/post/obtenerTodas.ts"),
   route("api/post/getByPostId", "routes/api/post/getByPostId.ts"),
   route("api/post/updatePost", "routes/api/post/updatePost.ts"),
+  route("api/post/comentarios/:id", "routes/api/post/comentarios.$id.ts"),
+  route("api/post/like/:id", "routes/api/post/like.$id.ts"),
 
   // Pets API routes
   route("api/pets/crear", "routes/api/pets/CrearPet.ts"),
@@ -106,6 +109,9 @@ export default [
   route("api/comments/crear", "routes/api/comments/crear.ts"),
   route("api/comments/actualizar", "routes/api/comments/actualizar.ts"),
   route("api/comments/eliminar", "routes/api/comments/eliminar.ts"),
+
+  // User API routes
+  route("api/user/profile/:id", "routes/api/user/profile.$id.ts"),
 
   route(
     "api/comments/obtenerPorPublicacion",

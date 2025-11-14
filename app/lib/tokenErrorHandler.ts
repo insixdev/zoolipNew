@@ -26,7 +26,7 @@ export function isTokenError(error: any): boolean {
  * Maneja errores de token: limpia cache y redirige al login
  */
 export function handleTokenError() {
-  console.log("🔴 TOKEN ERROR DETECTADO - Limpiando cache y redirigiendo");
+  console.log("[TOKEN] ERROR: Token invalido - Limpiando cache y redirigiendo");
   clearUserCache();
   throw redirect("/auth/login?error=session_expired");
 }
@@ -52,12 +52,28 @@ export async function withTokenErrorHandling<T>(
  * Extrae el error del backend (data.error o data.message) y lo propaga correctamente
  */
 export async function handleFetchResponse<T>(response: Response): Promise<T> {
-  const data = await response.json();
+  // Manejar respuestas sin contenido (204, 403 sin body, etc)
+  const contentType = response.headers.get("content-type");
+  const hasJsonContent = contentType?.includes("application/json");
+
+  let data: any = null;
+
+  // Solo intentar parsear JSON si hay contenido
+  if (hasJsonContent && response.status !== 204) {
+    try {
+      data = await response.json();
+    } catch (e) {
+      // Si falla el parse, la respuesta está vacía
+      data = null;
+    }
+  }
 
   if (!response.ok) {
     // Extraer mensaje de error del backend
     const errorMessage =
-      data.error || data.message || `Error ${response.status}`;
+      data?.error ||
+      data?.message ||
+      `Error ${response.status}: ${response.statusText}`;
     const error = new Error(errorMessage);
     (error as any).data = data; // Guardar data completa para debugging
     (error as any).status = response.status;

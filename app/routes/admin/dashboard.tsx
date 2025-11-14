@@ -4,16 +4,29 @@ import { requireAdmin } from "~/lib/roleGuards";
 import { AnyAdminRole } from "~/components/auth/AdminGuard";
 import { AreaChartInteractive } from "~/components/charts/AreaChartInteractive";
 import { AreaChartLinear } from "~/components/charts/AreaChartLinear";
+import { getUserFromRequest } from "~/server/me";
+import { ADMIN_ROLES } from "~/lib/constants";
 
 // Loader
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireAdmin(request);
 
+  const userData = await getUserFromRequest(request);
+  const userRole = "user" in userData ? userData.user?.role : null;
+  const isSystemAdmin = userRole === ADMIN_ROLES.SYSTEM;
+
   // Datos de ejemplo - en producción vendrían de tu API
+  // Para ROLE_SYSTEM: datos globales de todas las instituciones
+  // Para otros roles: datos específicos de su institución
   const adopcionesData = generateMonthlyData("adopciones", "donaciones");
   const visitasData = generateMonthlyData("desktop", "mobile");
 
-  return { adopcionesData, visitasData };
+  return {
+    adopcionesData,
+    visitasData,
+    isSystemAdmin,
+    userRole,
+  };
 }
 
 // Helper para generar datos de ejemplo
@@ -68,7 +81,8 @@ function AreaChartLinearExample() {
 }
 
 export default function AdminReportes() {
-  const { adopcionesData, visitasData } = useLoaderData<typeof loader>();
+  const { adopcionesData, visitasData, isSystemAdmin, userRole } =
+    useLoaderData<typeof loader>();
 
   const adopcionesConfig = {
     adopciones: {
@@ -104,7 +118,9 @@ export default function AdminReportes() {
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
           <p className="text-gray-600 mt-2">
-            Visualiza estadísticas y métricas de tu institución
+            {isSystemAdmin
+              ? "Visualiza estadísticas globales del sistema"
+              : "Visualiza estadísticas y métricas de tu institución"}
           </p>
         </div>
 

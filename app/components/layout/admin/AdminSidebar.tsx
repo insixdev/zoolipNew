@@ -34,8 +34,12 @@ export function AdminSidebar({ adminRole }: AdminSidebarProps) {
   // Configurar items del menú según el rol
   const getNavItems = (): NavItem[] => {
     switch (adminRole) {
+      case ADMIN_ROLES.SYSTEM:
       case ADMIN_ROLES.ADMINISTRADOR:
-        return [{ to: "/admin/system", icon: Shield, label: "Sistema" }];
+        return [
+          { to: "/admin", icon: Home, label: "Dashboard" },
+          { to: "/admin/system", icon: Shield, label: "Sistema" },
+        ];
 
       case ADMIN_ROLES.VETERINARIO:
         return [
@@ -81,7 +85,8 @@ export function AdminSidebar({ adminRole }: AdminSidebarProps) {
     >
       <div className="p-4 border-b border-gray-100 bg-white">
         <h2 className="text-2xl font-bold bg-gradient-to-r from-rose-600 to-rose-400 bg-clip-text text-transparent">
-          {adminRole === ADMIN_ROLES.ADMINISTRADOR
+          {adminRole === ADMIN_ROLES.SYSTEM ||
+          adminRole === ADMIN_ROLES.ADMINISTRADOR
             ? "Sistema"
             : "Administración"}
         </h2>
@@ -90,6 +95,7 @@ export function AdminSidebar({ adminRole }: AdminSidebarProps) {
           {adminRole === ADMIN_ROLES.PROTECTORA && "Protectora"}
           {adminRole === ADMIN_ROLES.REFUGIO && "Refugio"}
           {adminRole === ADMIN_ROLES.ADMINISTRADOR && "Administrador"}
+          {adminRole === ADMIN_ROLES.SYSTEM && "Sistema"}
         </p>
       </div>
 

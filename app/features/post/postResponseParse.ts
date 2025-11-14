@@ -30,6 +30,14 @@ export function postParseResponse(post: PublicationPublicGetResponse[]) {
       .map((post) => {
         // Soportar tanto snake_case como camelCase del backend
         const p = post as any;
+
+        // Log para debug
+        if (p.tipo) {
+          console.log(
+            `📝 [PARSER] Post ${p.id_publicacion || p.idPublicacion} - tipo: ${p.tipo}`
+          );
+        }
+
         const postFront: Post = {
           id: p.id_publicacion || p.idPublicacion || 0,
           topico: p.topico ?? "Sin título",
@@ -49,8 +57,10 @@ export function postParseResponse(post: PublicationPublicGetResponse[]) {
             avatar:
               "https://i.pravatar.cc/150?img=" +
               (p.id_publicacion || p.idPublicacion || 1),
+            id: p.id_usuario || p.idUsuario || undefined,
           },
           type: "text", // por ahora
+          publicationType: p.tipo || "PUBLICACION", // Tipo de publicación (CONSULTA o PUBLICACION)
         };
         return postFront;
       });

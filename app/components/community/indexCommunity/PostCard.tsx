@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/Avatar";
 import {
   Heart,
@@ -14,6 +15,8 @@ import type { Comment } from "../comentarios/CommentItem";
 type PostAuthor = {
   username: string;
   avatar: string;
+  id?: number; // ID del usuario para el link al perfil
+  role?: string; // Rol del usuario para mostrar badge de verificado
 };
 
 type Post = {
@@ -31,12 +34,14 @@ type Post = {
   shares: number;
   isLiked: boolean;
   isSaved: boolean;
+  publicationType?: "CONSULTA" | "PUBLICACION"; // Tipo de publicación
 };
 
 type PostCardProps = {
   post: Post;
   postComments?: Comment[];
   postCommentsLoading?: boolean;
+  isSubmittingComment?: boolean;
   onLike?: (postId: string) => void;
   onComment?: (postId: string) => void;
   onShare?: (postId: string) => void;
@@ -52,6 +57,7 @@ export default function PostCard({
   post,
   postComments = [],
   postCommentsLoading = false,
+  isSubmittingComment = false,
   onLike,
   onComment,
   onShare,
@@ -76,6 +82,10 @@ export default function PostCard({
   };
 
   const handleAddComment = (content: string) => {
+    console.log("🟡 [POSTCARD] handleAddComment called");
+    console.log("🟡 [POSTCARD] PostId:", postId);
+    console.log("🟡 [POSTCARD] Content:", content);
+    console.log("🟡 [POSTCARD] onAddComment exists?", !!onAddComment);
     onAddComment?.(postId, content);
   };
 
@@ -88,28 +98,68 @@ export default function PostCard({
       <div className="p-5 pb-3">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
-            <Avatar className="w-10 h-10">
-              <AvatarImage
-                src={post.author.avatar}
-                alt={post.author.username}
-              />
-              <AvatarFallback>
-                {post.author.username?.[0] ?? "U"}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="font-semibold text-gray-900 text-sm">
-                {post.author.username}
-              </p>
-              <p className="text-xs text-gray-500">
-                {post.author.username} · {post.fecha_creacion}
-              </p>
-            </div>
+            {post.author.id ? (
+              <Link
+                to={`/community/profile/${post.author.id}`}
+                className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Avatar className="w-10 h-10">
+                  <AvatarImage
+                    src={post.author.avatar}
+                    alt={post.author.username}
+                  />
+                  <AvatarFallback>
+                    {post.author.username?.[0] ?? "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-semibold text-gray-900 text-sm hover:underline">
+                    {post.author.username}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {post.author.username} · {post.fecha_creacion}
+                  </p>
+                </div>
+              </Link>
+            ) : (
+              <>
+                <Avatar className="w-10 h-10">
+                  <AvatarImage
+                    src={post.author.avatar}
+                    alt={post.author.username}
+                  />
+                  <AvatarFallback>
+                    {post.author.username?.[0] ?? "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-semibold text-gray-900 text-sm">
+                    {post.author.username}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {post.author.username} · {post.fecha_creacion}
+                  </p>
+                </div>
+              </>
+            )}
           </div>
           <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
             <MoreHorizontal size={18} className="text-gray-600" />
           </button>
         </div>
+
+        {post.topico && (
+          <div className="mb-3">
+            <Link
+              to={`/community/hashtag/${post.topico.replace("#", "")}`}
+              className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-rose-100 text-rose-700 hover:bg-rose-200 transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {post.topico}
+            </Link>
+          </div>
+        )}
 
         <p className="text-gray-800 text-sm whitespace-pre-wrap mb-3 line-clamp-4">
           {post.content}
@@ -189,6 +239,7 @@ export default function PostCard({
               comments={postComments}
               onAddComment={handleAddComment}
               onLikeComment={handleLikeComment}
+              isSubmitting={isSubmittingComment}
             />
           )}
         </>

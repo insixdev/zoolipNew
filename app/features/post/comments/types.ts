@@ -46,7 +46,10 @@ export type CommentResponse = {
  * Response al obtener comentarios (getAll y getById)
  */
 export type CommentGetResponse = {
-  id_comentario: number;
+  id_comentario?: number;
+  idComentario?: number; // Backend usa este nombre
   contenido: string;
-  fecha_comentario: string;
+  fecha_comentario?: string;
+  nombreUsuario?: string; // Nombre del usuario que comentó
+  idPublicacion?: number; // ID de la publicación
 };

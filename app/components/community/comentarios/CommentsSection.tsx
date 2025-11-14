@@ -7,6 +7,7 @@ type CommentsSectionProps = {
   comments: Comment[];
   onAddComment: (content: string) => void;
   onLikeComment?: (commentId: string) => void;
+  isSubmitting?: boolean;
 };
 
 export default function CommentsSection({
@@ -14,11 +15,16 @@ export default function CommentsSection({
   comments,
   onAddComment,
   onLikeComment,
+  isSubmitting = false,
 }: CommentsSectionProps) {
   return (
     <div className="bg-gray-50">
       <CommentsList comments={comments} onLikeComment={onLikeComment} />
-      <CommentInput postId={postId} onSubmit={onAddComment} />
+      <CommentInput
+        postId={postId}
+        onSubmit={onAddComment}
+        isSubmitting={isSubmitting}
+      />
     </div>
   );
 }

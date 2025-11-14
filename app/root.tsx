@@ -87,7 +87,7 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
       nextUrl.pathname.includes("/register") ||
       nextUrl.pathname.includes("/logout");
     if (isAuthAction) {
-      console.log("✅ Revalidando después de acción de autenticación");
+      console.log(" Revalidando después de acción de autenticación");
       return true;
     }
   }
@@ -98,12 +98,12 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
     currentUrl.pathname.includes("/login") &&
     !nextUrl.pathname.includes("/login")
   ) {
-    console.log("✅ Revalidando: navegación desde login a otra ruta");
+    console.log("Revalidando: navegación desde login a otra ruta");
     return true;
   }
 
   // No revalidar en navegación normal - usar AuthProvider
-  console.log("❌ NO revalidando: Usando datos de AuthProvider en memoria");
+  console.log("NO revalidando: Usando datos de AuthProvider en memoria");
   return false;
 };
 
@@ -120,17 +120,16 @@ export const loader: LoaderFunction = async ({ request }) => {
     url.pathname.includes(route)
   );
 
-  // Para rutas públicas, intentar cargar usuario si hay cookie, sino retornar null
+  // Para rutas publ, intentar cargar usuario si hay cookie, sino retornar null
   if (isPublicRoute) {
     const cookieHeader = request.headers.get("Cookie");
     if (!cookieHeader) {
-      console.log("🌍 Ruta pública sin autenticación, retornando usuario null");
+      console.log(" Ruta sin autenticación, retornando usuario null");
       return new Response(JSON.stringify({ user: null, authError: null }), {
         headers: { "Content-Type": "application/json" },
       });
     }
-    // Si hay cookie, continuar para cargar el usuario
-    console.log("🌍 Ruta pública con cookie, cargando usuario");
+    console.log(" Ruta pública con cookie, cargando usuario");
   }
 
   console.log("Cookie header:", request.headers.get("Cookie"));
@@ -138,7 +137,7 @@ export const loader: LoaderFunction = async ({ request }) => {
   const userResponse = await getUserFromRequest(request); // obtiene
 
   if (!isErrorUser(userResponse)) {
-    console.log("✅ Usuario autenticado:", userResponse.user?.username);
+    console.log(" Usuario autenticado:", userResponse.user?.username);
     // Retornar solo el objeto User, no todo el UserResponseHandler
     return Response.json({
       user: userResponse.user,
@@ -150,7 +149,7 @@ export const loader: LoaderFunction = async ({ request }) => {
       userResponse.status === "error" ||
       userResponse.message === "Invalid token"
     ) {
-      console.log("❌ Token inválido, eliminando cookie");
+      console.log("Token inválido, eliminando cookie");
       console.log("Error:", userResponse?.message);
 
       return Response.json(
@@ -161,14 +160,14 @@ export const loader: LoaderFunction = async ({ request }) => {
               maxAge: 0,
               path: "/",
               expires: new Date(0),
-            }), // 🔥 elimina la cookie
+            }), 
           },
         }
       );
     }
 
     // Otro tipo de error (no token inválido)
-    console.log("⚠️ Error al obtener usuario:", userResponse?.message);
+    console.log("Error al obtener usuario:", userResponse?.message);
 
     return Response.json({
       user: null,

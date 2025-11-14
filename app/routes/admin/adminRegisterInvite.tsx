@@ -32,11 +32,13 @@ import { decodeClaims, getUserInfoFromToken } from "~/lib/authUtil";
 import { getTokenFromCookie } from "~/server/cookies";
 import { registrarAdminProcess } from "~/features/entities/entitiesProcess";
 import { UserAppRegister } from "~/features/entities/User";
+import { w } from "public/build/_shared/chunk-O7IRWV66";
 
 // Loader para redirigir usuarios autenticados
 export async function loader({ params, request }) {
   cleanExpiratedInvites(); // clean a los invitados expirados
   await redirectIfAuthenticated(request, "/admin/dashboard");
+
   const { token } = params;
   console.log("token", token);
   if (!token) {
@@ -62,7 +64,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const institutionType = formData.get("role") as string;
 
   // Validar el tipo de institución
-  const validTypes = ["PROTECTORA", "VETERINARIA", "REFUGIO"];
+  const validTypes = ["ROLE_PROTECTORA", "ROLE_VETERINARIA", "ROLE_REFUGIO"];
   if (!validTypes.includes(institutionType)) {
     return Response.json(
       {
@@ -123,7 +125,7 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    console.log("✅ Info del usuario obtenida del token:", infoUserData);
+    console.log("Info del usuario obtenida del token:", infoUserData);
 
     const userid: UserId = {
       id: Number(infoUserData.id),
@@ -141,11 +143,27 @@ export async function action({ request }: ActionFunctionArgs) {
       // Si solo tiene HH:mm, agregar :00
       return `${horario}:00`;
     };
+    let role: string;
+    if(institutionType === "ROLE_VETERINARIA"){
+      role = "VETERINARIA"
+    } else if (institutionType === "ROLE_PROTECTORA"){
+      role = "PROTECTORA"
+    } else if (institutionType === "ROLE_REFUGIO"){
+      role = "REFUGIO"
+    } else {
+      return Response.json(
+        {
+          success: false,
+          error: "El tipo de institución no es valido",
+        },
+        { status: 400 }
+      );
+    }
 
     // Usar el tipo de institución de la invitación
     const institucionData: InstitutionCreateRequest = {
       nombre: formData.get("nombreInstitucion") as string,
-      tipo: institutionType as InstitutionType, // VETERINARIA, REFUGIO o PROTECTORA
+      tipo: role as InstitutionType, // VETERINARIA, REFUGIO o PROTECTORA
       email: formData.get("emailInstitucion") as string,
       descripcion: formData.get("descripcion") as string,
       horario_inicio: formatearHorario(horarioInicio),
@@ -172,14 +190,12 @@ export async function action({ request }: ActionFunctionArgs) {
     const institutionData = await getInstitutionByIdUsuarioService(userid.id, cookie ) 
 
 
-    if(institutionType === "REFUGIO" || institutionType === "PROTECTORA"){ 
+    if(institutionType === "ROLE_REFUGIO" || institutionType === "ROLE_PROTECTORA"){ 
 
 
-    //  
     }
     // Si es veterinaria, crear también el registro de veterinario
-    if (institutionType === "VETERINARIA") {
-      console.log("🏥 Creando registro de veterinario...");
+    if (institutionType === "ROLE_VETERINARIA") {
 
       const institutionId = institutionData.id_institucion;
 
@@ -315,7 +331,7 @@ export default function AdminRegister() {
     }
 
     // Validaciones para instituciones (REFUGIO, PROTECTORA o VETERINARIA)
-    if (role === "REFUGIO" || role === "PROTECTORA" || role === "VETERINARIA") {
+    if (role === "ROLE_REFUGIO" || role === "ROLE_PROTECTORA" || role === "ROLE_VETERINARIA") {
       if (!formData.nombreInstitucion?.trim()) {
         newErrors.nombreInstitucion =
           "El nombre de la institución es requerido";
@@ -502,9 +518,9 @@ export default function AdminRegister() {
                   </p>
                 )}
               </div>
-              {(role === "REFUGIO" ||
-                role === "PROTECTORA" ||
-                role === "VETERINARIA") && (
+              {(role === "ROLE_REFUGIO" ||
+                role === "ROLE_PROTECTORA" ||
+                role === "ROLE_VETERINARIA") && (
                 <>
                   <div className="mt-4 p-4 bg-fuchsia-50/50 border border-fuchsia-200 rounded-xl space-y-3">
                     <h3 className="text-sm font-semibold text-fuchsia-900 mb-2">
@@ -516,9 +532,9 @@ export default function AdminRegister() {
                         <span className="font-medium">
                           Tipo de institución:
                         </span>{" "}
-                        {role === "REFUGIO"
+                        {role === "ROLE_REFUGIO"
                           ? "Refugio"
-                          : role === "PROTECTORA"
+                          : role === "ROLE_PROTECTORA"
                             ? "Protectora"
                             : "Veterinaria"}
                       </p>

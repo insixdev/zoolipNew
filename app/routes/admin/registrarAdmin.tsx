@@ -45,12 +45,6 @@ export default function RegisterAdmin() {
 
   const validateField = (name: string, value: string): string | undefined => {
     switch (name) {
-      case "nombre":
-        if (!value.trim()) return "El nombre es obligatorio";
-        if (value.trim().length < 3)
-          return "El nombre debe tener al menos 3 caracteres";
-        return undefined;
-
       case "email":
         if (!value.trim()) return "El correo electrónico es obligatorio";
         if (!validateEmail(value))
@@ -175,7 +169,7 @@ export default function RegisterAdmin() {
                 htmlFor="nombre"
                 className="block text-sm font-medium text-gray-700 mb-2"
               >
-                Nombre completo <span className="text-rose-500">*</span>
+                Nombre completo (opcional para email) <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

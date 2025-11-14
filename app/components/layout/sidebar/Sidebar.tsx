@@ -47,11 +47,7 @@ const menuItems = [
     path: "/community/donaciones",
     icon: Gift,
   },
-  {
-    label: "Crear",
-    path: "/community/crear",
-    icon: User,
-  },
+
   // Admin-only: solicitudes institucionales
   {
     label: "Solicitudes",
@@ -126,7 +122,10 @@ export default function Sidebar({
 
             // Existing onlyForUsers behavior: if onlyForUsers is true and this item is /community/crear,
             // render a disabled-looking placeholder (keep previous UX)
-            if (onlyForUsers && item.path === "/community/crear" || onlyForUsers && item.path === "/community/buscar") {
+            if (
+              (onlyForUsers && item.path === "/community/crear") ||
+              (onlyForUsers && item.path === "/community/buscar")
+            ) {
               return (
                 <li key={item.path}>
                   <div

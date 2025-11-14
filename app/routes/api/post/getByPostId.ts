@@ -54,7 +54,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 }
 
-// POST: /api/post/getByPostId con body { id: 123 }
+// POST: /api/post/getByPostId con body { id: 123 } o formData
 export async function action({ request }: ActionFunctionArgs) {
   const cookie = request.headers.get("Cookie");
 
@@ -69,8 +69,30 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   try {
-    const body = await request.json();
-    const postId = body.id;
+    // Intentar obtener el ID desde formData o JSON
+    let postId: string | null = null;
+
+    const contentType = request.headers.get("content-type");
+    console.log("[GET_BY_ID] Content-Type:", contentType);
+
+    if (contentType?.includes("application/json")) {
+      const body = await request.json();
+      console.log("[GET_BY_ID] JSON body:", body);
+      postId = body.id || body.id_publicacion;
+    } else {
+      // Es formData
+      const formData = await request.formData();
+      console.log(
+        "[GET_BY_ID] FormData entries:",
+        Object.fromEntries(formData.entries())
+      );
+      postId =
+        formData.get("id")?.toString() ||
+        formData.get("id_publicacion")?.toString() ||
+        null;
+    }
+
+    console.log("[GET_BY_ID] Extracted postId:", postId);
 
     if (!postId) {
       return Response.json(
@@ -82,10 +104,10 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    const publication = await getPublicationByIdService(
-      parseInt(postId),
-      cookie
-    );
+    const postIdNumber = parseInt(postId);
+    console.log("[GET_BY_ID] Calling service with ID:", postIdNumber);
+
+    const publication = await getPublicationByIdService(postIdNumber, cookie);
 
     return Response.json(
       {

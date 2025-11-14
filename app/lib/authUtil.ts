@@ -144,31 +144,38 @@ export function decodeClaims(token: string): TokenValidationResult {
   }
 }
 export enum field {
-  id = "id",
-  username = "username",
+  id = "id_usuario", // El JWT usa id_usuario, no id
+  username = "sub", // El JWT usa sub para username
   email = "email",
   role = "role",
 }
+
 // mediante el cookie extraemos el token
 // y lo decodificamos
 // y obtenemos el payload
 // y obtenemos el campo que queremos
-export function getUserFieldFromCookie(cookie: string, field: string) {
+export function getUserFieldFromCookie(cookie: string, fieldName: string) {
   if (cookie) {
     const token = getTokenFromCookie(cookie);
     if (token) {
       const result = decodeClaims(token);
       if (result.valid) {
-        return result.payload[field];
+        const value = result.payload[fieldName];
+        console.log(`[getUserFieldFromCookie] Field '${fieldName}':`, value);
+        return value;
       } else {
+        console.log("[getUserFieldFromCookie] Token invalid");
         return null;
       }
     } else {
+      console.log("[getUserFieldFromCookie] No token found");
       return null;
     }
   }
+  console.log("[getUserFieldFromCookie] No cookie");
   return null;
 }
+
 /**
  * Extracts user ID from the token payload
  * @param payload The decoded JWT payload

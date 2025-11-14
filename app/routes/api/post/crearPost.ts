@@ -9,7 +9,6 @@ import { toLocalISOString } from "~/lib/generalUtil";
 
 //action para crear post
 export async function action({ request }) {
-  console.log("=== CREATE POST ACTION ===");
   const cookie = request.headers.get("Cookie");
 
   if (!cookie) {
@@ -65,7 +64,8 @@ export async function action({ request }) {
     topico: postValidation.post.topico || "General",
     contenido: postValidation.post.contenido,
     likes: 0,
-    imagen_url: "",
+    // Solo incluir imagen_url si NO es una consulta
+    imagen_url: postValidation.post.tipo === "CONSULTA" ? null : "",
     fecha_pregunta: now,
     fecha_edicion: "",
     fecha_duda_resuelta: "",

@@ -1,8 +1,8 @@
 /** Tipo de institución */
 export enum InstitutionType {
-  refugio = "REFUGIO",
-  veterinaria = "VETERINARIA",
-  protectora = "PROTECTORA",
+  refugio = "ROLE_REFUGIO",
+  veterinaria = "ROLE_VETERINARIA",
+  protectora = "ROLE_PROTECTORA",
 }
 
 /** ID de usuario asociado a la institución */
@@ -54,8 +54,8 @@ export type InstitutionGetResponse = {
   tipo: string;
   email: string;
   descripcion: string;
-  horario_inicio: string;
-  horario_fin: string;
+  horario_Inicio: string; // Backend devuelve con mayúscula
+  horario_Fin: string; // Backend devuelve con mayúscula
 };
 
 /** Tipos de solicitud de institución */

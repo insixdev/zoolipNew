@@ -1,5 +1,8 @@
 import { ActionFunctionArgs } from "react-router";
-import { addInvite, existingInvite } from "~/features/admin/adminRegisterInvitation";
+import {
+  addInvite,
+  existingInvite,
+} from "~/features/admin/adminRegisterInvitation";
 import { UserResponseHandler } from "~/features/entities/User";
 import { ADMIN_ROLES, AdminRole } from "~/lib/constants";
 import { getUserFromRequest } from "~/server/me";
@@ -7,24 +10,27 @@ import { getUserFromRequest } from "~/server/me";
 export async function action({ request }: ActionFunctionArgs) {
   try {
     const formData = await request.formData();
-    
+
     const nombre = formData.get("nombre") as string;
     const email = formData.get("email") as string;
     const tipo = formData.get("tipo") as string;
     const organizacion = formData.get("organizacion") as string;
 
     // Validaciones del servidor
-    if (!nombre || !email || !tipo) {
+    if (!email || !tipo) {
       return Response.json(
         { error: "Todos los campos obligatorios deben ser completados" },
         { status: 400 }
       );
     }
 
-    // Validar que el tipo sea válido en el form 
+    // Validar que el tipo sea válido en el form
     const validTypes = Object.values(ADMIN_ROLES);
     if (!validTypes.includes(tipo as any)) {
-      return Response.json({ error: "Tipo de administrador inválido" }, { status: 400 });
+      return Response.json(
+        { error: "Tipo de administrador inválido" },
+        { status: 400 }
+      );
     }
 
     // Validar formato de email
@@ -36,21 +42,26 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    // hacer verificacion de rol obteniendo en ssr aunque gaste mas 
+    // hacer verificacion de rol obteniendo en ssr aunque gaste mas
     // recurosos pero es mas seguro
     const roleCurrent = getUserFromRequest(request);
     if (!roleCurrent) {
       return Response.json({ error: "No autorizado" }, { status: 403 });
     }
-    if(roleCurrent instanceof UserResponseHandler){
-      if(roleCurrent.user.role !== ADMIN_ROLES.ADMINISTRADOR){
-        return Response.json({ error: "No autorizado tienes que ser administrador" }, { status: 403 });
+    if (roleCurrent instanceof UserResponseHandler) {
+      if (roleCurrent.user.role !== ADMIN_ROLES.ADMINISTRADOR) {
+        return Response.json(
+          { error: "No autorizado tienes que ser administrador" },
+          { status: 403 }
+        );
       }
     }
 
-    if(existingInvite(email)){
-      return Response.json({ error: "Ya existe una invitación para este correo" }, { status: 400 });
-      
+    if (existingInvite(email)) {
+      return Response.json(
+        { error: "Ya existe una invitación para este correo" },
+        { status: 400 }
+      );
     }
     // Generar token único
 
@@ -60,14 +71,12 @@ export async function action({ request }: ActionFunctionArgs) {
 
     const token = addInvite(email, tipo, expiresAt.getTime());
 
-
     // TODO: Enviar email con el link de invitación
     // await sendInvitationEmail(email, nombre, inviteLink);
 
     const inviteLink = `${new URL(request.url).origin}/admin-register/invite/${token}`;
 
     console.log("Invitación creada:", {
-      nombre,
       email,
       tipo,
       organizacion,
@@ -83,4 +92,3 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 }
-

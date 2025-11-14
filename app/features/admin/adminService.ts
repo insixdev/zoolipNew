@@ -18,7 +18,7 @@ export type AdminResponse = {
 const url = "http://localhost:3050/api/auth/admin/";
 export async function adminRegister(user): Promise<AdminResponse> {
   try {
-    console.log("📤 Enviando registro de admin al backend:", user);
+    console.log("[ADMIN] Enviando registro de admin al backend:", user);
     const res = await fetch(`${url}register`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -34,7 +34,7 @@ export async function adminRegister(user): Promise<AdminResponse> {
       console.log("📥 Respuesta raw del backend:", text);
 
       if (!text || text.trim() === "") {
-        console.log("⚠️ Respuesta vacía del backend");
+        console.log("[ADMIN] WARNING: Respuesta vacia del backend");
         data = { message: "Respuesta vacía del servidor" };
       } else {
         data = JSON.parse(text);

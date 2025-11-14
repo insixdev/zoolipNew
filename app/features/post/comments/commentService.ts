@@ -183,3 +183,53 @@ export async function getAllCommentsService(
     throw err;
   }
 }
+
+/**
+ * Obtiene todos los comentarios de una publicación específica
+ * @param publicationId - ID de la publicación
+ * @param cookie - Cookie de autenticación
+ * @returns Promise con array de comentarios de la publicación
+ * @throws Error si falla la petición
+ */
+export async function getCommentsByPublicationService(
+  publicationId: number,
+  cookie: string
+): Promise<CommentGetResponse[]> {
+  try {
+    const hd = new Headers();
+    hd.append("Content-Type", "application/json");
+    hd.append("Cookie", cookie);
+
+    const url = `${BASE_COMMENT_URL}obtenerPorIdPublicacion?id_publicacion=${publicationId}`;
+    console.log(`Fetching comments from: ${url}`);
+
+    const res = await fetch(url, {
+      method: "GET",
+      headers: hd,
+    });
+    console.log(`Response status: ${res.status}`);
+
+    // 204 No Content significa que no hay comentarios
+    if (res.status === 204) {
+      console.log("No hay comentarios (204 No Content)");
+      return [];
+    }
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      console.error("[COMMENT] Error response:", data);
+      throw new Error(
+        data.message ||
+          data.error ||
+          "Error al obtener comentarios de la publicación"
+      );
+    }
+
+    const data = await res.json();
+    console.log(`[COMMENT] Comments received:`, data);
+    return data;
+  } catch (err) {
+    console.error(" Get comments by publication error:", err);
+    throw err;
+  }
+}

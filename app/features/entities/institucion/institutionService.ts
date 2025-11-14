@@ -165,7 +165,7 @@ export async function getInstitutionByIdUsuarioService(
     }
 
     const data = JSON.parse(text);
-    console.log(`✅ Institución obtenida:`, data);
+    console.log(`[INSTITUTION] Institucion obtenida:`, data);
     return data;
   } catch (err) {
     console.error("❌ Get institution by id usuario error:", err);
