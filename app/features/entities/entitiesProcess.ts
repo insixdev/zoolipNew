@@ -5,12 +5,8 @@ import { loginService, registerService } from "../auth/authServiceCurrent";
 import { UserAppRegister } from "./User";
 
 export async function registrarAdminProcess(userData) {
-  // Primero lo registramos como usuario admin
   try {
-    console.log(" Iniciando proceso de registro de admin:", userData.username);
-
     const res = await adminRegister(userData);
-    console.log(" Respuesta de adminRegister:", res);
 
     if (!res) {
       return {
@@ -18,6 +14,7 @@ export async function registrarAdminProcess(userData) {
         status: 500,
       };
     }
+
     if (res.status === "error") {
       return {
         error: res.message || "Error al registrar el administrador",
@@ -26,17 +23,15 @@ export async function registrarAdminProcess(userData) {
     }
 
     // Si el registro fue exitoso, hacer login para obtener la cookie
-    console.log(" Registro exitoso, iniciando sesión...");
-
     const userRequest = {
       username: userData.username,
       password: userData.password,
     };
 
     const loginRes = await loginService(userRequest);
-    const cookie = loginRes.headers.get("Set-Cookie");
+    const newCookie = loginRes.headers.get("Set-Cookie");
 
-    if (!cookie) {
+    if (!newCookie) {
       return {
         error:
           "Registro exitoso pero no se pudo iniciar sesión automáticamente",
@@ -44,10 +39,8 @@ export async function registrarAdminProcess(userData) {
       };
     }
 
-    console.log("[AUTH] Login exitoso, cookie obtenida");
-    return cookie;
+    return newCookie;
   } catch (error) {
-    console.error("❌ Error en registrarAdminProcess:", error);
     return {
       error:
         error instanceof Error

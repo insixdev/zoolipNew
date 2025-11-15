@@ -56,7 +56,7 @@ export async function action({ request }: { request: Request }) {
   const id = formData.get("id");
   const actionType = formData.get("action");
 
-  console.log("📋 [INSTITUTION ACTION] Processing:", { id, actionType });
+  console.log("ITUTIOTN Processing:", { id, actionType });
 
   try {
     // Obtener la solicitud del loader data para tener email y nombre
@@ -76,7 +76,7 @@ export async function action({ request }: { request: Request }) {
     }
 
     if (actionType === "accept") {
-      console.log("✅ Aceptando solicitud:", id);
+      console.log("Aceptando solicitud:", id);
 
       // 1. Generar token de invitación
       const { addInvite } = await import(
@@ -100,7 +100,7 @@ export async function action({ request }: { request: Request }) {
       // 2. Generar link de invitación
       const inviteLink = `${new URL(request.url).origin}/admin-register/invite/${token}`;
 
-      console.log("🔗 Link de invitación generado:", inviteLink);
+      console.log(" Link de invitación generado:", inviteLink);
 
       // 3. Enviar email con el link
       const { solicitudAceptadaConInvitacionEmail } = await import(

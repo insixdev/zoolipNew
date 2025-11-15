@@ -285,68 +285,72 @@ export async function removeFavPublicationService(
 
 /**
  * Obtiene publicaciones con paginación
- * @param lastPublicationId - ID de la última publicación visible (para cargar las siguientes)
- * @param cookie - Cookie de autenticación
+ * @param lastPublicationId - ID de la última publicación visible (para cargar las siguientes). Si es 0, obtiene las primeras.
+ * @param cookie - Cookie de autenticación (opcional)
  * @returns Promise con array de publicaciones
  * @throws Error si falla la petición
  */
 export async function getPublicationsWithPaginationService(
-  lastPublicationId: number,
-  cookie: string
+  lastPublicationId: number = 1,
+  cookie?: string
 ): Promise<PublicationPublicGetResponse[]> {
   try {
     const hd = new Headers();
-    hd.append("Cookie", cookie);
     hd.append("Content-Type", "application/json");
 
-    const url = `${BASE_PUBLICATION_URL}obtenerTodas?id_publicacion=${lastPublicationId}`;
-    console.log("Fetching paginated publications from:", url);
+    // Solo agregar cookie si está disponible
+    if (cookie) {
+      hd.append("Cookie", cookie);
+    }
+
+    // El backend requiere el parámetro id_publicacion
+    // Si es 0, usar 1 para empezar desde el principio
+    const startId = lastPublicationId <= 0 ? 1 : lastPublicationId;
+    const url = `${BASE_PUBLICATION_URL}obtenerTodas?id_publicacion=${startId}`;
+
+    console.log(
+      "[POST SERVICE] Fetching publications from:",
+      url,
+      `(starting from ID: ${startId})`,
+      cookie ? "(with auth)" : "(public)"
+    );
 
     const res = await fetch(url, {
       method: "GET",
       headers: hd,
     });
 
-    console.log("Pagination response status:", res.status);
-
-    // Si obtenemos 403, el token es inválido o expiró
-    // Lanzar error especial para que el frontend maneje la redirección
-    if (res.status === 403) {
-      console.log(
-        "403 Forbidden - token inválido o expirado, lanzando error para logout"
-      );
-      throw new Error("TOKEN_INVALID_403");
-    }
+    console.log("[POST SERVICE] Response status:", res.status);
 
     if (!res.ok) {
       const text = await res.text();
-      let errorMessage = "Error al obtener publicaciones paginadas";
+      let errorMessage = "Error al obtener publicaciones";
       try {
         const errorData = JSON.parse(text);
         errorMessage = errorData.message || errorMessage;
       } catch {
         errorMessage = text || errorMessage;
       }
-      console.error("Pagination error:", errorMessage);
+      console.error("[POST SERVICE] Error:", errorMessage);
       // Devolver array vacío en lugar de lanzar error
       return [];
     }
 
     const text = await res.text();
     if (!text || text.trim() === "") {
-      console.log("Empty pagination response, returning empty array");
+      console.log("[POST SERVICE] Empty response, returning empty array");
       return [];
     }
 
     const data = JSON.parse(text);
     console.log(
-      "Paginated data length:",
+      "[POST SERVICE] Publications loaded:",
       Array.isArray(data) ? data.length : "not array"
     );
 
-    return data;
+    return Array.isArray(data) ? data : [];
   } catch (err) {
-    console.error("Get paginated publications error:", err);
+    console.error("[POST SERVICE] Get publications error:", err);
     // Devolver array vacío en lugar de lanzar error para no romper la UI
     return [];
   }
@@ -354,21 +358,26 @@ export async function getPublicationsWithPaginationService(
 
 /**
  * Obtiene publicaciones públicas (últimas 10)
- * @param cookie - Cookie de autenticación
+ * @param cookie - Cookie de autenticación (opcional, el endpoint es público)
  * @returns Promise con array de publicaciones públicas
  * @throws Error si falla la petición
  */
 export async function getAllPublicPublicationsService(
-  cookie: string
+  cookie?: string
 ): Promise<PublicationPublicGetResponse[]> {
   try {
     const hd = new Headers();
-    hd.append("Cookie", cookie);
     hd.append("Content-Type", "application/json");
 
+    // Solo agregar cookie si está disponible
+    if (cookie) {
+      hd.append("Cookie", cookie);
+    }
+
     console.log(
-      "Fetching public publications from:",
-      `${BASE_PUBLICATION_URL}obtenerPublicacionesPublicas`
+      "[POST SERVICE] Fetching public publications from:",
+      `${BASE_PUBLICATION_URL}obtenerPublicacionesPublicas`,
+      cookie ? "(with auth)" : "(public)"
     );
 
     const res = await fetch(
@@ -468,6 +477,45 @@ export async function getPublicationsByUserService(
   } catch (err) {
     console.error("[POST SERVICE] Get user publications error:", err);
     // Devolver array vacío en lugar de lanzar error
+    return [];
+  }
+}
+
+/**
+ * Obtiene todas las publicaciones del usuario autenticado actual
+ * @param cookie - Cookie de autenticación
+ * @returns Promise con array de publicaciones del usuario actual
+ * @throws Error si falla la petición
+ */
+export async function getCurrentUserPublicationsService(
+  cookie: string
+): Promise<PublicationPublicGetResponse[]> {
+  try {
+    const hd = new Headers();
+    hd.append("Cookie", cookie);
+    hd.append("Content-Type", "application/json");
+
+    const url = `${BASE_PUBLICATION_URL}obtenerPorUsuarioCurrent`;
+
+    const res = await fetch(url, {
+      method: "GET",
+      headers: hd,
+    });
+
+    if (res.status === 204 || !res.ok) {
+      return [];
+    }
+
+    const text = await res.text();
+    if (!text || text.trim() === "") {
+      return [];
+    }
+
+    const data = JSON.parse(text);
+
+    return Array.isArray(data) ? data : [];
+  } catch (err) {
+    console.error("[POST SERVICE] Get current user publications error:", err);
     return [];
   }
 }

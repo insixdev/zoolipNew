@@ -31,8 +31,6 @@ import {
 import { decodeClaims, getUserInfoFromToken } from "~/lib/authUtil";
 import { getTokenFromCookie } from "~/server/cookies";
 import { registrarAdminProcess } from "~/features/entities/entitiesProcess";
-import { UserAppRegister } from "~/features/entities/User";
-import { w } from "public/build/_shared/chunk-O7IRWV66";
 
 // Loader para redirigir usuarios autenticados
 export async function loader({ params, request }) {
@@ -44,14 +42,17 @@ export async function loader({ params, request }) {
   if (!token) {
     throw new Response("No se pudo acceder a la invitacion", { status: 404 });
   }
-  const valid = validateToken(token);
+  const { valide } = validateToken(token);
 
-  if (!(valid instanceof valideResponse)) {
-    throw new Response(valid.message, { status: valid.status });
+  if (!(valide instanceof valideResponse)) {
+    if (!valide) {
+      throw new Response("No se pudo acceder a la invitacion", { status: 404 });
+    }
   }
-  console.log("ROLE:", valid.role);
+
+  console.log("ROLE:", valide.role);
   return Response.json(
-    { email: valid.email, role: valid.role },
+    { email: valide.email, role: valide.role },
     { status: 200 }
   );
 }
@@ -76,15 +77,13 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   // Preparar datos para el backend
-  // Probar con diferentes formatos de campo para el rol
+  // El backend solo acepta ADMINISTRADOR o SYSTEM (sin ROLE_)
   const userData = {
     username: formData.get("name") as string,
     password: formData.get("password") as string,
     email: formData.get("email") as string,
-    rol: "ADMINISTRADOR", // Rol del usuario en el sistema
+    rol: "ADMINISTRADOR",
   };
-
-  console.log(" Admin Registration Data:", userData);
 
   try {
     const cookie = await registrarAdminProcess(userData);
@@ -125,10 +124,12 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    console.log("Info del usuario obtenida del token:", infoUserData);
-
-    const userid: UserId = {
-      id: Number(infoUserData.id),
+    // Crear objeto Usuario completo para el backend
+    const usuarioData = {
+      id_usuario: Number(infoUserData.id),
+      nombre: userData.username,
+      email: userData.email,
+      rol: "ADMINISTRADOR",
     };
 
     // Formatear horarios: agregar segundos si no los tienen
@@ -166,7 +167,7 @@ export async function action({ request }: ActionFunctionArgs) {
       descripcion: formData.get("descripcion") as string,
       horario_inicio: formatearHorario(horarioInicio),
       horario_fin: formatearHorario(horarioFin),
-      id_usuario: userid,
+      id_usuario: usuarioData,
     };
 
     console.log("Datos de institución a enviar:", institucionData);
@@ -185,7 +186,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     const institutionData = await getInstitutionByIdUsuarioService(
-      userid.id,
+      usuarioData.id_usuario,
       cookie
     );
 
@@ -315,7 +316,9 @@ export default function AdminRegister() {
     const newErrors: FormErrors = {};
 
     // Validaciones básicas
+
     if (!formData.name.trim()) newErrors.name = "El nombre es requerido";
+    if (!formData.email) newErrors.email = "NO HAY";
     if (!formData.email.trim()) newErrors.email = "El email es requerido";
     if (!formData.password) newErrors.password = "La contraseña es requerida";
     if (formData.password.length < 6)

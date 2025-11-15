@@ -87,9 +87,9 @@ export async function getUserFromRequest(
 
     return cached.data;
   } else if (cached) {
-    console.log("⏰ Cache expirado, obteniendo datos frescos del servidor");
+    console.log("Cache expirado, obteniendo datos frescos del servidor");
   } else {
-    console.log("🆕 No hay cache, obteniendo datos del servidor");
+    console.log("No hay cache, obteniendo datos del servidor");
   }
 
   // Verificar llamadas duplicadas muy rápidas

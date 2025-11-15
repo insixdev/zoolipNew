@@ -1,57 +1,66 @@
-import type { ActionFunctionArgs } from "react-router";
+import { ActionFunctionArgs } from "react-router";
 import { createSolicitudAdopcionService } from "~/features/adoption/adoptionService";
+import { getHeaderCookie } from "~/server/cookies";
 
-/**
- * API endpoint para solicitar adopción de una mascota
- * POST /api/adoption/solicitar
- */
 export async function action({ request }: ActionFunctionArgs) {
-  if (request.method !== "POST") {
-    return Response.json({ error: "Método no permitido" }, { status: 405 });
-  }
+  const cookie = getHeaderCookie(request);
 
-  const cookie = request.headers.get("Cookie") || "";
+  if (!cookie) {
+    return Response.json(
+      {
+        status: "error",
+        message: "No hay sesión activa",
+      },
+      { status: 401 }
+    );
+  }
 
   try {
     const formData = await request.formData();
-    const id_mascota = Number(formData.get("id_mascota"));
+    const id_mascota = formData.get("id_mascota");
+    const razon = formData.get("razon");
 
     if (!id_mascota) {
       return Response.json(
-        { error: "ID de mascota requerido" },
+        {
+          status: "error",
+          message: "ID de mascota es requerido",
+        },
         { status: 400 }
       );
     }
 
-    console.log(`🐕 [SOLICITAR ADOPCION] Mascota ID: ${id_mascota}`);
+    // Crear objeto de solicitud según el modelo del backend
+    const solicitudData = {
+      mascota: {
+        id: Number(id_mascota),
+      },
+      razon: razon || "",
+      estadoSolicitud: "PENDIENTE",
+    };
 
-    // El backend automáticamente obtiene el usuario del contexto de seguridad
-    const result = await createSolicitudAdopcionService(
-      { id_mascota: { id: id_mascota } } as any,
+    const response = await createSolicitudAdopcionService(
+      solicitudData,
       cookie
     );
 
-    return Response.json({
-      success: true,
-      message: "Solicitud de adopción enviada exitosamente",
-      result,
-    });
-  } catch (error: any) {
-    console.error("🐕 [SOLICITAR ADOPCION] Error:", error);
-
-    // Si es error 409 (ya solicitada)
-    if (
-      error.message?.includes("409") ||
-      error.message?.includes("ya solicitada")
-    ) {
-      return Response.json(
-        { error: "Ya has solicitado adoptar esta mascota" },
-        { status: 409 }
-      );
-    }
-
     return Response.json(
-      { error: error.message || "Error al solicitar adopción" },
+      {
+        status: "success",
+        message:
+          response.message || "Solicitud de adopción enviada exitosamente",
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    return Response.json(
+      {
+        status: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Error al crear solicitud de adopción",
+      },
       { status: 500 }
     );
   }

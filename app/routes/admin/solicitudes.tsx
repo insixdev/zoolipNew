@@ -13,7 +13,7 @@ import {
 import type { SolicitudAdopcionDTO } from "~/features/adoption/types";
 import { useEffect } from "react";
 
-// Action para aprobar/rechazar solicitudes
+// Action para completar adopción
 export async function action({ request }: ActionFunctionArgs) {
   await requireAdmin(request);
   const cookie = request.headers.get("Cookie") || "";
@@ -21,28 +21,23 @@ export async function action({ request }: ActionFunctionArgs) {
   try {
     const formData = await request.formData();
     const id_solicitud = Number(formData.get("id_solicitud"));
-    const estado = formData.get("estado") as "APROBADA" | "RECHAZADA";
 
-    console.log(
-      `📋 [ADMIN SOLICITUDES] ${estado === "APROBADA" ? "Aprobando" : "Rechazando"} solicitud ${id_solicitud}`
-    );
+    const solicitudData = {
+      id_solicitud_adopcion: id_solicitud,
+    };
 
-    const result = await completarSolicitudService(
-      id_solicitud,
-      estado,
-      cookie
-    );
+    const result = await completarAdopcionService(solicitudData, cookie);
 
     return {
       success: true,
-      message: `Solicitud ${estado === "APROBADA" ? "aprobada" : "rechazada"} exitosamente`,
+      message: "Adopción completada exitosamente",
       result,
     };
   } catch (error: any) {
     console.error("📋 [ADMIN SOLICITUDES] Error:", error);
     return {
       success: false,
-      error: error.message || "Error al procesar solicitud",
+      error: error.message || "Error al completar adopción",
     };
   }
 }
@@ -83,24 +78,14 @@ export default function AdminSolicitudes() {
     }
   }, [fetcher.data]);
 
-  const handleAprobar = (id_solicitud: number) => {
+  const handleCompletarAdopcion = (id_solicitud: number) => {
     if (
       confirm(
-        "¿Estás seguro de aprobar esta solicitud? El usuario se convertirá en adoptante."
+        "¿Estás seguro de completar esta adopción? El usuario se convertirá en adoptante y la mascota será asignada."
       )
     ) {
       const formData = new FormData();
       formData.append("id_solicitud", id_solicitud.toString());
-      formData.append("estado", "APROBADA");
-      fetcher.submit(formData, { method: "post" });
-    }
-  };
-
-  const handleRechazar = (id_solicitud: number) => {
-    if (confirm("¿Estás seguro de rechazar esta solicitud?")) {
-      const formData = new FormData();
-      formData.append("id_solicitud", id_solicitud.toString());
-      formData.append("estado", "RECHAZADA");
       fetcher.submit(formData, { method: "post" });
     }
   };
@@ -234,33 +219,25 @@ export default function AdminSolicitudes() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
                         {solicitud.estadoSolicitud === "PENDIENTE" ? (
-                          <>
-                            <button
-                              onClick={() =>
-                                handleAprobar(solicitud.idSolicitudAdopcion)
-                              }
-                              disabled={fetcher.state !== "idle"}
-                              className="text-green-600 hover:text-green-900 mr-3 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                            >
-                              {fetcher.state !== "idle"
-                                ? "Procesando..."
-                                : "Aprobar"}
-                            </button>
-                            <button
-                              onClick={() =>
-                                handleRechazar(solicitud.idSolicitudAdopcion)
-                              }
-                              disabled={fetcher.state !== "idle"}
-                              className="text-red-600 hover:text-red-900 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                            >
-                              Rechazar
-                            </button>
-                          </>
+                          <button
+                            onClick={() =>
+                              handleCompletarAdopcion(
+                                solicitud.idSolicitudAdopcion
+                              )
+                            }
+                            disabled={fetcher.state !== "idle"}
+                            className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all shadow-sm hover:shadow-md"
+                          >
+                            {fetcher.state !== "idle"
+                              ? "Procesando..."
+                              : "Completar Adopción"}
+                          </button>
                         ) : (
                           <span className="text-gray-500 italic">
-                            {solicitud.estadoSolicitud === "APROBADA"
-                              ? "Aprobada"
-                              : "Rechazada"}
+                            {solicitud.estadoSolicitud === "APROBADA" ||
+                            solicitud.estadoSolicitud === "COMPLETADA"
+                              ? "Completada"
+                              : solicitud.estadoSolicitud}
                           </span>
                         )}
                       </td>
@@ -275,9 +252,9 @@ export default function AdminSolicitudes() {
         {solicitudes.length > 0 && (
           <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-sm text-blue-800">
-              💡 <strong>Nota:</strong> Al aprobar una solicitud, el usuario
-              automáticamente se convierte en ADOPTANTE y obtiene acceso a sus
-              mascotas adoptadas.
+              💡 <strong>Nota:</strong> Al completar una adopción, el usuario
+              automáticamente se convierte en ADOPTANTE y la mascota es asignada
+              a su perfil.
             </p>
           </div>
         )}

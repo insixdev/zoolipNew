@@ -1,5 +1,8 @@
 import { LoaderFunctionArgs, useLoaderData, Link } from "react-router";
-import { getUserByIdService, UserProfile } from "~/features/user/userService";
+import {
+  getPublicUserByIdService,
+  UserProfile,
+} from "~/features/user/userService";
 import { getUserFieldFromCookie, field } from "~/lib/authUtil";
 import { Settings, Grid, Bookmark, Heart, Dog } from "lucide-react";
 import { useState } from "react";
@@ -30,99 +33,78 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     // Verificar si es el perfil propio
     const isOwnProfile = currentUserId === userId;
 
-    console.log(`[PROFILE] Cargando perfil del usuario: ${userId}`);
-
-    // Obtener los datos del usuario desde el backend
-    const user = await getUserByIdService(parseInt(userId), cookie);
+    // Obtener los datos del usuario desde el backend usando el endpoint público
+    const user = await getPublicUserByIdService(parseInt(userId));
 
     // Si el usuario es un refugio, cargar sus mascotas
     let mascotas: MascotaDTO[] = [];
     if (user.id_institucion) {
       try {
-        console.log(
-          `[PROFILE] Usuario es refugio, cargando mascotas de institución: ${user.id_institucion}`
-        );
         mascotas = await getMascotasByInstitucionService(
           user.id_institucion,
           cookie
         );
-        console.log(`[PROFILE] Mascotas cargadas: ${mascotas.length}`);
       } catch (error) {
-        console.error("[PROFILE] Error cargando mascotas:", error);
         // No fallar si no se pueden cargar las mascotas
       }
     }
     // Si es adoptante y es su propio perfil, cargar sus mascotas adoptadas
     else if (isOwnProfile && user.rol === "ADOPTANTE") {
       try {
-        console.log(
-          `[PROFILE] Usuario es adoptante, cargando mascotas adoptadas`
-        );
         const { getMisMascotasService } = await import(
           "~/features/adoption/adoptionService"
         );
         mascotas = await getMisMascotasService(cookie);
-        console.log(`[PROFILE] Mascotas adoptadas: ${mascotas.length}`);
       } catch (error) {
-        console.error("[PROFILE] Error cargando mascotas adoptadas:", error);
         // No fallar si no se pueden cargar las mascotas
       }
     }
 
     // Obtener las publicaciones del usuario
-    let userPosts: Post[] = [];
+    let allUserPosts: Post[] = [];
     try {
-      console.log(`[PROFILE] Cargando publicaciones del usuario: ${userId}`);
       const publicationsFromBackend = await getPublicationsByUserService(
         parseInt(userId),
         cookie
       );
 
       // Parsear las publicaciones al formato del frontend
-      userPosts = postParseResponse(publicationsFromBackend);
-
-      // Filtrar solo PUBLICACIONES (no CONSULTAS)
-      userPosts = userPosts.filter(
-        (post) => post.publicationType === "PUBLICACION"
-      );
-
-      console.log(`[PROFILE] Publicaciones cargadas: ${userPosts.length}`);
+      allUserPosts = postParseResponse(publicationsFromBackend);
     } catch (error) {
-      console.error("[PROFILE] Error cargando publicaciones:", error);
       // No fallar si no se pueden cargar las publicaciones
     }
 
-    return { user, isOwnProfile, mascotas, userPosts };
+    // Separar publicaciones y consultas
+    const userPosts = allUserPosts.filter(
+      (post) => post.publicationType === "PUBLICACION"
+    );
+    const userConsultas = allUserPosts.filter(
+      (post) => post.publicationType === "CONSULTA"
+    );
+
+    return { user, isOwnProfile, mascotas, userPosts, userConsultas };
   } catch (err) {
-    console.error("Error al cargar perfil:", err);
-
-    // Si es error 403, probablemente el usuario tiene un rol incorrecto en la BD
-    if (err instanceof Error && err.message.includes("403")) {
-      throw new Response(
-        "Error de permisos. El usuario puede tener un rol incorrecto en la base de datos. " +
-          "Intenta re-registrarte o contacta al administrador.",
-        { status: 403 }
-      );
-    }
-
     throw new Response("Error al cargar perfil", { status: 500 });
   }
 }
 
 export default function UserProfile() {
-  const { user, isOwnProfile, mascotas, userPosts } = useLoaderData<{
-    user: UserProfile;
-    isOwnProfile: boolean;
-    mascotas: MascotaDTO[];
-    userPosts: Post[];
-  }>();
+  const { user, isOwnProfile, mascotas, userPosts, userConsultas } =
+    useLoaderData<{
+      user: UserProfile;
+      isOwnProfile: boolean;
+      mascotas: MascotaDTO[];
+      userPosts: Post[];
+      userConsultas: Post[];
+    }>();
 
-  const [activeTab, setActiveTab] = useState<"posts" | "saved" | "mascotas">(
-    "posts"
-  );
+  const [activeTab, setActiveTab] = useState<
+    "posts" | "consultas" | "saved" | "mascotas"
+  >("posts");
 
-  // Número de publicaciones del usuario
+  // Número de publicaciones y consultas del usuario
   const publicaciones = userPosts?.length || 0;
+  const consultas = userConsultas?.length || 0;
 
   // Verificar si es un refugio o adoptante
   const isRefugio =
@@ -206,6 +188,12 @@ export default function UserProfile() {
                     </span>
                     <span className="text-sm text-gray-600">publicaciones</span>
                   </div>
+                  <div className="text-center">
+                    <span className="block text-lg font-semibold text-gray-900">
+                      {consultas}
+                    </span>
+                    <span className="text-sm text-gray-600">consultas</span>
+                  </div>
                   {showMascotas && (
                     <div className="text-center">
                       <span className="block text-lg font-semibold text-gray-900">
@@ -228,13 +216,15 @@ export default function UserProfile() {
                   {user.fecha_registro && (
                     <p className="text-sm text-gray-600">
                       📍 Miembro desde{" "}
-                      {new Date(user.fecha_registro).toLocaleDateString(
-                        "es-ES",
-                        {
-                          year: "numeric",
-                          month: "long",
-                        }
-                      )}
+                      <span suppressHydrationWarning>
+                        {new Date(user.fecha_registro).toLocaleDateString(
+                          "es-ES",
+                          {
+                            year: "numeric",
+                            month: "long",
+                          }
+                        )}
+                      </span>
                     </p>
                   )}
                 </div>
@@ -256,6 +246,17 @@ export default function UserProfile() {
                 >
                   <Grid size={16} />
                   PUBLICACIONES
+                </button>
+                <button
+                  onClick={() => setActiveTab("consultas")}
+                  className={`flex items-center gap-2 py-4 text-sm font-medium transition-colors ${
+                    activeTab === "consultas"
+                      ? "text-gray-900 border-b-2 border-gray-900"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  <Grid size={16} />
+                  CONSULTAS
                 </button>
                 {showMascotas && (
                   <button
@@ -309,7 +310,10 @@ export default function UserProfile() {
                               <h3 className="font-semibold text-gray-900">
                                 {user.nombre}
                               </h3>
-                              <span className="text-sm text-gray-500">
+                              <span
+                                className="text-sm text-gray-500"
+                                suppressHydrationWarning
+                              >
                                 {new Date(
                                   post.fecha_creacion
                                 ).toLocaleDateString()}
@@ -349,6 +353,81 @@ export default function UserProfile() {
                         className="mt-4 inline-block text-sm font-medium text-purple-600 hover:text-purple-700"
                       >
                         Comparte tu primera publicación
+                      </Link>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === "consultas" && (
+              <div>
+                {userConsultas && userConsultas.length > 0 ? (
+                  <div className="space-y-6">
+                    {userConsultas.map((consulta) => (
+                      <div
+                        key={consulta.id}
+                        className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl shadow-md border border-purple-100 p-6 hover:shadow-lg transition-all"
+                      >
+                        <div className="flex items-start gap-4">
+                          <img
+                            src={user.avatar}
+                            alt={user.nombre}
+                            className="w-12 h-12 rounded-full"
+                          />
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h3 className="font-semibold text-gray-900">
+                                {user.nombre}
+                              </h3>
+                              <span
+                                className="text-sm text-gray-500"
+                                suppressHydrationWarning
+                              >
+                                {new Date(
+                                  consulta.fecha_creacion
+                                ).toLocaleDateString()}
+                              </span>
+                              <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
+                                Consulta
+                              </span>
+                            </div>
+                            <p className="text-gray-800 mb-3">
+                              {consulta.content}
+                            </p>
+                            <div className="flex items-center gap-4 text-sm text-gray-500">
+                              <span className="flex items-center gap-1">
+                                <Heart size={16} />
+                                {consulta.likes} me gusta
+                              </span>
+                              <span>{consulta.comments} respuestas</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-16">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full border-2 border-purple-300 flex items-center justify-center">
+                      <Grid size={24} className="text-purple-400" />
+                    </div>
+                    <h3 className="text-xl font-light text-gray-900 mb-2">
+                      {isOwnProfile
+                        ? "Haz tus primeras consultas"
+                        : "Sin consultas aún"}
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      {isOwnProfile
+                        ? "Cuando hagas preguntas, aparecerán en tu perfil."
+                        : "Las consultas aparecerán aquí."}
+                    </p>
+                    {isOwnProfile && (
+                      <Link
+                        to="/community/consultas"
+                        className="mt-4 inline-block text-sm font-medium text-purple-600 hover:text-purple-700"
+                      >
+                        Haz tu primera consulta
                       </Link>
                     )}
                   </div>

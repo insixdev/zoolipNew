@@ -30,13 +30,14 @@ const ITEMS_PER_PAGE = 10;
 // Loader para obtener solo las consultas
 export async function loader({ request }: LoaderFunctionArgs) {
   const cookie = request.headers.get("Cookie");
-
-  if (!cookie) {
-    return { consultas: [], isPublic: true, hasMore: false };
-  }
+  console.log("[CONSULTAS LOADER] Cookie:", cookie ? "present" : "not present");
 
   try {
-    const fetchedPosts = await getAllPublicPublicationsService(cookie);
+    // Usar el endpoint público para la carga inicial (últimas 10)
+    console.log("[CONSULTAS LOADER] Fetching initial public publications...");
+    const fetchedPosts = await getAllPublicPublicationsService(
+      cookie || undefined
+    );
     console.log(
       "[CONSULTAS LOADER] Total posts fetched:",
       fetchedPosts?.length || 0
@@ -46,41 +47,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
     console.log("[CONSULTAS LOADER] Total posts parsed:", allPosts.length);
 
     // Filtrar solo consultas
-    // TEMPORAL: El backend está guardando tipo=null para TODO
     // Solo mostramos posts con tipo explícito "CONSULTA"
-    // Los posts con null se muestran en /community (feed principal)
     const consultasOnly = allPosts.filter(
       (post) => post.publicationType === "CONSULTA"
     );
 
-    console.log(
-      "[CONSULTAS LOADER] First 3 consultas:",
-      consultasOnly.slice(0, 3).map((c) => ({
-        id: c.id,
-        type: c.publicationType,
-        topico: c.topico,
-      }))
-    );
+    console.log("[CONSULTAS LOADER] Total posts:", allPosts.length);
+    console.log("[CONSULTAS LOADER] Consultas filtered:", consultasOnly.length);
 
     // Los posts ya vienen con el contador de comentarios del backend
-    // No necesitamos hacer peticiones adicionales aquí
-
-    // Retornar solo las primeras ITEMS_PER_PAGE consultas
-    const initialConsultas = consultasOnly.slice(0, ITEMS_PER_PAGE);
-    const hasMore = consultasOnly.length > ITEMS_PER_PAGE;
-
-    console.log("[CONSULTAS LOADER] Returning:", {
-      initialConsultas: initialConsultas.length,
-      hasMore,
-    });
-
+    // Retornar todas las consultas encontradas
     return {
-      consultas: initialConsultas,
-      allConsultas: consultasOnly,
-      hasMore,
+      consultas: consultasOnly,
+      hasMore: consultasOnly.length >= 10, // Si hay 10 o más, probablemente hay más en el servidor
     };
   } catch (error) {
-    return { consultas: [], allConsultas: [], hasMore: false };
+    console.error("[CONSULTAS LOADER] Error:", error);
+    return { consultas: [], hasMore: false };
   }
 }
 
@@ -129,6 +112,7 @@ export default function CommunityConsultas() {
   useEffect(() => {
     if (loaderData?.consultas && loaderData.consultas.length > 0) {
       setDisplayedConsultas(syncConsultasWithLikes(loaderData.consultas));
+      setHasMore(loaderData.hasMore);
     }
   }, [loaderData?.consultas]);
 
@@ -137,39 +121,77 @@ export default function CommunityConsultas() {
     if (loadMoreFetcher.data && loadMoreFetcher.state === "idle") {
       const response = loadMoreFetcher.data as any;
 
+      console.log("[LOAD MORE] Response received:", response);
+
       // Si el token es inválido, limpiar todo y redirigir al login
       if (response.status === "error" && response.code === "INVALID_TOKEN") {
         console.log(
-          "Token inválido, limpiando sesión y redirigiendo al login..."
+          "[LOAD MORE] Token inválido, limpiando sesión y redirigiendo al login..."
         );
-        // Guardar preferencia de cookies antes de limpiar
-        const cookiesAccepted = localStorage.getItem("cookiesAccepted");
-        // Limpiar localStorage
         localStorage.clear();
-        // Redirigir al login
         window.location.href = "/login?redirectTo=/community/consultas";
         return;
       }
 
       if (response.status === "success" && response.posts) {
+        // Parsear las publicaciones si es necesario
+        const parsedPosts = Array.isArray(response.posts)
+          ? response.posts
+          : postParseResponse(response.posts);
+
         // Filtrar solo consultas
-        const newConsultas = response.posts.filter(
+        const newConsultas = parsedPosts.filter(
           (post: any) => post.publicationType === "CONSULTA"
         );
 
-        console.log(" Nuevas consultas cargadas:", newConsultas.length);
+        console.log(
+          "[LOAD MORE] Nuevas consultas cargadas:",
+          newConsultas.length
+        );
+        console.log(
+          "[LOAD MORE] Tipos de posts:",
+          parsedPosts.map((p: any) => ({ id: p.id, type: p.publicationType }))
+        );
 
         if (newConsultas.length > 0) {
-          // Sincronizar nuevas consultas con likes de localStorage
-          const syncedNewConsultas = syncConsultasWithLikes(newConsultas);
-          setDisplayedConsultas((prev) => [...prev, ...syncedNewConsultas]);
-          // Si recibimos menos de 5 consultas, probablemente no hay más
-          setHasMore(newConsultas.length >= 5);
+          // Filtrar duplicados - solo agregar consultas que no existan ya
+          setDisplayedConsultas((prev) => {
+            const existingIds = new Set(prev.map((c) => c.id));
+            const uniqueNewConsultas = newConsultas.filter(
+              (consulta: any) => !existingIds.has(consulta.id)
+            );
+
+            console.log("[LOAD MORE] IDs existentes:", Array.from(existingIds));
+            console.log(
+              "[LOAD MORE] IDs nuevos:",
+              newConsultas.map((c: any) => c.id)
+            );
+            console.log(
+              "[LOAD MORE] Consultas únicas a agregar:",
+              uniqueNewConsultas.length
+            );
+
+            if (uniqueNewConsultas.length === 0) {
+              console.log(
+                "[LOAD MORE] Todas las consultas ya estaban cargadas"
+              );
+              return prev;
+            }
+
+            // Sincronizar nuevas consultas con likes de localStorage
+            const syncedNewConsultas =
+              syncConsultasWithLikes(uniqueNewConsultas);
+            return [...prev, ...syncedNewConsultas];
+          });
+
+          // Si recibimos menos de 3 consultas, probablemente no hay más
+          setHasMore(newConsultas.length >= 3);
         } else {
+          console.log("[LOAD MORE] No se encontraron más consultas");
           setHasMore(false);
         }
       } else {
-        console.log(" Respuesta inesperada del servidor");
+        console.log("[LOAD MORE] Respuesta inesperada del servidor:", response);
         setHasMore(false);
       }
 
@@ -179,7 +201,14 @@ export default function CommunityConsultas() {
 
   // Cargar más consultas desde el backend
   const handleLoadMore = () => {
-    if (isLoading || !hasMore || displayedConsultas.length === 0) return;
+    if (isLoading || !hasMore || displayedConsultas.length === 0) {
+      console.log("[LOAD MORE] Skipping:", {
+        isLoading,
+        hasMore,
+        length: displayedConsultas.length,
+      });
+      return;
+    }
 
     setIsLoading(true);
 
@@ -187,7 +216,7 @@ export default function CommunityConsultas() {
     const lastConsulta = displayedConsultas[displayedConsultas.length - 1];
     const lastId = lastConsulta.id;
 
-    console.log("Cargando más consultas desde ID:", lastId);
+    console.log("[LOAD MORE] Cargando más consultas desde ID:", lastId);
 
     // Llamar al endpoint con el ID de la última consulta
     loadMoreFetcher.load(`/api/post/obtenerTodas?lastId=${lastId}`);

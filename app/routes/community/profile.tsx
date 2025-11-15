@@ -28,8 +28,7 @@ export async function action({ request }: LoaderFunctionArgs) {
     }
 
     try {
-      const logoutResponse = await logoutService(navCookie);
-      console.log("🚪 Logout response:", logoutResponse);
+      await logoutService(navCookie);
 
       // Limpiar caché del servidor
       const { clearUserCache } = await import("~/server/me");
@@ -64,6 +63,25 @@ export async function action({ request }: LoaderFunctionArgs) {
 export async function loader({ request }: LoaderFunctionArgs) {
   // Verificar autenticación (redirige automáticamente si no está autenticado)
   const userResponse = await requireAuth(request);
+  const cookie = request.headers.get("Cookie");
+
+  // Obtener publicaciones del usuario actual
+  let publications = [];
+  if (cookie) {
+    const { getCurrentUserPublicationsService } = await import(
+      "~/features/post/postService"
+    );
+    const { postParseResponse } = await import(
+      "~/features/post/postResponseParse"
+    );
+
+    try {
+      const fetchedPosts = await getCurrentUserPublicationsService(cookie);
+      publications = postParseResponse(fetchedPosts);
+    } catch (error) {
+      console.error("Error loading user publications:", error);
+    }
+  }
 
   const user = {
     id: userResponse.user.id,
@@ -71,16 +89,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     email: userResponse.user.email,
     nombre: userResponse.user.username,
     fechaRegistro: "2024-01-15",
-    mascotas: 2, // Datos de ejemplo
-    publicaciones: 15, // Datos de ejemplo
+    mascotas: 2,
+    publicaciones: publications.length,
     role: userResponse.user.role,
   };
 
-  return { user };
+  return { user, publications };
 }
 
 export default function Profile() {
-  const { user } = useLoaderData<typeof loader>();
+  const { user, publications } = useLoaderData<typeof loader>();
   const { logout, setIsLoading } = useAuth();
   const navigate = useNavigate();
   const fetcher = useFetcher<{ status: string; message: string }>();
@@ -94,21 +112,14 @@ export default function Profile() {
   useEffect(() => {
     if (fetcher.data) {
       if (fetcher.data.status === "success") {
-        console.log(" Logout exitoso, limpiando estado");
-        logout(); // Limpiar estado del AuthProvider
-        navigate("/"); // Redirigir a home
-      } else if (fetcher.data.status === "error") {
-        console.error(" Error en logout:", fetcher.data.message);
-        // Mostrar error al usuario si es necesario
+        logout();
+        navigate("/");
       }
     }
   }, [fetcher.data, logout, navigate]);
 
   const handleLogout = () => {
-    console.log("🚪 Iniciando logout...");
     setIsLoading(true);
-
-    // Usar fetcher para hacer logout
     fetcher.submit({ intent: "logout" }, { method: "post" });
   };
 
@@ -201,7 +212,7 @@ export default function Profile() {
                 >
                   <Bookmark size={16} />
                   GUARDADO
-                                <UserPlus size={16} />
+                  <UserPlus size={16} />
                 </button>
               </div>
             </div>
@@ -211,24 +222,47 @@ export default function Profile() {
           <div className="p-6">
             {activeTab === "posts" && (
               <div>
-                <div className="grid grid-cols-3 gap-1">
-                  {/* Publicaciones de ejemplo */}
-                  {Array.from({ length: 9 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className="aspect-square bg-gray-200 rounded-sm overflow-hidden group cursor-pointer"
-                    >
-                      <img
-                        src={`https://picsum.photos/300/300?random=${i + 1}`}
-                        alt={`Publicación ${i + 1}`}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                      />
-                    </div>
-                  ))}
-                </div>
-
-                {/* Estado vacío si no hay publicaciones */}
-                {user.publicaciones === 0 && (
+                {publications.length > 0 ? (
+                  <div className="space-y-4">
+                    {publications.map((post: any) => (
+                      <div
+                        key={post.id}
+                        className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex items-start gap-3 mb-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-pink-400 flex items-center justify-center text-white font-semibold">
+                            {user.username[0].toUpperCase()}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-gray-900">
+                                {user.username}
+                              </span>
+                              <span className="text-gray-400">•</span>
+                              <span className="text-sm text-gray-500">
+                                {post.publicationType === "CONSULTA"
+                                  ? "Consulta"
+                                  : "Publicación"}
+                              </span>
+                            </div>
+                            {post.topico && (
+                              <span className="text-xs text-gray-500">
+                                {post.topico}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-gray-800 whitespace-pre-wrap">
+                          {post.content}
+                        </div>
+                        <div className="flex items-center gap-4 mt-3 text-sm text-gray-500">
+                          <span>{post.likes} me gusta</span>
+                          <span>{post.comments} comentarios</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
                   <div className="text-center py-16">
                     <div className="w-16 h-16 mx-auto mb-4 rounded-full border-2 border-gray-300 flex items-center justify-center">
                       <Grid size={24} className="text-gray-400" />
@@ -239,9 +273,12 @@ export default function Profile() {
                     <p className="text-sm text-gray-500">
                       Cuando compartas fotos, aparecerán en tu perfil.
                     </p>
-                    <button className="mt-4 text-sm font-medium text-blue-500 hover:text-blue-700">
-                      Comparte tu primera foto
-                    </button>
+                    <Link
+                      to="/community"
+                      className="mt-4 inline-block text-sm font-medium text-blue-500 hover:text-blue-700"
+                    >
+                      Comparte tu primera publicación
+                    </Link>
                   </div>
                 )}
               </div>

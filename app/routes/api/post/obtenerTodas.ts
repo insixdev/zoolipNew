@@ -1,8 +1,5 @@
 import { LoaderFunctionArgs } from "react-router";
-import {
-  getAllPublicPublicationsService,
-  getPublicationsWithPaginationService,
-} from "~/features/post/postService";
+import { getPublicationsWithPaginationService } from "~/features/post/postService";
 import { postParseResponse } from "~/features/post/postResponseParse";
 import { getCommentsByPublicationService } from "~/features/post/comments/commentService";
 import { decodeClaims } from "~/lib/authUtil";
@@ -37,10 +34,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // Validar que el token sea válido
   const tokenValidation = decodeClaims(token);
-  console.log("Token validation:", tokenValidation);
+  console.log("[OBTENER TODAS] Token validation:", tokenValidation);
 
   if (!tokenValidation.valid) {
-    console.log("Token inválido o expirado:", tokenValidation.error);
+    console.log(
+      "[OBTENER TODAS] Token inválido o expirado:",
+      tokenValidation.error
+    );
     return Response.json(
       {
         status: "error",
@@ -55,36 +55,48 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const lastId = url.searchParams.get("lastId");
 
   try {
-    let publications;
+    // Si no hay lastId, el servicio usará 1 por defecto
+    const startId = lastId ? parseInt(lastId) : 1;
 
-    // Si hay lastId, usar paginación
-    if (lastId) {
-      const fetchedPosts = await getPublicationsWithPaginationService(
-        parseInt(lastId),
-        cookie
-      );
+    console.log(
+      `[OBTENER TODAS] Fetching publications starting from ID: ${startId}`
+    );
 
-      const posts = postParseResponse(fetchedPosts);
+    const fetchedPosts = await getPublicationsWithPaginationService(
+      startId,
+      cookie
+    );
 
-      // Obtener el número de comentarios para cada post
-      publications = await Promise.all(
-        posts.map(async (post) => {
-          try {
-            const comments = await getCommentsByPublicationService(
-              post.id,
-              cookie
-            );
-            return { ...post, comments: comments.length };
-          } catch (error) {
-            console.error(`Error getting comments for post ${post.id}:`, error);
-            return { ...post, comments: 0 };
-          }
-        })
-      );
-    } else {
-      // Sin lastId, obtener todas las publicaciones públicas
-      publications = await getAllPublicPublicationsService(cookie);
-    }
+    console.log(
+      `[OBTENER TODAS] Fetched ${fetchedPosts.length} posts from backend`
+    );
+
+    const posts = postParseResponse(fetchedPosts);
+
+    console.log(`[OBTENER TODAS] Parsed ${posts.length} posts`);
+
+    // Obtener el número de comentarios para cada post
+    const publications = await Promise.all(
+      posts.map(async (post) => {
+        try {
+          const comments = await getCommentsByPublicationService(
+            post.id,
+            cookie
+          );
+          return { ...post, comments: comments.length };
+        } catch (error) {
+          console.error(
+            `[OBTENER TODAS] Error getting comments for post ${post.id}:`,
+            error
+          );
+          return { ...post, comments: 0 };
+        }
+      })
+    );
+
+    console.log(
+      `[OBTENER TODAS] Returning ${publications.length} publications with comment counts`
+    );
 
     return Response.json(
       {
@@ -95,7 +107,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       { status: 200 }
     );
   } catch (err: any) {
-    console.error("Error al obtener publicaciones:", err);
+    console.error("[OBTENER TODAS] Error al obtener publicaciones:", err);
 
     // Si el error es por token inválido (403), devolver error especial
     if (err.message === "TOKEN_INVALID_403") {

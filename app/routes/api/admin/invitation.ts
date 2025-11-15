@@ -12,6 +12,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const formData = await request.formData();
 
     const email = formData.get("email") as string;
+    const systemCookie = request.headers.get("Cookie");
     const tipo = formData.get("tipo") as string;
     const organizacion = formData.get("organizacion") as string;
 
@@ -68,7 +69,14 @@ export async function action({ request }: ActionFunctionArgs) {
     expiresAt.setDate(expiresAt.getDate() + 7); // Expira en 7 días
     console.log("tipo:", tipo);
 
-    const token = addInvite(email, tipo, expiresAt.getTime());
+    if(!systemCookie){
+      return Response.json(
+        { error: "No autenticado" },
+        { status: 401 }
+      );
+    }
+
+    const token = addInvite(email, tipo, expiresAt.getTime(), systemCookie);
 
     // TODO: Enviar email con el link de invitación
     // await sendInvitationEmail(email, nombre, inviteLink);

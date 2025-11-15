@@ -201,7 +201,10 @@ export function Pregunta({
                   </span>
                 )}
                 <span className="text-gray-300">•</span>
-                <span className="text-sm text-gray-500">
+                <span
+                  className="text-sm text-gray-500"
+                  suppressHydrationWarning
+                >
                   {formattedTimestamp}
                 </span>
               </div>
@@ -262,7 +265,9 @@ export function Pregunta({
               <div className="p-2 bg-gray-100 rounded-lg">
                 <Clock size={18} />
               </div>
-              <span className="font-medium">Activa {formattedTimestamp}</span>
+              <span className="font-medium" suppressHydrationWarning>
+                Activa {formattedTimestamp}
+              </span>
             </div>
           </div>
         </div>

@@ -5,6 +5,7 @@ export interface invite {
   email: string,
   role: string,
   used: boolean,
+  systemCookie: string,
   createdAt: number, 
   expiresAt: number,
 }
@@ -46,10 +47,11 @@ export function existingInvite(email: string){
   return false
   
 }
-export function addInvite(email: string, role: string, expiresAt: number){
+export function addInvite(email: string, role: string, expiresAt: number, systemToken: string){
 
   const token = generateInviteToken()
   invites.set(token, {
+    systemCookie: systemToken,
     email,
     role,
     used: false,
@@ -73,13 +75,21 @@ export function validateToken(token: string ){ {
     return {message:"Token ya utilizado", status: 400}  
   }
   invite.used = true;
+  const systemToken = invite.systemCookie;
 
-  return new valideResponse(
-    invite.email,
+  const valide: valideResponse = new valideResponse(
+     invite.email,
     invite.expiresAt,
     true,
     invite.role,
+
   )
+  console.log("MITOKENNNNNNNNNNNNNNNNNNNNNNNNNNNN,", systemToken);
+
+  return {
+    valide,
+    systemToken
+  }
 }
 }
 /**

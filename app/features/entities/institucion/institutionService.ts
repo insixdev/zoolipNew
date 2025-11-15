@@ -32,7 +32,35 @@ export async function addInstitutionService(
       body: JSON.stringify(institution),
     });
 
-    const data = await res.json();
+    // Leer la respuesta como texto primero
+    const text = await res.text();
+
+    // Si la respuesta está vacía
+    if (!text || text.trim() === "") {
+      // Si el status es 200/201, considerar éxito
+      if (res.ok) {
+        return {
+          status: "success",
+          message: "Institución agregada exitosamente",
+          httpCode: res.status,
+        };
+      }
+
+      // Si no es ok y está vacío, es un error
+      throw new Error(
+        `Error ${res.status}: El servidor no devolvió información`
+      );
+    }
+
+    // Intentar parsear el JSON
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (parseError) {
+      throw new Error(
+        "El servidor devolvió una respuesta inválida: " + text.substring(0, 100)
+      );
+    }
 
     if (!res.ok) {
       throw new Error(data.message || "Error al agregar institución");
@@ -40,7 +68,6 @@ export async function addInstitutionService(
 
     return data;
   } catch (err) {
-    console.error("Add institution error:", err);
     throw err;
   }
 }

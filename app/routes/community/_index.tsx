@@ -30,17 +30,14 @@ const POSTS_PER_PAGE = 5; // Número de posts a mostrar por página
 // loader para cargar las post inciciales
 export async function loader({ request }: LoaderFunctionArgs) {
   const cookie = request.headers.get("Cookie");
-  console.log("cookie", cookie);
-
-  // Permitir acceso sin cookie (modo público)
-  // Si no hay cookie, simplemente retornar posts vacíos o públicos
-  if (!cookie) {
-    return { posts: [], isPublic: true };
-  }
+  console.log("[COMMUNITY LOADER] Cookie:", cookie ? "present" : "not present");
 
   try {
-    console.log("Calling getAllPublicPublicationsService...");
-    const fetchedPost = await getAllPublicPublicationsService(cookie);
+    console.log("[COMMUNITY LOADER] Fetching initial public publications...");
+    // Usar el endpoint público para la carga inicial (últimas 10)
+    const fetchedPost = await getAllPublicPublicationsService(
+      cookie || undefined
+    );
 
     const posts: Post[] = postParseResponse(fetchedPost);
 
@@ -55,17 +52,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
 
     // Filtrar solo publicaciones (no consultas)
-    // TEMPORAL: El backend está guardando tipo=null para TODO
-    // Mostramos posts con tipo "PUBLICACION" O null (asumiendo que son publicaciones)
+    // Mostramos posts con tipo "PUBLICACION" o null (asumiendo que son publicaciones)
     // Solo excluimos posts con tipo explícito "CONSULTA"
     const publicacionesOnly = posts.filter(
-      (post) => post.publicationType === "PUBLICACION"
+      (post) => post.publicationType !== "CONSULTA"
     );
 
-    console.log("AFTERfilter - Publicaciones only:", publicacionesOnly.length);
+    console.log("[COMMUNITY LOADER] Total posts:", posts.length);
     console.log(
-      " Filtred postss",
-      publicacionesOnly.map((p) => ({ id: p.id, type: p.publicationType }))
+      "[COMMUNITY LOADER] Publicaciones only:",
+      publicacionesOnly.length
+    );
+    console.log(
+      "[COMMUNITY LOADER] Post types:",
+      posts.map((p) => ({ id: p.id, type: p.publicationType }))
     );
 
     const postsWithCommentCount = await Promise.all(
@@ -407,48 +407,95 @@ export default function CommunityIndex() {
     if (loadMoreFetcher.data && loadMoreFetcher.state === "idle") {
       const response = loadMoreFetcher.data as any;
 
+      console.log("[LOAD MORE INDEX] Response received:", response);
+
       // Si el token es inválido, limpiar todo y redirigir al login
       if (response.status === "error" && response.code === "INVALID_TOKEN") {
         console.log(
-          "Token inválido, limpiando sesión y redirigiendo al login..."
+          "[LOAD MORE INDEX] Token inválido, limpiando sesión y redirigiendo al login..."
         );
-        // Guardar preferencia de cookies antes de limpiar
-        const cookiesAccepted = localStorage.getItem("cookiesAccepted");
-        // Limpiar localStorage
         localStorage.clear();
-        // Restaurar preferencia de cookies
-        if (cookiesAccepted) {
-          localStorage.setItem("cookiesAccepted", cookiesAccepted);
-        }
-        // Redirigir al login
         window.location.href = "/login?redirectTo=/community";
         return;
       }
 
       if (response.status === "success" && response.posts) {
+        // Parsear las publicaciones si es necesario
+        const parsedPosts = Array.isArray(response.posts)
+          ? response.posts
+          : postParseResponse(response.posts);
+
         // Filtrar solo publicaciones (no consultas)
-        const newPosts = response.posts.filter(
+        const newPosts = parsedPosts.filter(
           (post: any) => post.publicationType !== "CONSULTA"
         );
 
-        console.log("📥 Nuevas publicaciones cargadas:", newPosts.length);
+        console.log(
+          "[LOAD MORE INDEX] Nuevas publicaciones cargadas:",
+          newPosts.length
+        );
+        console.log(
+          "[LOAD MORE INDEX] Tipos de posts:",
+          parsedPosts.map((p: any) => ({ id: p.id, type: p.publicationType }))
+        );
 
         if (newPosts.length > 0) {
-          setPostsList((prev) => syncPostsWithLikes([...prev, ...newPosts]));
+          // Filtrar duplicados - solo agregar posts que no existan ya
+          setPostsList((prev) => {
+            const existingIds = new Set(prev.map((p) => p.id));
+            const uniqueNewPosts = newPosts.filter(
+              (post: any) => !existingIds.has(post.id)
+            );
+
+            console.log(
+              "[LOAD MORE INDEX] IDs existentes:",
+              Array.from(existingIds)
+            );
+            console.log(
+              "[LOAD MORE INDEX] IDs nuevos:",
+              newPosts.map((p: any) => p.id)
+            );
+            console.log(
+              "[LOAD MORE INDEX] Posts únicos a agregar:",
+              uniqueNewPosts.length
+            );
+
+            if (uniqueNewPosts.length === 0) {
+              console.log(
+                "[LOAD MORE INDEX] Todos los posts ya estaban cargados"
+              );
+              setHasMoreFromServer(false);
+              return prev;
+            }
+
+            const syncedNewPosts = syncPostsWithLikes(uniqueNewPosts);
+            return [...prev, ...syncedNewPosts];
+          });
+
           setVisiblePostsCount((prev) => prev + newPosts.length);
-          // Si recibimos menos de 5 publicaciones, probablemente no hay más
-          setHasMoreFromServer(newPosts.length >= 5);
+          // Si recibimos menos de 3 publicaciones, probablemente no hay más
+          setHasMoreFromServer(newPosts.length >= 3);
         } else {
+          console.log("[LOAD MORE INDEX] No se encontraron más publicaciones");
           setHasMoreFromServer(false);
         }
       } else {
+        console.log(
+          "[LOAD MORE INDEX] Respuesta inesperada del servidor:",
+          response
+        );
         setHasMoreFromServer(false);
       }
     }
   }, [loadMoreFetcher.data, loadMoreFetcher.state]);
 
   const handleLoadMore = () => {
-    console.log("Loading more posts...");
+    console.log("[LOAD MORE INDEX] Loading more posts...");
+    console.log("[LOAD MORE INDEX] Current state:", {
+      visiblePostsCount,
+      postsListLength: postsList.length,
+      hasMoreFromServer,
+    });
 
     // Si ya mostramos todos los posts locales, cargar desde el servidor
     if (visiblePostsCount >= postsList.length && postsList.length > 0) {
@@ -456,12 +503,13 @@ export default function CommunityIndex() {
       const lastId = lastPost.id;
 
       console.log(
-        "🔄 Cargando más publicaciones desde el servidor, lastId:",
+        "[LOAD MORE INDEX] Cargando más publicaciones desde el servidor, lastId:",
         lastId
       );
       loadMoreFetcher.load(`/api/post/obtenerTodas?lastId=${lastId}`);
     } else {
       // Incrementar el número de posts visibles
+      console.log("[LOAD MORE INDEX] Mostrando más posts locales");
       setVisiblePostsCount((prev) =>
         Math.min(prev + POSTS_PER_PAGE, postsList.length)
       );

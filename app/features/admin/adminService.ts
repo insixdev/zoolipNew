@@ -18,38 +18,51 @@ export type AdminResponse = {
 const url = "http://localhost:3050/api/auth/admin/";
 export async function adminRegister(user): Promise<AdminResponse> {
   try {
-    console.log("[ADMIN] Enviando registro de admin al backend:", user);
+    const hd = new Headers();
+    hd.append("Content-Type", "application/json");
     const res = await fetch(`${url}register`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: hd,
       body: JSON.stringify(user),
     });
 
-    console.log("📥 Status de respuesta:", res.status);
+    // Leer la respuesta como texto primero
+    const text = await res.text();
 
-    // Intentar leer la respuesta como texto primero
-    let data;
-    try {
-      const text = await res.text();
-      console.log("📥 Respuesta raw del backend:", text);
-
-      if (!text || text.trim() === "") {
-        console.log("[ADMIN] WARNING: Respuesta vacia del backend");
-        data = { message: "Respuesta vacía del servidor" };
-      } else {
-        data = JSON.parse(text);
+    // Si la respuesta está vacía
+    if (!text || text.trim() === "") {
+      // Si el status es 200/201, considerar éxito aunque no haya body
+      if (res.ok) {
+        return {
+          status: "success",
+          message: "Administrador registrado exitosamente",
+          httpCode: res.status,
+        };
       }
-    } catch (parseError) {
-      console.error("❌ Error al parsear JSON:", parseError);
+
+      // Si no es ok y está vacío, es un error
       return {
         status: "error",
-        message: "El servidor devolvió una respuesta inválida",
+        message: `Error ${res.status}: El servidor no devolvió información`,
         httpCode: res.status,
       };
     }
 
-    console.log("📥 Datos parseados:", data);
+    // Intentar parsear el JSON
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch (parseError) {
+      return {
+        status: "error",
+        message:
+          "El servidor devolvió una respuesta inválida: " +
+          text.substring(0, 100),
+        httpCode: res.status,
+      };
+    }
 
+    // Si no es ok, devolver error
     if (!res.ok) {
       return {
         status: "error",
@@ -59,9 +72,13 @@ export async function adminRegister(user): Promise<AdminResponse> {
       };
     }
 
-    return data;
+    // Si es ok, devolver los datos o un éxito genérico
+    return {
+      status: "success",
+      message: data.message || "Administrador registrado exitosamente",
+      httpCode: res.status,
+    };
   } catch (err) {
-    console.error("❌ Error en adminRegister:", err);
     return {
       status: "error",
       message:
