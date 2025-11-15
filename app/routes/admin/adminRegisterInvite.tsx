@@ -124,13 +124,8 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    // Crear objeto Usuario completo para el backend
-    const usuarioData = {
-      id_usuario: Number(infoUserData.id),
-      nombre: userData.username,
-      email: userData.email,
-      rol: "ADMINISTRADOR",
-    };
+    // El backend solo necesita el ID del usuario
+    const userId = Number(infoUserData.id);
 
     // Formatear horarios: agregar segundos si no los tienen
     const horarioInicio = formData.get("horario_inicio") as string;
@@ -167,7 +162,7 @@ export async function action({ request }: ActionFunctionArgs) {
       descripcion: formData.get("descripcion") as string,
       horario_inicio: formatearHorario(horarioInicio),
       horario_fin: formatearHorario(horarioFin),
-      id_usuario: usuarioData,
+      id_usuario: userId,
     };
 
     console.log("Datos de institución a enviar:", institucionData);
@@ -186,7 +181,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     const institutionData = await getInstitutionByIdUsuarioService(
-      usuarioData.id_usuario,
+      userId,
       cookie
     );
 

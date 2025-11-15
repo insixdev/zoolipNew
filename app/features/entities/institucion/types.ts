@@ -5,24 +5,11 @@ export enum InstitutionType {
   protectora = "ROLE_PROTECTORA",
 }
 
-/** ID de usuario asociado a la institución */
-export type UserId = {
-  id: number;
-};
-
-/** Usuario completo para asociar a la institución */
-export type UsuarioData = {
-  id_usuario: number;
-  nombre: string;
-  email: string;
-  rol: string;
-};
-
 /**
  * Request para agregar una nueva institución
  */
 export type InstitutionCreateRequest = {
-  id_usuario: UsuarioData;
+  id_usuario: number;
   nombre: string;
   tipo: InstitutionType;
   email: string;
