@@ -104,6 +104,20 @@ export async function requireSystem(
 }
 
 /**
+ * Guard para ADMIN o SYSTEM
+ * Permite acceso a administradores del sistema
+ */
+export async function requireAdminOrSystem(
+  request: Request
+): Promise<UserResponseHandler> {
+  return requireSpecificRole(
+    request,
+    [USER_ROLES.ADMIN, USER_ROLES.SYSTEM],
+    "/login"
+  );
+}
+
+/**
  * Guard específico para ROLE_USER
  * Solo permite acceso a usuarios regulares
  */

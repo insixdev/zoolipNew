@@ -3,6 +3,8 @@ import { index, route } from "@react-router/dev/routes";
 
 export default [
   // Index route is now community (social feed)
+  //
+  //
   index("routes/_index.tsx"),
 
   route("admin-register/invite/:token", "routes/admin/adminRegisterInvite.tsx"),
@@ -15,6 +17,7 @@ export default [
       "routes/admin/system/institutionSolicitudes.tsx"
     ),
     route("system/users", "routes/admin/system/users.tsx"),
+    route("system/accounts", "routes/admin/system/accounts.tsx"),
     route("system/institutions", "routes/admin/system/institutions.tsx"),
     route(
       "system/institutionSolicitudes/:id",
@@ -61,10 +64,10 @@ export default [
   // Adopt nested routes
   route("adopt", "routes/adopt/_layout.tsx", [
     index("routes/adopt/_index.tsx"), // /adopt
+    route("mascota/:id", "routes/adopt/mascota.$id.tsx"), // /adopt/mascota/:id
     route("mis-adopciones", "routes/adopt/mis-adopciones.tsx"), // /adopt/mis-adopciones
     route("chatAdopt", "routes/adopt/chatAdopt.tsx"), // /adopt/chatAdopt
     route("solicitudes", "routes/adopt/solicitudes.tsx"), // /adopt/solicitudes
-    //route(":petId", "routes/adopt/[petId].tsx"), // /adopt/max, /adopt/luna, etc.
   ]),
   // Other main routes
   route("landing", "routes/landing.tsx"),
@@ -100,6 +103,10 @@ export default [
   route("api/post/comentarios/:id", "routes/api/post/comentarios.$id.ts"),
   route("api/post/like/:id", "routes/api/post/like.$id.ts"),
 
+  // Upload API routes
+  route("api/upload/image", "routes/api/upload/image.ts"),
+  route("api/upload/:filename", "routes/api/upload/$filename.ts"),
+
   // Pets API routes
   route("api/pets/crear", "routes/api/pets/CrearPet.ts"),
   route("api/pets/actualizar", "routes/api/pets/ActualizarPet.ts"),
@@ -124,6 +131,8 @@ export default [
 
   // Adoption API routes
   route("api/adoption/solicitar", "routes/api/adoption/solicitar.ts"),
+  route("api/adoption/completar", "routes/api/adoption/completar.ts"),
+  route("api/adoption/completar", "routes/api/adoption/completar.ts"),
 
   // User API routes
   route("api/user/update", "routes/api/user/update.ts"),

@@ -1,10 +1,6 @@
 import { createPublicationService } from "~/features/post/postService";
 import { PublicationCreateRequest, UserIdPost } from "~/features/post/types";
-import {
-  field,
-  getUserFieldFromCookie,
-  getUserIdFromToken,
-} from "~/lib/authUtil";
+import { getUserFieldFromCookie } from "~/lib/authUtil";
 import { toLocalISOString } from "~/lib/generalUtil";
 
 //action para crear post
@@ -38,12 +34,17 @@ export async function action({ request }) {
 
   const formData = await request.formData();
   const data = Object.fromEntries(formData);
-  console.log("Form data received:", data);
+  console.log("[CREATE POST] Datos recibidos del formulario:", {
+    topico: data.topico,
+    contenido: data.contenido?.toString().substring(0, 50),
+    tipo: data.tipo,
+    imagen_url: data.imagen_url,
+  });
 
   const postValidation = postBasicValidation(data);
 
   if (!postValidation.post) {
-    console.error("Validation failed:", postValidation.message);
+    console.error("[CREATE POST] Validacion fallida:", postValidation.message);
     return Response.json(
       {
         status: postValidation.status,
@@ -52,7 +53,10 @@ export async function action({ request }) {
       { status: 400 }
     );
   }
-  console.log("Post validated successfully");
+  console.log(
+    "[CREATE POST] Post validado correctamente, imagen_url:",
+    postValidation.post.imagen_url
+  );
 
   const id: UserIdPost = {
     id: Number(userIdFormCookie),
@@ -67,8 +71,13 @@ export async function action({ request }) {
     topico: postValidation.post.topico || "General",
     contenido: postValidation.post.contenido,
     likes: 0,
-    // Solo incluir imagen_url si NO es una consulta
-    imagen_url: isConsulta ? null : "",
+    // Solo incluir imagen_url si NO es una consulta Y si existe una URL válida
+    imagen_url: isConsulta
+      ? null
+      : postValidation.post.imagen_url &&
+          postValidation.post.imagen_url.trim() !== ""
+        ? postValidation.post.imagen_url
+        : null,
     // Solo incluir fecha_pregunta si ES una consulta
     fecha_pregunta: isConsulta ? now : "",
     fecha_edicion: "",
@@ -76,28 +85,36 @@ export async function action({ request }) {
     tipo: postValidation.post.tipo,
   };
 
-  console.log("Creating post with data:", postRequest);
+  console.log("[CREATE POST] Enviando al backend:", {
+    id_usuario: postRequest.id_usuario,
+    topico: postRequest.topico,
+    tipo: postRequest.tipo,
+    imagen_url: postRequest.imagen_url,
+    imagen_url_length: postRequest.imagen_url?.length || 0,
+    contenido_length: postRequest.contenido.length,
+  });
   console.log(
-    `[CREATE POST] Tipo: ${postRequest.tipo}, fecha_pregunta: ${postRequest.fecha_pregunta}`
+    "[CREATE POST] JSON completo:",
+    JSON.stringify(postRequest, null, 2)
   );
 
   try {
     const postRes = await createPublicationService(postRequest, cookie);
-    console.log("Post created successfully:", postRes);
+    console.log("[CREATE POST] Respuesta del backend:", postRes);
 
     return Response.json(
       { status: "success", message: "Publicación creada con éxito" },
       { status: 200 }
     );
   } catch (err) {
-    console.error("Error creating post:", err);
+    console.error("[CREATE POST] Error al crear publicacion:", err);
     return Response.json(
       { status: "error", message: `Error al crear publicación: ${err}` },
       { status: 500 }
     );
   }
 }
-function postBasicValidation(data) {
+function postBasicValidation(data: any) {
   if (!data) {
     return {
       status: "error",
@@ -107,7 +124,6 @@ function postBasicValidation(data) {
 
   try {
     const postData = data as any;
-    console.log("Validating post data:", postData);
 
     // Validar que tenga contenido
     if (!postData.contenido || postData.contenido.trim().length === 0) {
@@ -126,7 +142,15 @@ function postBasicValidation(data) {
       contenido: postData.contenido.trim(),
       likes: 0,
       tipo: postData.tipo || "PUBLICACION",
+      imagen_url: postData.imagen_url || "",
     };
+
+    console.log("[VALIDATION] Post validado:", {
+      topico: validatedPost.topico,
+      tipo: validatedPost.tipo,
+      tiene_imagen: !!validatedPost.imagen_url,
+      imagen_url: validatedPost.imagen_url,
+    });
 
     return {
       status: "success",
@@ -134,7 +158,7 @@ function postBasicValidation(data) {
       post: validatedPost,
     };
   } catch (err) {
-    console.error("Validation error:", err);
+    console.error("[VALIDATION] Error:", err);
     return {
       status: "error",
       message: `Error al procesar los datos: ${err}`,

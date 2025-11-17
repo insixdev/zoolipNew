@@ -4,12 +4,14 @@ export enum InstitutionType {
   veterinaria = "ROLE_VETERINARIA",
   protectora = "ROLE_PROTECTORA",
 }
-
+export type idadmin = {
+  id: number;
+}
 /**
  * Request para agregar una nueva institución
  */
 export type InstitutionCreateRequest = {
-  id_usuario: number;
+  id_usuario: idadmin;
   nombre: string;
   tipo: InstitutionType;
   email: string;

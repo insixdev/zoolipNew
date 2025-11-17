@@ -40,7 +40,7 @@ export async function getAllUsersService(
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error("👥 [USER SERVICE] Error fetching users:", error);
+    console.error("USER SERVICE Error fetching users:", error);
     throw error;
   }
 }
@@ -76,12 +76,11 @@ export async function getUserByIdService(
 
 /**
  * Tipo para actualizar usuario
+ * El ID y rol se obtienen del token, no se envían en el body
  */
 export type UpdateUserRequest = {
-  id: number;
   nombre: string;
   email: string;
-  rol?: string;
   imagen_url?: string;
   biografia?: string;
 };
@@ -101,22 +100,22 @@ export async function updateUserService(
     headers.append("Content-Type", "application/json");
     headers.append("Cookie", cookie);
 
-    const url = "http://localhost:3050/api/usuario/actualizar";
+    const url = "http://localhost:3050/api/usuario/updateCurrentUser";
 
     const response = await fetch(url, {
-      method: "PUT",
+      method: "POST",
       headers,
       body: JSON.stringify(userData),
     });
 
     if (!response.ok) {
-      throw new Error(`Error ${response.status}: ${response.statusText}`);
+      throw new Error(`Error ${response.status}: ${response.body}`);
     }
 
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error("👤 [USER SERVICE] Error updating user:", error);
+    console.error("USER SERVICE Error updating user:", error);
     throw error;
   }
 }
@@ -179,6 +178,75 @@ export async function getPublicUserByIdService(
     return data;
   } catch (error) {
     console.error("Error fetching public user by id:", error);
+    throw error;
+  }
+}
+
+/**
+ * Obtiene los primeros 5 usuarios
+ * Endpoint: GET /get5Usuarios
+ */
+export async function get5UsersService(cookie: string): Promise<UsuarioDTO[]> {
+  try {
+    const headers = new Headers();
+    headers.append("Content-Type", "application/json");
+    headers.append("Cookie", cookie);
+
+    const url = `http://localhost:3050/api/usuario/get5Usuarios`;
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers,
+    });
+
+    if (response.status === 204 || response.status === 404) {
+      return [];
+    }
+
+    if (!response.ok) {
+      throw new Error(`Error ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("USER SERVICE Error fetching 5 users:", error);
+    throw error;
+  }
+}
+
+/**
+ * Obtiene usuarios con límite basado en un ID de usuario
+ * Endpoint: GET /getUsuarios?id_usuario={id}
+ */
+export async function getUsersWithLimitService(
+  userId: number,
+  cookie: string
+): Promise<UsuarioDTO[]> {
+  try {
+    const headers = new Headers();
+    headers.append("Content-Type", "application/json");
+    headers.append("Cookie", cookie);
+
+    const url = `http://localhost:3050/api/usuario/getUsuarios?id_usuario=${userId}`;
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers,
+    });
+
+    if (response.status === 204 || response.status === 404) {
+      return [];
+    }
+
+    if (!response.ok) {
+      throw new Error(`Error ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("USER SERVICE Error fetching users with limit:", error);
     throw error;
   }
 }

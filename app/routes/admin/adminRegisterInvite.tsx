@@ -82,39 +82,70 @@ export async function action({ request }: ActionFunctionArgs) {
     username: formData.get("name") as string,
     password: formData.get("password") as string,
     email: formData.get("email") as string,
-    rol: "ADMINISTRADOR",
+    rol: "ROLE_ADMINISTRADOR",
   };
 
   try {
+    console.log("[ADMIN REGISTER] Iniciando proceso de registro...");
+    console.log("[ADMIN REGISTER] Datos de usuario:", {
+      username: userData.username,
+      email: userData.email,
+      rol: userData.rol,
+    });
+
+    // Paso 1: Registrar admin y obtener cookie
     const cookie = await registrarAdminProcess(userData);
-    // debugear si esta bien
+
     if (!(typeof cookie === "string")) {
+      console.error("[ADMIN REGISTER] Error en registro:", cookie);
       return Response.json(
-        { error: cookie.error, status: cookie.status },
-        { status: 400 }
+        {
+          success: false,
+          error: cookie.error || "Error al registrar el administrador",
+          status: cookie.status,
+        },
+        { status: cookie.status || 400 }
       );
     }
 
+    console.log(
+      "[ADMIN REGISTER] Admin registrado exitosamente, cookie obtenida"
+    );
+
+    // Paso 2: Extraer token de la cookie
     const token = getTokenFromCookie(cookie);
     if (!token) {
-      return Response.json(
-        { error: "Error al registrar la institucion intentalo de nuevo" },
-        { status: 400 }
+      console.error(
+        "[ADMIN REGISTER] No se pudo extraer el token de la cookie"
       );
-    }
-    const payload = decodeClaims(token);
-    if (!payload.valid) {
       return Response.json(
         {
-          error:
-            "Error al registrar la institucion intentalo de nuevo, no valido",
+          success: false,
+          error: "Error al obtener el token de autenticación",
         },
         { status: 400 }
       );
     }
-    const infoUserData = getUserInfoFromToken(payload.payload);
 
+    // Paso 3: Decodificar token
+    const payload = decodeClaims(token);
+    if (!payload.valid) {
+      console.error("[ADMIN REGISTER] Token inválido");
+      return Response.json(
+        {
+          success: false,
+          error: "El token de autenticación no es válido",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Paso 4: Obtener información del usuario del token
+    const infoUserData = getUserInfoFromToken(payload.payload);
     if (!infoUserData) {
+      console.error(
+        "[ADMIN REGISTER] No se pudo obtener info del usuario del token"
+      );
       return Response.json(
         {
           success: false,
@@ -124,8 +155,8 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    // El backend solo necesita el ID del usuario
     const userId = Number(infoUserData.id);
+    console.log("[ADMIN REGISTER] ID de usuario obtenido:", userId);
 
     // Formatear horarios: agregar segundos si no los tienen
     const horarioInicio = formData.get("horario_inicio") as string;
@@ -153,6 +184,9 @@ export async function action({ request }: ActionFunctionArgs) {
         { status: 400 }
       );
     }
+    const iduser = {
+      id: userId,
+    }
 
     // Usar el tipo de institución de la invitación
     const institucionData: InstitutionCreateRequest = {
@@ -162,34 +196,51 @@ export async function action({ request }: ActionFunctionArgs) {
       descripcion: formData.get("descripcion") as string,
       horario_inicio: formatearHorario(horarioInicio),
       horario_fin: formatearHorario(horarioFin),
-      id_usuario: userId,
+      id_usuario: iduser,
     };
 
-    console.log("Datos de institución a enviar:", institucionData);
+    console.log(
+      "[ADMIN REGISTER] Datos de institución a enviar:",
+      institucionData
+    );
 
+    // Paso 5: Crear la institución
     const res = await addInstitutionService(institucionData, cookie);
-    console.log("Respuesta de addInstitutionService:", res);
+    console.log("[ADMIN REGISTER] Respuesta de addInstitutionService:", res);
 
-    if (!res) {
+    if (!res || res.status === "error") {
+      console.error("[ADMIN REGISTER] Error al crear institución:", res);
       return Response.json(
         {
           success: false,
-          error: "Error al registrar la institución",
+          error: res?.message || "Error al registrar la institución",
         },
         { status: 400 }
       );
     }
 
+    console.log("[ADMIN REGISTER] Institución creada exitosamente");
+
+    // Paso 6: Obtener los datos completos de la institución creada
     const institutionData = await getInstitutionByIdUsuarioService(
       userId,
       cookie
     );
+    console.log(
+      "[ADMIN REGISTER] Datos de institución obtenidos:",
+      institutionData
+    );
 
-    // Si es veterinaria, crear también el registro de veterinario
+    // Paso 7: Si es veterinaria, crear también el registro de veterinario
     if (institutionType === "ROLE_VETERINARIA") {
+      console.log("[ADMIN REGISTER] Creando registro de veterinaria...");
+
       const institutionId = institutionData.id_institucion;
 
       if (!institutionId) {
+        console.error(
+          "[ADMIN REGISTER] No se pudo obtener el ID de la institución"
+        );
         return Response.json(
           {
             success: false,
@@ -208,12 +259,15 @@ export async function action({ request }: ActionFunctionArgs) {
         id_institucion: institucionId,
       };
 
+      console.log("[ADMIN REGISTER] Datos de veterinaria:", veterinarianData);
+
       const vetResult = await createVeterinarianService(
         veterinarianData,
         cookie
       );
 
       if (!vetResult) {
+        console.error("[ADMIN REGISTER] Error al crear veterinaria");
         return Response.json(
           {
             success: false,
@@ -223,19 +277,22 @@ export async function action({ request }: ActionFunctionArgs) {
         );
       }
 
-      console.log(" Veterinario registrado exitosamente");
+      console.log("[ADMIN REGISTER] Veterinario registrado exitosamente");
     }
 
-    console.log(" Registro completado, redirigiendo al login");
+    console.log(
+      "[ADMIN REGISTER] ✓ Registro completado exitosamente, redirigiendo al login"
+    );
     return redirect("/login?registered=true");
   } catch (error) {
-    console.error(" Admin registration error:", error);
+    console.error("[ADMIN REGISTER] ✗ Error en el proceso de registro:", error);
+
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
     return Response.json(
       {
         success: false,
-        error:
-          "Error al registrar el administrador: " +
-          (error instanceof Error ? error.message : error),
+        error: `Error al registrar el administrador: ${errorMessage}`,
       },
       { status: 500 }
     );
@@ -311,13 +368,20 @@ export default function AdminRegister() {
     const newErrors: FormErrors = {};
 
     // Validaciones básicas
+    if (!formData.name.trim()) {
+      newErrors.name = "El nombre es requerido";
+    }
 
-    if (!formData.name.trim()) newErrors.name = "El nombre es requerido";
-    if (!formData.email) newErrors.email = "NO HAY";
-    if (!formData.email.trim()) newErrors.email = "El email es requerido";
-    if (!formData.password) newErrors.password = "La contraseña es requerida";
-    if (formData.password.length < 6)
+    if (!formData.email || !formData.email.trim()) {
+      newErrors.email = "El email es requerido";
+    }
+
+    if (!formData.password) {
+      newErrors.password = "La contraseña es requerida";
+    } else if (formData.password.length < 6) {
       newErrors.password = "La contraseña debe tener al menos 6 caracteres";
+    }
+
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Las contraseñas no coinciden";
     }

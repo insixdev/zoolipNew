@@ -97,11 +97,11 @@ export default function PostCard({
 
         {/* Post Image */}
         {post.type === "image" && post.image && (
-          <div className="-mx-6 mb-3">
+          <div className="-mx-6 mb-3 bg-gray-100">
             <img
               src={post.image}
               alt="Post"
-              className="w-full max-h-[500px] object-cover"
+              className="w-full max-h-[500px] object-contain"
             />
           </div>
         )}

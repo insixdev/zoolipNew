@@ -30,16 +30,30 @@ export function postParseResponse(post: PublicationPublicGetResponse[]) {
       .map((post) => {
         // Soportar tanto snake_case como camelCase del backend
         const p = post as any;
+        const postId = p.id_publicacion || p.idPublicacion;
 
-        // Log para debug
-        if (p.tipo) {
-          console.log(
-            `📝 [PARSER] Post ${p.id_publicacion || p.idPublicacion} - tipo: ${p.tipo}`
-          );
+        // Obtener la URL de la imagen si existe
+        const imageUrl = p.imagen_url || p.imagenUrl || null;
+
+        // Log detallado para debug
+        if (p.tipo === "PUBLICACION") {
+          console.log(`[PARSER] Post ${postId}:`, {
+            tipo: p.tipo,
+            tiene_campo_imagen_url: "imagen_url" in p || "imagenUrl" in p,
+            valor_imagen_url: imageUrl,
+            topico: p.topico,
+          });
+
+          // Advertencia si es PUBLICACION pero no tiene el campo imagen_url
+          if (!("imagen_url" in p) && !("imagenUrl" in p)) {
+            console.warn(
+              `[PARSER] ADVERTENCIA: Post ${postId} tipo PUBLICACION no tiene campo imagen_url en la respuesta del backend`
+            );
+          }
         }
 
         const postFront: Post = {
-          id: p.id_publicacion || p.idPublicacion || 0,
+          id: postId || 0,
           topico: p.topico ?? "Sin título",
           content: p.contenido ?? "",
           likes: p.likes ?? 0,
@@ -55,22 +69,33 @@ export function postParseResponse(post: PublicationPublicGetResponse[]) {
           comments: p.cantidadComentarios ?? p.cantidad_comentarios ?? 0,
           author: {
             username: p.nombreUsuario || p.nombre_usuario || "Usuario",
-            avatar:
-              "https://i.pravatar.cc/150?img=" +
-              (p.id_publicacion || p.idPublicacion || 1),
+            avatar: "https://i.pravatar.cc/150?img=" + (postId || 1),
             id: p.id_usuario || p.idUsuario || undefined,
             role: p.rolUsuario || p.rol_usuario || undefined,
           },
-          type: "text", // por ahora
+          // Si tiene imagen, tipo "image", sino "text"
+          type: imageUrl ? "image" : "text",
+          image: imageUrl || undefined,
           publicationType: p.tipo, // Tipo de publicación (CONSULTA, PUBLICACION, o null)
         };
+
+        if (imageUrl) {
+          console.log(`[PARSER] Post ${postId} parseado con imagen:`, {
+            type: postFront.type,
+            image: postFront.image,
+          });
+        }
+
         return postFront;
       });
 
-    console.log(`Parsed ${newPosts.length} posts successfully`);
+    const postsConImagen = newPosts.filter((p) => p.image).length;
+    console.log(
+      `[PARSER] Parseados ${newPosts.length} posts (${postsConImagen} con imagen)`
+    );
     return newPosts;
   } catch (err) {
-    console.error("Error al parsear la publicacion", err);
+    console.error("[PARSER] Error al parsear publicaciones:", err);
     // En lugar de lanzar error, devolver array vacío
     return [];
   }

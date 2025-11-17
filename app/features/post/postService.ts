@@ -25,18 +25,25 @@ export async function createPublicationService(
     const hd = new Headers();
     hd.append("Content-Type", "application/json");
     hd.append("Cookie", cookie);
-    console.log("jsonpublication", JSON.stringify(publication));
+
+    console.log("[SERVICE] Creando publicacion:", {
+      tipo: publication.tipo,
+      topico: publication.topico,
+      tiene_imagen: !!publication.imagen_url,
+      imagen_url: publication.imagen_url,
+    });
 
     const res = await fetch(`${BASE_PUBLICATION_URL}crear`, {
       method: "POST",
       headers: hd,
       body: JSON.stringify(publication),
     });
-    console.log(res);
+
+    console.log("[SERVICE] Respuesta del backend:", res.status, res.statusText);
 
     return await handleFetchResponse<PublicationResponse>(res);
   } catch (err) {
-    console.error("Create publication error:", err);
+    console.error("[SERVICE] Error al crear publicacion:", err);
     throw err;
   }
 }
@@ -343,10 +350,28 @@ export async function getPublicationsWithPaginationService(
     }
 
     const data = JSON.parse(text);
-    console.log(
-      "[POST SERVICE] Publications loaded:",
-      Array.isArray(data) ? data.length : "not array"
-    );
+    const postsCount = Array.isArray(data) ? data.length : 0;
+    console.log(`[POST SERVICE] Cargadas ${postsCount} publicaciones`);
+
+    if (Array.isArray(data) && data.length > 0) {
+      const postsConImagen = data.filter(
+        (p: any) => p.imagen_url || p.imagenUrl
+      ).length;
+      console.log(
+        `[POST SERVICE] ${postsConImagen} publicaciones tienen imagen`
+      );
+
+      // Log de las primeras 3 publicaciones con imagen
+      data
+        .filter((p: any) => p.imagen_url || p.imagenUrl)
+        .slice(0, 3)
+        .forEach((p: any) => {
+          console.log(
+            `[POST SERVICE] Post ${p.id_publicacion || p.idPublicacion} imagen:`,
+            p.imagen_url || p.imagenUrl
+          );
+        });
+    }
 
     return Array.isArray(data) ? data : [];
   } catch (err) {
@@ -421,6 +446,15 @@ export async function getAllPublicPublicationsService(
 
     if (Array.isArray(data) && data.length > 0) {
       console.log(JSON.stringify(data[0], null, 2));
+      // Log específico para imagen_url
+      data.forEach((post: any) => {
+        if (post.imagen_url || post.imagenUrl) {
+          console.log(
+            `📷 [SERVICE] Post ${post.idPublicacion || post.id_publicacion} tiene imagen_url:`,
+            post.imagen_url || post.imagenUrl
+          );
+        }
+      });
     }
 
     return data;

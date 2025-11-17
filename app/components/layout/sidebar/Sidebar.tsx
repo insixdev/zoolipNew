@@ -36,7 +36,11 @@ const menuItems = [
     path: "/community/consultas",
     icon: FileText,
   },
-
+  {
+    label: "Chat",
+    path: "/community/chatCommunity",
+    icon: MessageCircle,
+  },
   {
     label: "Refugios",
     path: "/community/refugios",

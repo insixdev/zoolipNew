@@ -42,6 +42,44 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
+    // Obtener el ID del usuario actual del token
+    const userId = getUserFieldFromCookie(cookie, field.ID);
+    console.log("[UPDATE PET] ID de usuario:", userId);
+
+    if (!userId) {
+      return Response.json(
+        {
+          message: "No se pudo obtener el ID del usuario",
+          status: "error",
+        },
+        { status: 401 }
+      );
+    }
+
+    // Obtener el ID de la institución del usuario actual
+    const { getInstitutionByIdUsuarioService } = await import(
+      "~/features/entities/institucion/institutionService"
+    );
+
+    let institutionId;
+    try {
+      const institution = await getInstitutionByIdUsuarioService(
+        Number(userId),
+        cookie
+      );
+      institutionId = institution.id_institucion;
+      console.log("[UPDATE PET] ID de institución obtenido:", institutionId);
+    } catch (error) {
+      console.error("[UPDATE PET] Error obteniendo institución:", error);
+      return Response.json(
+        {
+          message: "Institución no encontrada para el usuario actual",
+          status: "error",
+        },
+        { status: 404 }
+      );
+    }
+
     const pet = {
       id: Number(petId),
       size: formData.get("size"),
@@ -51,7 +89,7 @@ export async function action({ request }: ActionFunctionArgs) {
       race: formData.get("race"),
       species: formData.get("species"),
       id_institution: {
-        id_institucion: Number(formData.get("id_institution")),
+        id_institucion: institutionId,
       },
       name: formData.get("name"),
     };

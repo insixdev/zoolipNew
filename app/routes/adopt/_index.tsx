@@ -1,5 +1,5 @@
 import { Link, useLoaderData, type LoaderFunctionArgs } from "react-router";
-import { Heart, MapPin, Calendar, Sparkles } from "lucide-react";
+import { Heart, Calendar, Dog } from "lucide-react";
 import { getAllMascotasService } from "~/features/adoption/adoptionService";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -9,6 +9,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     console.log("🐕 [ADOPT] Loading mascotas...");
     const mascotas = await getAllMascotasService(cookie);
     console.log("🐕 [ADOPT] Mascotas loaded:", mascotas.length);
+
+    // Log para verificar IDs
+    if (mascotas.length > 0) {
+      console.log("🐕 [ADOPT] Primera mascota:", {
+        id: mascotas[0].id,
+        id_mascota: mascotas[0].id_mascota,
+        nombre: mascotas[0].nombre,
+      });
+    }
+
     return { mascotas };
   } catch (error) {
     console.error("🐕 [ADOPT] Error loading mascotas:", error);
@@ -46,146 +56,171 @@ export default function AdoptIndex() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-purple-50">
-      {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-r from-orange-400 via-pink-400 to-purple-400 py-20 px-4">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48cGF0aCBkPSJNMzYgMzRjMC0yLjIxLTEuNzktNC00LTRzLTQgMS43OS00IDQgMS43OSA0IDQgNCA0LTEuNzkgNC00em0wLTEwYzAtMi4yMS0xLjc5LTQtNC00cy00IDEuNzktNCA0IDEuNzkgNCA0IDQgNC0xLjc5IDQtNHptMC0xMGMwLTIuMjEtMS43OS00LTQtNHMtNCAxLjc5LTQgNCAxLjc5IDQgNCA0IDQtMS43OSA0LTR6Ii8+PC9nPjwvZz48L3N2Zz4=')] opacity-20"></div>
-        <div className="max-w-6xl mx-auto text-center relative z-10">
-          <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full mb-6">
-            <Sparkles className="text-white" size={20} />
-            <span className="text-white font-medium">
-              {mascotas.length} mascotas esperando un hogar
-            </span>
-          </div>
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 drop-shadow-lg">
-            Encuentra a tu nuevo
-            <br />
-            mejor amigo
-          </h1>
-          <p className="text-xl text-white/90 max-w-2xl mx-auto mb-8">
-            Cada mascota tiene una historia única y está lista para llenar tu
-            vida de amor y alegría
-          </p>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero Section - Minimalista con animaciones */}
+      <div className="md:ml-64">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-6">
+          <div className="relative bg-white rounded-2xl border-2 border-orange-200 overflow-hidden">
+            {/* Patrón de fondo animado */}
+            <div className="absolute inset-0 opacity-5">
+              <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmYjkyM2MiIGZpbGwtb3BhY2l0eT0iMSI+PHBhdGggZD0iTTM2IDM0YzAtMi4yMS0xLjc5LTQtNC00cy00IDEuNzktNCA0IDEuNzkgNCA0IDQgNC0xLjc5IDQtNHptMC0xMGMwLTIuMjEtMS43OS00LTQtNHMtNCAxLjc5LTQgNCAxLjc5IDQgNCA0IDQtMS43OSA0LTR6bTAtMTBjMC0yLjIxLTEuNzktNC00LTRzLTQgMS43OS00IDQgMS43OSA0IDQgNCA0LTEuNzkgNC00eiIvPjwvZz48L2c+PC9zdmc+')] animate-pulse"></div>
+            </div>
 
-      {/* Mascotas Grid */}
-      <div className="max-w-7xl mx-auto px-4 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {mascotas.map((mascota, index) => (
-            <Link
-              key={mascota.id}
-              to={`/adopt/mascota/${mascota.id}`}
-              className="group"
-              style={{
-                animation: `fadeInUp 0.6s ease-out ${index * 0.1}s both`,
-              }}
-            >
-              <div className="bg-white rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2">
-                {/* Image Container */}
-                <div className="relative h-80 overflow-hidden bg-gradient-to-br from-orange-100 to-pink-100">
-                  <img
-                    src={
-                      mascota.imagen_url ||
-                      "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=800&h=800&fit=crop"
-                    }
-                    alt={mascota.nombre}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                  />
-                  {/* Gradient Overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-
-                  {/* Floating Heart */}
-                  <div className="absolute top-4 right-4 w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:scale-110">
-                    <Heart
-                      className="text-pink-500"
-                      size={24}
-                      fill="currentColor"
-                    />
-                  </div>
-
-                  {/* Badge de disponibilidad */}
-                  <div className="absolute top-4 left-4">
-                    <span className="inline-flex items-center gap-1 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold shadow-lg">
-                      <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
-                      Disponible
-                    </span>
-                  </div>
+            <div className="relative px-6 py-10 md:px-12 md:py-14">
+              <div className="text-center">
+                {/* Badge animado */}
+                <div className="inline-flex items-center gap-2 bg-orange-100 text-orange-700 px-4 py-2 rounded-lg mb-6 border-2 border-orange-200 animate-[slideDown_0.6s_ease-out]">
+                  <Heart className="animate-pulse" size={18} />
+                  <span className="text-sm font-semibold">
+                    {mascotas.length}{" "}
+                    {mascotas.length === 1
+                      ? "mascota disponible"
+                      : "mascotas disponibles"}
+                  </span>
                 </div>
 
-                {/* Content */}
-                <div className="p-6">
-                  {/* Name and Gender */}
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-2xl font-bold text-gray-900 group-hover:text-orange-500 transition-colors">
-                      {mascota.nombre}
-                    </h3>
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-bold ${
-                        mascota.sexo === "Macho"
-                          ? "bg-blue-100 text-blue-800"
-                          : "bg-pink-100 text-pink-800"
-                      }`}
-                    >
-                      {mascota.sexo || "N/A"}
-                    </span>
-                  </div>
+                {/* Título con animación de entrada */}
+                <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 animate-[slideUp_0.8s_ease-out]">
+                  Encuentra a tu compañero ideal
+                </h1>
 
-                  {/* Info Grid */}
-                  <div className="space-y-2 mb-4">
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <Calendar size={16} className="text-orange-500" />
-                      <span className="text-sm">
-                        {mascota.edad} {mascota.edad === 1 ? "año" : "años"}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <MapPin size={16} className="text-orange-500" />
-                      <span className="text-sm">{mascota.raza}</span>
-                    </div>
-                  </div>
-
-                  {/* Description Preview */}
-                  {mascota.descripcion && (
-                    <p className="text-gray-600 text-sm line-clamp-2 mb-4">
-                      {mascota.descripcion}
-                    </p>
-                  )}
-
-                  {/* CTA Button */}
-                  <button className="w-full bg-gradient-to-r from-orange-500 to-pink-500 text-white py-3 rounded-xl font-semibold group-hover:from-orange-600 group-hover:to-pink-600 transition-all duration-300 shadow-md group-hover:shadow-lg transform group-hover:scale-105">
-                    Conocer más
-                  </button>
-                </div>
+                {/* Descripción con animación */}
+                <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed animate-[fadeIn_1s_ease-out]">
+                  Cada mascota merece un hogar lleno de amor. Descubre quién
+                  está esperando por ti.
+                </p>
               </div>
-            </Link>
-          ))}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* CTA Section */}
-      <div className="max-w-4xl mx-auto px-4 pb-20">
-        <div className="bg-gradient-to-r from-orange-400 via-pink-400 to-purple-400 rounded-3xl p-12 text-center shadow-2xl">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            ¿Listo para adoptar?
-          </h2>
-          <p className="text-white/90 text-lg mb-8 max-w-2xl mx-auto">
-            Adoptar es un acto de amor. Dale a una mascota la oportunidad de
-            tener un hogar lleno de cariño.
-          </p>
-          <div className="flex flex-wrap gap-4 justify-center">
-            <Link
-              to="/community"
-              className="bg-white text-orange-600 px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
-            >
-              Únete a la comunidad
-            </Link>
-            <Link
-              to="/adopt/solicitudes"
-              className="bg-white/20 backdrop-blur-sm text-white px-8 py-3 rounded-full font-semibold hover:bg-white/30 transition-all duration-300 border-2 border-white/50"
-            >
-              Ver solicitudes
-            </Link>
+      {/* Mascotas Grid - Ajustado para sidebar */}
+      <div className="md:ml-64">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {mascotas.map((mascota, index) => {
+              const mascotaId = mascota.id || mascota.id_mascota;
+
+              if (!mascotaId) {
+                console.error("🐕 [ADOPT] Mascota sin ID:", mascota);
+                return null;
+              }
+
+              return (
+                <Link
+                  key={mascotaId}
+                  to={`/adopt/mascota/${mascotaId}`}
+                  className="group"
+                  style={{
+                    animation: `fadeInUp 0.6s ease-out ${index * 0.1}s both`,
+                  }}
+                >
+                  <div className="bg-white rounded-2xl overflow-hidden border-2 border-gray-200 hover:border-orange-400 transition-all duration-300">
+                    {/* Image Container */}
+                    <div className="relative h-80 overflow-hidden bg-gradient-to-br from-orange-50 to-pink-50">
+                      <img
+                        src={
+                          mascota.imagen_url ||
+                          "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=800&h=800&fit=crop"
+                        }
+                        alt={mascota.nombre}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+
+                      {/* Badge de disponibilidad */}
+                      <div className="absolute top-4 left-4">
+                        <span className="inline-flex items-center gap-1.5 bg-white/95 backdrop-blur-sm text-gray-900 px-3 py-1.5 rounded-lg text-xs font-medium border border-green-200 shadow-sm">
+                          <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                          Disponible
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="p-6">
+                      {/* Name and Gender */}
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-xl font-bold text-gray-900">
+                          {mascota.nombre}
+                        </h3>
+                        <span className="px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
+                          {mascota.sexo || "N/A"}
+                        </span>
+                      </div>
+
+                      {/* Info Grid */}
+                      <div className="space-y-2 mb-4">
+                        <div className="flex items-start gap-2">
+                          <Calendar
+                            size={16}
+                            className="text-orange-400 mt-0.5 flex-shrink-0"
+                          />
+                          <div>
+                            <p className="text-xs text-gray-500">Edad</p>
+                            <p className="text-sm text-gray-900 font-medium">
+                              {mascota.edad}{" "}
+                              {mascota.edad === 1 ? "año" : "años"}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <Dog
+                            size={16}
+                            className="text-gray-400 mt-0.5 flex-shrink-0"
+                          />
+                          <div>
+                            <p className="text-xs text-gray-500">Raza</p>
+                            <p className="text-sm text-gray-900 font-medium">
+                              {mascota.raza}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Description Preview */}
+                      {mascota.descripcion && (
+                        <p className="text-gray-600 text-sm line-clamp-2 mb-4">
+                          {mascota.descripcion}
+                        </p>
+                      )}
+
+                      {/* CTA Button */}
+                      <button className="w-full bg-white text-gray-900 py-2.5 rounded-lg font-medium border-2 border-gray-900 hover:bg-orange-500 hover:text-white hover:border-orange-500 transition-colors duration-200">
+                        Conocer más
+                      </button>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* CTA Section */}
+        <div className="max-w-4xl mx-auto px-4 pb-20">
+          <div className="bg-gradient-to-r from-orange-400 via-pink-400 to-purple-400 rounded-3xl p-12 text-center shadow-2xl">
+            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+              ¿Listo para adoptar?
+            </h2>
+            <p className="text-white/90 text-lg mb-8 max-w-2xl mx-auto">
+              Adoptar es un acto de amor. Dale a una mascota la oportunidad de
+              tener un hogar lleno de cariño.
+            </p>
+            <div className="flex flex-wrap gap-4 justify-center">
+              <Link
+                to="/community"
+                className="bg-white text-orange-600 px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+              >
+                Únete a la comunidad
+              </Link>
+              <Link
+                to="/adopt/solicitudes"
+                className="bg-white/20 backdrop-blur-sm text-white px-8 py-3 rounded-full font-semibold hover:bg-white/30 transition-all duration-300 border-2 border-white/50"
+              >
+                Ver solicitudes
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -199,6 +234,37 @@ export default function AdoptIndex() {
           to {
             opacity: 1;
             transform: translateY(0);
+          }
+        }
+        
+        @keyframes slideDown {
+          from {
+            opacity: 0;
+            transform: translateY(-20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        @keyframes slideUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
           }
         }
       `}</style>

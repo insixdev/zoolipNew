@@ -59,7 +59,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const startId = lastId ? parseInt(lastId) : 1;
 
     console.log(
-      `[OBTENER TODAS] Fetching publications starting from ID: ${startId}`
+      `[OBTENER TODAS] Obteniendo publicaciones desde ID: ${startId}`
     );
 
     const fetchedPosts = await getPublicationsWithPaginationService(
@@ -68,12 +68,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
 
     console.log(
-      `[OBTENER TODAS] Fetched ${fetchedPosts.length} posts from backend`
+      `[OBTENER TODAS] Recibidas ${fetchedPosts.length} publicaciones del backend`
     );
+
+    // Log de publicaciones con imagen
+    const postsConImagen = fetchedPosts.filter(
+      (p: any) => p.imagen_url || p.imagenUrl
+    );
+    if (postsConImagen.length > 0) {
+      console.log(
+        `[OBTENER TODAS] ${postsConImagen.length} publicaciones tienen imagen`
+      );
+    }
 
     const posts = postParseResponse(fetchedPosts);
 
-    console.log(`[OBTENER TODAS] Parsed ${posts.length} posts`);
+    console.log(`[OBTENER TODAS] Parseadas ${posts.length} publicaciones`);
 
     // Obtener el número de comentarios para cada post
     const publications = await Promise.all(
@@ -94,8 +104,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
       })
     );
 
+    const pubsConImagen = publications.filter((p) => p.image).length;
     console.log(
-      `[OBTENER TODAS] Returning ${publications.length} publications with comment counts`
+      `[OBTENER TODAS] Devolviendo ${publications.length} publicaciones (${pubsConImagen} con imagen)`
     );
 
     return Response.json(

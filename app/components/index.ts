@@ -3,7 +3,6 @@
 
 // UI Components
 export * from "./ui";
-
 // Layout Components  
 export * from "./layout";
 
@@ -21,3 +20,4 @@ export {
   GradientText,
   ScrollReveal 
 } from "./ui";
+

@@ -30,12 +30,21 @@ const POSTS_PER_PAGE = 5; // Número de posts a mostrar por página
 // loader para cargar las post inciciales
 export async function loader({ request }: LoaderFunctionArgs) {
   const cookie = request.headers.get("Cookie");
+  console.log("[COMMUNITY LOADER] ===== LOADER EJECUTADO =====");
   console.log("[COMMUNITY LOADER] Cookie:", cookie ? "present" : "not present");
+  console.log("[COMMUNITY LOADER] URL:", request.url);
 
   try {
-    console.log("[COMMUNITY LOADER] Fetching initial public publications...");
-    // Usar el endpoint público para la carga inicial (últimas 10)
-    const fetchedPost = await getAllPublicPublicationsService(
+    console.log(
+      "[COMMUNITY LOADER] Fetching initial publications with pagination..."
+    );
+    // Usar el endpoint de paginación desde el principio, empezando desde ID 1
+    const { getPublicationsWithPaginationService } = await import(
+      "~/features/post/postService"
+    );
+
+    const fetchedPost = await getPublicationsWithPaginationService(
+      1, // Empezar desde el ID 1
       cookie || undefined
     );
 
@@ -108,10 +117,30 @@ export default function CommunityIndex() {
   // Helper para sincronizar posts con localStorage
   const syncPostsWithLikes = (postsToSync: Post[]): Post[] => {
     const userLikes = getUserLikes();
-    return postsToSync.map((post) => ({
-      ...post,
-      isLiked: userLikes.has(post.id),
-    }));
+    console.log("[SYNC LIKES] Likes en localStorage:", Array.from(userLikes));
+    console.log(
+      "[SYNC LIKES] Posts a sincronizar:",
+      postsToSync.map((p) => ({ id: p.id, isLiked: p.isLiked }))
+    );
+
+    const synced = postsToSync.map((post) => {
+      const shouldBeLiked = userLikes.has(post.id);
+      if (post.isLiked !== shouldBeLiked) {
+        console.log(
+          `[SYNC LIKES] Post ${post.id}: cambiando isLiked de ${post.isLiked} a ${shouldBeLiked}`
+        );
+      }
+      return {
+        ...post,
+        isLiked: shouldBeLiked,
+      };
+    });
+
+    console.log(
+      "[SYNC LIKES] Resultado:",
+      synced.map((p) => ({ id: p.id, isLiked: p.isLiked }))
+    );
+    return synced;
   };
 
   const [postsList, setPostsList] = useState<Post[]>(() => {
@@ -121,8 +150,22 @@ export default function CommunityIndex() {
 
   // Sincronizar posts cuando cambian desde el loader
   useEffect(() => {
+    console.log("[COMMUNITY] Posts del loader cambiaron:", posts.length);
     if (posts.length > 0) {
-      setPostsList(syncPostsWithLikes(posts));
+      // Solo actualizar si es la carga inicial (postsList está vacío)
+      // o si los posts del loader son diferentes
+      setPostsList((prev) => {
+        if (prev.length === 0) {
+          console.log("[COMMUNITY] Carga inicial, usando posts del loader");
+          return syncPostsWithLikes(posts);
+        }
+
+        // Si ya hay posts, solo sincronizar likes sin reemplazar
+        console.log(
+          "[COMMUNITY] Ya hay posts cargados, solo sincronizando likes"
+        );
+        return syncPostsWithLikes(prev);
+      });
     }
   }, [posts]);
 
@@ -211,13 +254,11 @@ export default function CommunityIndex() {
 
   const visiblePosts = postsList.slice(0, visiblePostsCount);
 
-  console.log("📊 [RENDER] postsList length:", postsList.length);
-  console.log("📊 [RENDER] visiblePostsCount:", visiblePostsCount);
-  console.log("📊 [RENDER] visiblePosts length:", visiblePosts.length);
   console.log(
-    "📊 [RENDER] Post IDs:",
+    "RENDER] Post iDs:",
     postsList.map((p) => p.id)
   );
+
 
   // hasMore es true si hay más posts locales O si el último fetch trajo datos
   const hasMore = visiblePostsCount < postsList.length || hasMoreFromServer;
@@ -236,23 +277,34 @@ export default function CommunityIndex() {
       return;
     }
 
+    console.log(`[LIKE] Post ${postId}:`, {
+      isLiked: post.isLiked,
+      likes: post.likes,
+    });
+
     const wasLiked = post.isLiked || false;
 
     // Verificar y actualizar localStorage
     let shouldUpdate = false;
     if (wasLiked) {
+      console.log(`[LIKE] Quitando like del post ${postId}`);
       shouldUpdate = removeLike(postIdNum);
     } else {
+      console.log(`[LIKE] Agregando like al post ${postId}`);
       shouldUpdate = addLike(postIdNum);
     }
 
     // Solo actualizar si el estado cambió realmente
     if (!shouldUpdate) {
       console.log(
-        "[LIKE] Estado ya sincronizado, no se requiere actualización"
+        "[LIKE] Estado ya sincronizado, no se requiere actualizacion"
       );
       return;
     }
+
+    console.log(
+      `[LIKE] Actualizando UI: wasLiked=${wasLiked}, newLikes=${wasLiked ? post.likes - 1 : post.likes + 1}`
+    );
 
     // Actualizar UI optimistamente
     setPostsList((prev) =>
@@ -407,12 +459,12 @@ export default function CommunityIndex() {
     if (loadMoreFetcher.data && loadMoreFetcher.state === "idle") {
       const response = loadMoreFetcher.data as any;
 
-      console.log("[LOAD MORE INDEX] Response received:", response);
+      console.log("[LOAD MORE INDEX] Respuesta recibida:", response);
 
       // Si el token es inválido, limpiar todo y redirigir al login
       if (response.status === "error" && response.code === "INVALID_TOKEN") {
         console.log(
-          "[LOAD MORE INDEX] Token inválido, limpiando sesión y redirigiendo al login..."
+          "[LOAD MORE INDEX] Token invalido, limpiando sesion y redirigiendo..."
         );
         localStorage.clear();
         window.location.href = "/login?redirectTo=/community";
@@ -434,18 +486,18 @@ export default function CommunityIndex() {
           "[LOAD MORE INDEX] Nuevas publicaciones cargadas:",
           newPosts.length
         );
-        console.log(
-          "[LOAD MORE INDEX] Tipos de posts:",
-          parsedPosts.map((p: any) => ({ id: p.id, type: p.publicationType }))
-        );
 
         if (newPosts.length > 0) {
+          let uniqueCount = 0;
+
           // Filtrar duplicados - solo agregar posts que no existan ya
           setPostsList((prev) => {
             const existingIds = new Set(prev.map((p) => p.id));
             const uniqueNewPosts = newPosts.filter(
               (post: any) => !existingIds.has(post.id)
             );
+
+            uniqueCount = uniqueNewPosts.length;
 
             console.log(
               "[LOAD MORE INDEX] IDs existentes:",
@@ -456,27 +508,49 @@ export default function CommunityIndex() {
               newPosts.map((p: any) => p.id)
             );
             console.log(
-              "[LOAD MORE INDEX] Posts únicos a agregar:",
-              uniqueNewPosts.length
+              "[LOAD MORE INDEX] Posts unicos a agregar:",
+              uniqueCount
             );
 
-            if (uniqueNewPosts.length === 0) {
+            if (uniqueCount === 0) {
               console.log(
-                "[LOAD MORE INDEX] Todos los posts ya estaban cargados"
+                "[LOAD MORE INDEX] Todos los posts ya estaban cargados, no hay mas"
               );
               setHasMoreFromServer(false);
               return prev;
             }
 
             const syncedNewPosts = syncPostsWithLikes(uniqueNewPosts);
+
+            // Si el primer post nuevo tiene ID menor que el primer post actual,
+            // significa que estamos recargando desde el principio
+            if (prev.length > 0 && uniqueNewPosts[0].id < prev[0].id) {
+              console.log(
+                "[LOAD MORE INDEX] Recarga completa, reemplazando posts"
+              );
+              return syncedNewPosts;
+            }
+
+            // Si no, agregar al final (load more normal)
+            console.log(
+              "[LOAD MORE INDEX] Agregando",
+              uniqueCount,
+              "posts al final"
+            );
             return [...prev, ...syncedNewPosts];
           });
 
-          setVisiblePostsCount((prev) => prev + newPosts.length);
-          // Si recibimos menos de 3 publicaciones, probablemente no hay más
-          setHasMoreFromServer(newPosts.length >= 3);
+          // Incrementar visiblePostsCount solo por los posts únicos agregados
+          if (uniqueCount > 0) {
+            setVisiblePostsCount((prev) => prev + uniqueCount);
+          }
+
+          // Si recibimos menos de 3 publicaciones únicas, probablemente no hay más
+          setHasMoreFromServer(uniqueCount >= 3);
         } else {
-          console.log("[LOAD MORE INDEX] No se encontraron más publicaciones");
+          console.log(
+            "[LOAD MORE INDEX] No se encontraron mas publicaciones (todas filtradas)"
+          );
           setHasMoreFromServer(false);
         }
       } else {
@@ -490,8 +564,8 @@ export default function CommunityIndex() {
   }, [loadMoreFetcher.data, loadMoreFetcher.state]);
 
   const handleLoadMore = () => {
-    console.log("[LOAD MORE INDEX] Loading more posts...");
-    console.log("[LOAD MORE INDEX] Current state:", {
+    console.log("[LOAD MORE INDEX] Cargando mas posts...");
+    console.log("[LOAD MORE INDEX] Estado actual:", {
       visiblePostsCount,
       postsListLength: postsList.length,
       hasMoreFromServer,
@@ -500,16 +574,17 @@ export default function CommunityIndex() {
     // Si ya mostramos todos los posts locales, cargar desde el servidor
     if (visiblePostsCount >= postsList.length && postsList.length > 0) {
       const lastPost = postsList[postsList.length - 1];
-      const lastId = lastPost.id;
+      // Pedir desde el siguiente ID para evitar duplicados
+      const nextId = lastPost.id + 1;
 
       console.log(
-        "[LOAD MORE INDEX] Cargando más publicaciones desde el servidor, lastId:",
-        lastId
+        "[LOAD MORE INDEX] Cargando desde el servidor, nextId:",
+        nextId
       );
-      loadMoreFetcher.load(`/api/post/obtenerTodas?lastId=${lastId}`);
+      loadMoreFetcher.load(`/api/post/obtenerTodas?lastId=${nextId}`);
     } else {
       // Incrementar el número de posts visibles
-      console.log("[LOAD MORE INDEX] Mostrando más posts locales");
+      console.log("[LOAD MORE INDEX] Mostrando mas posts locales");
       setVisiblePostsCount((prev) =>
         Math.min(prev + POSTS_PER_PAGE, postsList.length)
       );
@@ -517,14 +592,26 @@ export default function CommunityIndex() {
   };
 
   const handlePostCreated = (newPost: Partial<Post>) => {
-    console.log("Post created! Loading new posts from server...");
+    console.log("[POST CREATED] Recargando publicaciones desde el servidor...");
 
-    // Cargar posts desde el servidor sin recargar la página
-    loadMoreFetcher.load("/api/post/obtenerTodas");
+    // Recargar desde el principio para obtener la nueva publicación
+    loadMoreFetcher.load("/api/post/obtenerTodas?lastId=1");
   };
 
   return (
     <div className="w-full mx-auto md:pl-72 px-6 pt-6 pb-10 pr-12">
+      {/* Botón temporal para debug - REMOVER EN PRODUCCIÓN */}
+      <button
+        onClick={() => {
+          localStorage.clear();
+          console.log("[DEBUG] localStorage limpiado");
+          window.location.reload();
+        }}
+        className="fixed bottom-4 right-4 z-50 px-4 py-2 bg-red-500 text-white rounded-lg shadow-lg hover:bg-red-600 text-sm"
+      >
+        Limpiar Likes
+      </button>
+
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-12">
         {/* Feed principal */}
         <div className="xl:col-span-3 space-y-6 max-w-2xl">

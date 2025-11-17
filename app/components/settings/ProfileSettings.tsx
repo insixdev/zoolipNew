@@ -1,6 +1,6 @@
 import { Save, Camera } from "lucide-react";
-import { useState, useRef } from "react";
-import { LoaderFunctionArgs, useFetcher } from "react-router";
+import { useState, useRef, useEffect } from "react";
+import { LoaderFunctionArgs, useFetcher, useNavigate } from "react-router";
 import { useSmartAuth } from "~/features/auth/useSmartAuth";
 
 // opcional, si después querés cargar algo del backend
@@ -9,11 +9,23 @@ export async function loader({ request }: LoaderFunctionArgs) {}
 export default function ProfileSettings() {
   const { user } = useSmartAuth();
   const fetcher = useFetcher();
+  const navigate = useNavigate();
   const formRef = useRef<HTMLFormElement>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [result, setResult] = useState<string | null>(null);
 
   const isSaving = fetcher.state === "submitting";
+
+  // Redirigir al login cuando la actualización sea exitosa
+  useEffect(() => {
+    if (fetcher.data?.status === "success" && fetcher.state === "idle") {
+      // Mostrar mensaje brevemente antes de redirigir
+      setResult("✓ Cambios guardados. Redirigiendo al login...");
+      setTimeout(() => {
+        navigate("/auth/login");
+      }, 1500);
+    }
+  }, [fetcher.data, fetcher.state, navigate]);
 
   const handleGuardar = (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,10 +41,34 @@ export default function ProfileSettings() {
 
     const formData = new FormData(formRef.current);
 
-    // Agregar el rol del usuario (no se puede cambiar desde el form)
-    formData.append("rol", user?.role || "ROLE_USER");
+    // Crear un nuevo FormData solo con los campos que tienen valor
+    const cleanFormData = new FormData();
 
-    fetcher.submit(formData, {
+    // Solo agregar campos que tienen valor y son diferentes del original
+    const nombre = formData.get("nombre") as string;
+    const email = formData.get("email") as string;
+    const imagen_url = formData.get("imagen_url") as string;
+    const biografia = formData.get("biografia") as string;
+
+    if (nombre && nombre.trim()) {
+      cleanFormData.append("nombre", nombre.trim());
+    }
+
+    if (email && email.trim()) {
+      cleanFormData.append("email", email.trim());
+    }
+
+    // Solo enviar imagen_url si tiene valor
+    if (imagen_url && imagen_url.trim()) {
+      cleanFormData.append("imagen_url", imagen_url.trim());
+    }
+
+    // Solo enviar biografía si tiene valor
+    if (biografia && biografia.trim()) {
+      cleanFormData.append("biografia", biografia.trim());
+    }
+
+    fetcher.submit(cleanFormData, {
       method: "post",
       action: "/api/user/update",
     });
@@ -40,14 +76,12 @@ export default function ProfileSettings() {
     setShowConfirmation(false);
   };
 
-  // Mostrar resultado cuando el fetcher termine
+  // Mostrar resultado de error cuando el fetcher termine
   if (fetcher.data && fetcher.state === "idle" && !result) {
-    if (fetcher.data.status === "success") {
-      setResult("✓ Cambios guardados correctamente");
-      // Limpiar el mensaje después de 3 segundos
-      setTimeout(() => setResult(null), 3000);
-    } else {
+    if (fetcher.data.status === "error") {
       setResult(`✗ Error: ${fetcher.data.message}`);
+      // Limpiar el mensaje después de 5 segundos
+      setTimeout(() => setResult(null), 5000);
     }
   }
 

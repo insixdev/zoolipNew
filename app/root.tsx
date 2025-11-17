@@ -67,6 +67,7 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
   formMethod,
 }) => {
   console.log("shouldRevalidate llamado:", {
+
     currentUrl: currentUrl?.pathname,
     nextUrl: nextUrl?.pathname,
     formMethod,
@@ -256,6 +257,7 @@ export function ErrorBoundary() {
       </div>
     );
   }
+  
 
   // Caso 3: fallback final (por si el error no tiene forma conocida)
   return (

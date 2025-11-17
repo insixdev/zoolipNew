@@ -187,18 +187,19 @@ export default function CommunityNavbar({
         </div>
         {/* Mensajes, notificaciones y perfil a la derecha */}
         <div className="ml-auto flex items-center space-x-1">
-          {/* Messages - Solo para usuarios autenticados */}
+          {/* Messages - Chat de adopción (usuarios con instituciones) */}
           <AuthRoleComponent
             allowedRoles={[
-              USER_ROLES.ADMIN,
               USER_ROLES.ADOPTANTE,
               USER_ROLES.USER,
+              USER_ROLES.ADMIN,
               USER_ROLES.VETERINARIA,
               USER_ROLES.REFUGIO,
+              USER_ROLES.SYSTEM,
             ]}
           >
             <Link
-              to="/community/chatCommunity"
+              to="/adopt/chatAdopt"
               className="p-2 rounded-full hover:bg-rose-50 transition-colors relative"
             >
               <svg

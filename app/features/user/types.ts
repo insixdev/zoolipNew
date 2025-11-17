@@ -1,7 +1,6 @@
 /**
  * Tipos para el servicio de usuarios
  */
-
 export interface UserUpdateRequest {
   id: number;
   nombre?: string;

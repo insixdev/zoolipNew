@@ -13,7 +13,14 @@ import type { Post } from "~/components/community/indexCommunity/PostCard";
 import type { Comment } from "~/components/community/comentarios/CommentItem";
 import { getAllPublicPublicationsService } from "~/features/post/postService";
 import { postParseResponse } from "~/features/post/postResponseParse";
-import { getUserLikes, addLike, removeLike } from "~/lib/likeStorage";
+import {
+  getUserLikes,
+  getUserCommentLikes,
+  addLike,
+  removeLike,
+  addCommentLike,
+  removeCommentLike,
+} from "~/lib/likeStorage";
 
 // Loader para cargar posts filtrados por hashtag
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -29,8 +36,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   try {
-    const fetchedPost = await getAllPublicPublicationsService(cookie);
+    console.log(`[HASHTAG LOADER] Loading posts for hashtag: ${hashtag}`);
+
+    // Usar el endpoint de paginación para obtener TODAS las publicaciones
+    const { getPublicationsWithPaginationService } = await import(
+      "~/features/post/postService"
+    );
+
+    const fetchedPost = await getPublicationsWithPaginationService(1, cookie);
     const allPosts: Post[] = postParseResponse(fetchedPost);
+
+    console.log(`[HASHTAG LOADER] Total posts fetched: ${allPosts.length}`);
 
     // Filtrar posts por el hashtag (con o sin #)
     const normalizedTag = hashtag.startsWith("#") ? hashtag.slice(1) : hashtag;
@@ -41,6 +57,28 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         : post.topico;
       return postTopic.toLowerCase() === normalizedTag.toLowerCase();
     });
+
+    console.log(`[HASHTAG LOADER] Filtered posts: ${filteredPosts.length}`);
+
+    // Obtener el número de comentarios para cada post
+    const { getCommentsByPublicationService } = await import(
+      "~/features/post/comments/commentService"
+    );
+
+    const postsWithComments = await Promise.all(
+      filteredPosts.map(async (post) => {
+        try {
+          const comments = await getCommentsByPublicationService(
+            post.id,
+            cookie
+          );
+          return { ...post, comments: comments.length };
+        } catch (error) {
+          console.error(`Error getting comments for post ${post.id}:`, error);
+          return { ...post, comments: 0 };
+        }
+      })
+    );
 
     // Obtener hashtags relacionados de todos los posts
     const relatedTopics = allPosts.reduce(
@@ -62,7 +100,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       .slice(0, 5);
 
     return {
-      posts: filteredPosts,
+      posts: postsWithComments,
       hashtag: normalizedTag,
       relatedHashtags,
     };
@@ -84,7 +122,9 @@ export default function CommunityTrendingView() {
   });
   const likeFetcher = useFetcher();
   const getByIdFetcher = useFetcher();
+  const createCommentFetcher = useFetcher();
   const lastRequestedCommentsPostId = useRef<string | null>(null);
+  const lastCommentedPostId = useRef<string | null>(null);
 
   const currentHashtag = `#${hashtag}`;
 
@@ -111,25 +151,85 @@ export default function CommunityTrendingView() {
     const postId = lastRequestedCommentsPostId.current;
     if (!postId) return;
 
+    console.log(
+      `[HASHTAG] Loaded ${fetchedComments.length} comments for post ${postId}`
+    );
+
+    // Sincronizar comentarios con likes de localStorage
+    const userCommentLikes = getUserCommentLikes();
+    const commentsWithLikes = fetchedComments.map((comment: Comment) => ({
+      ...comment,
+      isLiked: userCommentLikes.has(parseInt(comment.id)),
+    }));
+
     setCommentsMap((prev) => ({
       ...prev,
-      [postId]: fetchedComments,
+      [postId]: commentsWithLikes,
     }));
+
+    // Actualizar el contador de comentarios del post
+    setPostsList((prev) =>
+      prev.map((post) =>
+        post.id?.toString() === postId
+          ? { ...post, comments: fetchedComments.length }
+          : post
+      )
+    );
+
+    lastRequestedCommentsPostId.current = null;
   }, [getByIdFetcher.data]);
 
-  const handleLike = (postId: string) => {
-    console.log("Like post:", postId);
+  // Recargar comentarios después de crear uno
+  useEffect(() => {
+    if (
+      createCommentFetcher.state === "idle" &&
+      createCommentFetcher.data?.status === "success" &&
+      lastCommentedPostId.current
+    ) {
+      const postId = lastCommentedPostId.current;
+      lastRequestedCommentsPostId.current = postId;
+      getByIdFetcher.load(`/api/post/comentarios/${postId}`);
+      lastCommentedPostId.current = null;
+    }
+  }, [createCommentFetcher.state, createCommentFetcher.data]);
 
+  const handleLike = (postId: string) => {
     const postIdNum = parseInt(postId);
     const post = postsList.find((p) => p.id?.toString() === postId);
-    const wasLiked = post?.isLiked || false;
 
-    // Actualizar localStorage
-    if (wasLiked) {
-      removeLike(postIdNum);
-    } else {
-      addLike(postIdNum);
+    if (!post) {
+      console.error("[HASHTAG LIKE] Post no encontrado:", postId);
+      return;
     }
+
+    console.log(`[HASHTAG LIKE] Post ${postId}:`, {
+      isLiked: post.isLiked,
+      likes: post.likes,
+    });
+
+    const wasLiked = post.isLiked || false;
+
+    // Verificar y actualizar localStorage
+    let shouldUpdate = false;
+    if (wasLiked) {
+      console.log(`[HASHTAG LIKE] Quitando like del post ${postId}`);
+      shouldUpdate = removeLike(postIdNum);
+    } else {
+      console.log(`[HASHTAG LIKE] Agregando like al post ${postId}`);
+      shouldUpdate = addLike(postIdNum);
+    }
+
+    // Solo actualizar si el estado cambió realmente
+    if (!shouldUpdate) {
+      console.log(
+        "[HASHTAG LIKE] Estado ya sincronizado, no se requiere actualizacion"
+      );
+      return;
+    }
+
+    console.log(
+      `[HASHTAG LIKE] Actualizando UI: wasLiked=${wasLiked}, newLikes=${wasLiked ? post.likes - 1 : post.likes + 1}`
+    );
 
     // Actualizar UI optimistamente
     setPostsList((prev) =>
@@ -144,14 +244,15 @@ export default function CommunityTrendingView() {
       )
     );
 
-    // Enviar like al backend
-    likeFetcher.submit(
-      {},
-      {
-        method: "post",
-        action: `/api/post/like/${postId}`,
-      }
-    );
+    // Enviar like al backend con el estado actual
+    const formData = new FormData();
+    formData.append("isLiked", wasLiked.toString());
+    formData.append("action", "toggle");
+
+    likeFetcher.submit(formData, {
+      method: "post",
+      action: `/api/post/like/${postId}`,
+    });
   };
 
   const handleComment = (postId: string) => {
@@ -173,11 +274,75 @@ export default function CommunityTrendingView() {
   };
 
   const handleAddComment = (postId: string, content: string) => {
-    console.log("Add comment to post:", postId, content);
+    console.log("[HASHTAG] Adding comment to post:", postId, content);
+
+    // Guardar el postId para recargar comentarios después
+    lastCommentedPostId.current = postId;
+
+    // Enviar comentario al backend
+    const formData = new FormData();
+    formData.append("id_publicacion", postId);
+    formData.append("contenido", content);
+
+    createCommentFetcher.submit(formData, {
+      method: "post",
+      action: "/api/comments/crear",
+    });
+
+    // Actualizar contador de comentarios optimistamente
+    setPostsList((prev) =>
+      prev.map((post) =>
+        post.id?.toString() === postId
+          ? { ...post, comments: post.comments + 1 }
+          : post
+      )
+    );
   };
 
   const handleLikeComment = (postId: string, commentId: string) => {
-    console.log("Like comment:", commentId, "on post:", postId);
+    const commentIdNum = parseInt(commentId);
+    const comment = commentsMap[postId]?.find((c) => c.id === commentId);
+
+    if (!comment) {
+      console.error("[HASHTAG LIKE] Comentario no encontrado:", commentId);
+      return;
+    }
+
+    const wasLiked = comment.isLiked || false;
+
+    // Verificar y actualizar localStorage
+    let shouldUpdate = false;
+    if (wasLiked) {
+      shouldUpdate = removeCommentLike(commentIdNum);
+    } else {
+      shouldUpdate = addCommentLike(commentIdNum);
+    }
+
+    // Solo actualizar si el estado cambió realmente
+    if (!shouldUpdate) {
+      console.log(
+        "[HASHTAG LIKE] Estado del comentario ya sincronizado, no se requiere actualizacion"
+      );
+      return;
+    }
+
+    // Actualizar UI optimistamente
+    setCommentsMap((prev) => ({
+      ...prev,
+      [postId]: prev[postId]?.map((comment) =>
+        comment.id === commentId
+          ? {
+              ...comment,
+              isLiked: !comment.isLiked,
+              likes: comment.isLiked ? comment.likes - 1 : comment.likes + 1,
+            }
+          : comment
+      ),
+    }));
+
+    console.log(
+      "[HASHTAG LIKE] Like de comentario actualizado (solo local por ahora)"
+    );
   };
 
   return (
@@ -233,13 +398,18 @@ export default function CommunityTrendingView() {
             <PostsList
               posts={postsList}
               commentsMap={commentsMap}
+              commentsLoadingPostId={
+                getByIdFetcher.state === "loading"
+                  ? lastRequestedCommentsPostId.current
+                  : null
+              }
+              isSubmittingComment={createCommentFetcher.state === "submitting"}
               onLike={handleLike}
               onComment={handleComment}
               onShare={handleShare}
               onSave={handleSave}
               onAddComment={handleAddComment}
               onLikeComment={handleLikeComment}
-              commentsLoading={getByIdFetcher.state === "loading"}
             />
           )}
         </div>

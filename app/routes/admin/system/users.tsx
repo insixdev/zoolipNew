@@ -7,7 +7,8 @@ import {
 } from "react-router";
 import { AdministradorOnly } from "~/components/auth/AdminGuard";
 import {
-  getAllUsersService,
+  get5UsersService,
+  getUsersWithLimitService,
   type UsuarioDTO,
 } from "~/features/user/userService";
 import { requireAdmin } from "~/lib/roleGuards";
@@ -18,12 +19,30 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const cookie = request.headers.get("Cookie") || "";
 
   try {
-    console.log("👥 [ADMIN USERS] Loading users...");
-    const users = await getAllUsersService(cookie);
-    console.log("👥 [ADMIN USERS] Users loaded:", users.length);
+    console.log("[ADMIN USERS] Loading users...");
+
+    // Primero intentar obtener los primeros 5 usuarios
+    let users = await get5UsersService(cookie);
+    console.log("[ADMIN USERS] Initial 5 users loaded:", users.length);
+
+    // Si hay usuarios, obtener más usando el ID del último usuario
+    if (users.length > 0) {
+      const lastUserId = users[users.length - 1].id;
+      const moreUsers = await getUsersWithLimitService(lastUserId, cookie);
+      console.log("[ADMIN USERS] Additional users loaded:", moreUsers.length);
+
+      // Combinar y eliminar duplicados
+      const allUsers = [...users, ...moreUsers];
+      const uniqueUsers = Array.from(
+        new Map(allUsers.map((user) => [user.id, user])).values()
+      );
+      users = uniqueUsers;
+    }
+
+    console.log("[ADMIN USERS] Total users loaded:", users.length);
     return { users };
   } catch (error) {
-    console.error("👥 [ADMIN USERS] Error loading users:", error);
+    console.error("[ADMIN USERS] Error loading users:", error);
     return { users: [] };
   }
 }

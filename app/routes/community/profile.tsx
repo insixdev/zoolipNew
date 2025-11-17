@@ -83,26 +83,36 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
   }
 
+  // Separar publicaciones y consultas
+  const userPosts = publications.filter(
+    (post: any) => post.publicationType === "PUBLICACION"
+  );
+  const userConsultas = publications.filter(
+    (post: any) => post.publicationType === "CONSULTA"
+  );
+
   const user = {
     id: userResponse.user.id,
     username: userResponse.user.username,
     email: userResponse.user.email,
     nombre: userResponse.user.username,
-    fechaRegistro: "2024-01-15",
+    biografia: userResponse.user.biografia || null,
+    fechaRegistro: userResponse.user.fecha_registro || "2024-01-15",
     mascotas: 2,
-    publicaciones: publications.length,
+    publicaciones: userPosts.length,
+    consultas: userConsultas.length,
     role: userResponse.user.role,
   };
 
-  return { user, publications };
+  return { user, userPosts, userConsultas };
 }
 
 export default function Profile() {
-  const { user, publications } = useLoaderData<typeof loader>();
+  const { user, userPosts, userConsultas } = useLoaderData<typeof loader>();
   const { logout, setIsLoading } = useAuth();
   const navigate = useNavigate();
   const fetcher = useFetcher<{ status: string; message: string }>();
-  const [activeTab, setActiveTab] = useState<"posts" | "saved" | "tagged">(
+  const [activeTab, setActiveTab] = useState<"posts" | "consultas" | "saved">(
     "posts"
   );
 
@@ -161,27 +171,42 @@ export default function Profile() {
                 </div>
 
                 {/* Estadísticas estilo Instagram */}
-                <div className="flex gap-8 mb-4 text-center text-gray-600">
-                  <div className="text-center justify-center ">
+                <div className="flex gap-8 mb-4">
+                  <div className="text-center">
                     <span className="block text-lg font-semibold text-gray-900">
                       {user.publicaciones}
                     </span>
                     <span className="text-sm text-gray-600">publicaciones</span>
+                  </div>
+                  <div className="text-center">
+                    <span className="block text-lg font-semibold text-gray-900">
+                      {user.consultas}
+                    </span>
+                    <span className="text-sm text-gray-600">consultas</span>
                   </div>
                 </div>
 
                 {/* Bio */}
                 <div className="space-y-1">
                   <h2 className="font-semibold text-gray-900">{user.nombre}</h2>
-                  <p className="text-sm text-gray-600">
-                    🐾 Amante de los animales | Rescatista voluntario
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    📍 Ciudad de México | Miembro desde {user.fechaRegistro}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    🏠 {user.mascotas} mascotas rescatadas en casa
-                  </p>
+                  <p className="text-sm text-gray-600">{user.email}</p>
+                  {user.biografia && (
+                    <p className="text-sm text-gray-600">{user.biografia}</p>
+                  )}
+                  {user.fechaRegistro && (
+                    <p className="text-sm text-gray-600">
+                      📍 Miembro desde{" "}
+                      <span suppressHydrationWarning>
+                        {new Date(user.fechaRegistro).toLocaleDateString(
+                          "es-ES",
+                          {
+                            year: "numeric",
+                            month: "long",
+                          }
+                        )}
+                      </span>
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -203,6 +228,17 @@ export default function Profile() {
                   PUBLICACIONES
                 </button>
                 <button
+                  onClick={() => setActiveTab("consultas")}
+                  className={`flex items-center gap-2 py-4 text-sm font-medium transition-colors ${
+                    activeTab === "consultas"
+                      ? "text-gray-900 border-b-2 border-gray-900"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  <Grid size={16} />
+                  CONSULTAS
+                </button>
+                <button
                   onClick={() => setActiveTab("saved")}
                   className={`flex items-center gap-2 py-4 text-sm font-medium transition-colors ${
                     activeTab === "saved"
@@ -212,7 +248,6 @@ export default function Profile() {
                 >
                   <Bookmark size={16} />
                   GUARDADO
-                  <UserPlus size={16} />
                 </button>
               </div>
             </div>
@@ -222,9 +257,9 @@ export default function Profile() {
           <div className="p-6">
             {activeTab === "posts" && (
               <div>
-                {publications.length > 0 ? (
+                {userPosts.length > 0 ? (
                   <div className="space-y-4">
-                    {publications.map((post: any) => (
+                    {userPosts.map((post: any) => (
                       <div
                         key={post.id}
                         className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
@@ -284,6 +319,68 @@ export default function Profile() {
               </div>
             )}
 
+            {activeTab === "consultas" && (
+              <div>
+                {userConsultas.length > 0 ? (
+                  <div className="space-y-4">
+                    {userConsultas.map((post: any) => (
+                      <div
+                        key={post.id}
+                        className="bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                      >
+                        <div className="flex items-start gap-3 mb-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-semibold">
+                            {user.username[0].toUpperCase()}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-gray-900">
+                                {user.username}
+                              </span>
+                              <span className="text-gray-400">•</span>
+                              <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
+                                Consulta
+                              </span>
+                            </div>
+                            {post.topico && (
+                              <span className="text-xs text-gray-500">
+                                {post.topico}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-gray-800 whitespace-pre-wrap">
+                          {post.content}
+                        </div>
+                        <div className="flex items-center gap-4 mt-3 text-sm text-gray-500">
+                          <span>{post.likes} me gusta</span>
+                          <span>{post.comments} respuestas</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-16">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full border-2 border-purple-300 flex items-center justify-center">
+                      <Grid size={24} className="text-purple-400" />
+                    </div>
+                    <h3 className="text-xl font-light text-gray-900 mb-2">
+                      Haz tus primeras consultas
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      Cuando hagas preguntas, aparecerán en tu perfil.
+                    </p>
+                    <Link
+                      to="/community/consultas"
+                      className="mt-4 inline-block text-sm font-medium text-purple-600 hover:text-purple-700"
+                    >
+                      Haz tu primera consulta
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+
             {activeTab === "saved" && (
               <div className="text-center py-16">
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full border-2 border-gray-300 flex items-center justify-center">
@@ -294,20 +391,6 @@ export default function Profile() {
                 </h3>
                 <p className="text-sm text-gray-500">
                   Cuando guardes publicaciones, aparecerán aquí.
-                </p>
-              </div>
-            )}
-
-            {activeTab === "tagged" && (
-              <div className="text-center py-16">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full border-2 border-gray-300 flex items-center justify-center">
-                  <UserPlus size={24} className="text-gray-400" />
-                </div>
-                <h3 className="text-xl font-light text-gray-900 mb-2">
-                  Fotos tuyas
-                </h3>
-                <p className="text-sm text-gray-500">
-                  Cuando te etiqueten en fotos, aparecerán aquí.
                 </p>
               </div>
             )}

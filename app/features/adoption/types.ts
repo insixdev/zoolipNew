@@ -17,6 +17,8 @@ export type InstitucionId = {
  */
 export type MascotaDTO = {
   id: number;
+  id_mascota?: number; // Alternativa que puede venir del backend
+  id_Mascota?: number; // Otra alternativa con M mayúscula
   nombre: string;
   raza: string;
   edad: number;
@@ -24,9 +26,14 @@ export type MascotaDTO = {
   descripcion?: string;
   imagen_url?: string;
   sexo?: string;
+  especie?: string; // Alternativa a sexo
   tamanio?: string;
   estado?: string;
+  estadoAdopcion?: string; // Estado de adopción del backend
+  estadoSalud?: string; // Estado de salud
   fecha_registro?: string;
+  ubicacion?: string;
+  nombreInstitucion?: string; // Nombre de la institución
 };
 
 /**
@@ -51,9 +58,10 @@ export type SolicitudAdopcionDTO = {
   idSolicitudAdopcion: number;
   nombreSolicitante: string;
   idMascota: number;
-  estadoSolicitud: "PENDIENTE" | "APROBADA" | "RECHAZADA" | "COMPLETADA";
+  estadoSolicitud: "SOLICITADA" | "APROBADO" | "RECHAZADO";
   fecha_inicio: string;
   fecha_finalizado?: string;
+  motivo_decision?: string;
 };
 
 /**

@@ -16,7 +16,6 @@ export type Refugio = {
   description: string;
   image: string;
   logo?: string;
-  location: string;
   address: string;
   phone: string;
   email: string;

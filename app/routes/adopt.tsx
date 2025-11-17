@@ -17,14 +17,13 @@ import type { MascotaDTO } from "~/features/adoption/types";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const cookie = request.headers.get("Cookie") || "";
-
   try {
-    console.log("🐕 [ADOPT] Loading mascotas...");
+    console.log("ADOPT] Loading mascotas...");
     const mascotas = await getAllMascotasService(cookie);
-    console.log("🐕 [ADOPT] Mascotas loaded:", mascotas.length);
+    console.log("ADOPT] Mascotas loaded:", mascotas.length);
     return { mascotas };
   } catch (error) {
-    console.error("🐕 [ADOPT] Error loading mascotas:", error);
+    console.error("ADOPT] Error loading mascotas:", error);
     return { mascotas: [] };
   }
 }

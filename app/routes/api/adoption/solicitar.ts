@@ -18,7 +18,9 @@ export async function action({ request }: ActionFunctionArgs) {
   try {
     const formData = await request.formData();
     const id_mascota = formData.get("id_mascota");
-    const razon = formData.get("razon");
+    const razon_solicitud = formData.get("razon");
+
+    console.log("[ADOPTION] Datos recibidos:", { id_mascota, razon_solicitud });
 
     if (!id_mascota) {
       return Response.json(
@@ -30,19 +32,22 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    // Crear objeto de solicitud según el modelo del backend
+    // Crear objeto de solicitud según el formato del backend
     const solicitudData = {
       mascota: {
         id: Number(id_mascota),
       },
-      razon: razon || "",
-      estadoSolicitud: "PENDIENTE",
+      razon_solicitud: razon_solicitud || "",
     };
 
+    console.log("[ADOPTION] Enviando solicitud:", solicitudData);
+
     const response = await createSolicitudAdopcionService(
-      solicitudData,
+      solicitudData as any,
       cookie
     );
+
+    console.log("[ADOPTION] Respuesta del backend:", response);
 
     return Response.json(
       {
@@ -53,6 +58,7 @@ export async function action({ request }: ActionFunctionArgs) {
       { status: 200 }
     );
   } catch (error) {
+    console.error("[ADOPTION] Error al crear solicitud:", error);
     return Response.json(
       {
         status: "error",

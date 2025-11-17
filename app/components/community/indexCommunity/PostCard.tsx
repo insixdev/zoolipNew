@@ -71,11 +71,26 @@ export default function PostCard({
 
   // Validar que el post tenga ID
   if (!post || !post.id) {
-    console.error("PostCard: Invalid post", post);
+    console.error("[POSTCARD] Post invalido:", post);
     return null;
   }
 
   const postId = post.id.toString();
+
+  // Log para debug de likes (solo en desarrollo)
+  if (process.env.NODE_ENV === "development") {
+    console.log(
+      `[POSTCARD] Post ${postId} - isLiked: ${post.isLiked}, likes: ${post.likes}, avatar: ${post.author.avatar}`
+    );
+  }
+
+  // Log para debug de imágenes
+  if (post.type === "image" && post.image) {
+    console.log(
+      `[POSTCARD] Renderizando post ${postId} con imagen:`,
+      post.image
+    );
+  }
 
   // Verificar si el autor es una institución verificada
   const isVerified =
@@ -124,7 +139,7 @@ export default function PostCard({
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
       <div className="p-5 pb-3">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
@@ -134,7 +149,7 @@ export default function PostCard({
                 className="flex items-center gap-3 hover:opacity-80 transition-opacity"
                 onClick={(e) => e.stopPropagation()}
               >
-                <Avatar className="w-10 h-10">
+                <Avatar className="w-10 h-10 flex-shrink-0">
                   <AvatarImage
                     src={post.author.avatar}
                     alt={post.author.username}
@@ -174,7 +189,7 @@ export default function PostCard({
               </Link>
             ) : (
               <>
-                <Avatar className="w-10 h-10">
+                <Avatar className="w-10 h-10 flex-shrink-0">
                   <AvatarImage
                     src={post.author.avatar}
                     alt={post.author.username}
@@ -237,11 +252,11 @@ export default function PostCard({
       </div>
 
       {post.type === "image" && post.image && (
-        <div className="rounded-xl overflow-hidden">
+        <div className="rounded-xl overflow-hidden bg-gray-100">
           <img
             src={post.image}
             alt="Post"
-            className="w-full h-64 object-cover"
+            className="w-full max-h-96 object-contain"
           />
         </div>
       )}

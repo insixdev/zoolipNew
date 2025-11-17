@@ -92,7 +92,14 @@ export default function SystemDashboard() {
       icon: <FaUsers />,
       link: "/admin/system/users",
       color: "bg-blue-100 text-blue-600",
-      description: "Ver, buscar y administrar cuentas de usuario",
+      description: "Ver, buscar y administrar perfiles de usuario",
+    },
+    {
+      title: "Gestionar cuentas",
+      icon: <FaShieldAlt />,
+      link: "/admin/system/accounts",
+      color: "bg-purple-100 text-purple-600",
+      description: "Administrar cuentas de autenticación y acceso",
     },
     {
       title: "Configuración",
@@ -148,28 +155,34 @@ export default function SystemDashboard() {
         </div>
 
         {/* Acciones rápidas */}
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-6 flex-wrap">
           <Link
             to="/admin/system/users"
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
           >
             Gestionar Usuarios
           </Link>
           <Link
+            to="/admin/system/accounts"
+            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            Gestionar Cuentas
+          </Link>
+          <Link
             to="/admin/system/institutions"
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
           >
             Gestionar Instituciones
           </Link>
           <Link
             to="/admin/system/institutionSolicitudes"
-            className="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700"
+            className="px-4 py-2 bg-rose-600 text-white rounded-lg hover:bg-rose-700 transition-colors"
           >
             Solicitudes Instituciones
           </Link>
           <Link
             to="/admin/donaciones"
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+            className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
           >
             Donaciones
           </Link>

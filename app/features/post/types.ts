@@ -82,6 +82,7 @@ export type PublicationPublicGetResponse = {
   rolUsuario?: string; // Rol del usuario para badge de verificado
   likes: number;
   cantidadComentarios?: number; // Número de comentarios
+  imagen_url?: string | null; // URL de la imagen adjunta
   fecha_pregunta: string;
   fecha_duda_resuelta: string | null;
   fecha_edicion: string | null;

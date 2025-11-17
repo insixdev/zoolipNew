@@ -98,7 +98,6 @@ export default function CommunityRefugios() {
     image:
       "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=600&h=300&fit=crop",
     logo: "https://i.pravatar.cc/100?img=" + (inst.id_institucion % 60),
-    location: "México",
     address: "Dirección no disponible",
     phone: "Teléfono no disponible",
     email: inst.email,

@@ -52,7 +52,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
     if (user && institutionRoles.includes(user.rol)) {
       console.log(
-        "🚫 Usuario con rol",
+        "[] Usuario con rol",
         user.rol,
         "no puede acceder al formulario de solicitud (ya es institución)"
       );
@@ -63,7 +63,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return { allowed: true };
   } catch (error) {
     // Si hay error al obtener usuario (no autenticado), permitir acceso
-    console.log("✅ Usuario no autenticado, permitir acceso al formulario");
+    console.log("[] Usuario no autenticado, permitir acceso al formulario");
     return { allowed: true };
   }
 }
