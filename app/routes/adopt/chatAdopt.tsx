@@ -14,7 +14,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // Verificar si el usuario es administrador
   const userResult = await getUserFromRequest(request);
 
-  if (userResult && userResult.user) {
+  // Verificar que sea un UserResponseHandler con usuario válido
+  if (userResult && "user" in userResult && userResult.user) {
     const userRole = userResult.user.role;
     const isAdmin = Object.values(ADMIN_ROLES).includes(userRole as any);
 
@@ -52,7 +53,6 @@ type ChatDTO = {
   nombreUsuario: string;
   nombreAdministrador: string;
 };
-
 // URL base para el chat - debe coincidir con el backend
 const BASE_CHAT_URL = "http://localhost:3050/api/chat";
 const BASE_WS_URL = "ws://localhost:3050/chat";
@@ -466,16 +466,20 @@ export default function AdoptChat() {
             <div className="text-center max-w-md px-6">
               <MessageCircle className="mx-auto text-gray-300 mb-4" size={64} />
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                {chats.length === 0
-                  ? "Comienza una conversación"
-                  : "Selecciona un chat"}
+                {isLoadingChats
+                  ? "Cargando conversaciones..."
+                  : chats.length === 0
+                    ? "Comienza una conversación"
+                    : "Selecciona un chat"}
               </h3>
               <p className="text-gray-600 mb-4">
-                {chats.length === 0
-                  ? "Visita el perfil de un refugio y presiona el botón 'Enviar Mensaje' para iniciar un chat"
-                  : "Elige una conversación de la lista para comenzar"}
+                {isLoadingChats
+                  ? "Estamos obteniendo tus chats, espera un momento"
+                  : chats.length === 0
+                    ? "Visita el perfil de un refugio y presiona el botón 'Enviar Mensaje' para iniciar un chat"
+                    : "Elige una conversación de la lista para comenzar"}
               </p>
-              {chats.length === 0 && (
+              {!isLoadingChats && chats.length === 0 && (
                 <Link
                   to="/community/refugios"
                   className="inline-block px-6 py-3 bg-gradient-to-r from-orange-500 to-pink-500 text-white rounded-lg hover:from-orange-600 hover:to-pink-600 transition-all shadow-md hover:shadow-lg font-semibold"

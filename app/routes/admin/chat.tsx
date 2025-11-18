@@ -404,14 +404,18 @@ export default function AdminChat() {
             <div className="text-center max-w-md px-6">
               <MessageCircle className="mx-auto text-gray-300 mb-4" size={64} />
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                {chats.length === 0
-                  ? "Esperando conversaciones"
-                  : "Selecciona un chat"}
+                {isLoadingChats
+                  ? "Cargando conversaciones..."
+                  : chats.length === 0
+                    ? "Esperando conversaciones"
+                    : "Selecciona un chat"}
               </h3>
               <p className="text-gray-600 mb-4">
-                {chats.length === 0
-                  ? "Los usuarios podrán iniciar conversaciones contigo desde los refugios"
-                  : "Elige una conversación de la lista para responder"}
+                {isLoadingChats
+                  ? "Estamos obteniendo tus chats, espera un momento"
+                  : chats.length === 0
+                    ? "Los usuarios podrán iniciar conversaciones contigo desde los refugios"
+                    : "Elige una conversación de la lista para responder"}
               </p>
             </div>
           </div>

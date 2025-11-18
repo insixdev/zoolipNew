@@ -132,7 +132,7 @@ export default function CommunityRefugios() {
     return matchesSearch && matchesLocation && matchesSpecialty;
   });
 
-  const handleContact = (
+  const handleContact = async (
     refugioId: string,
     method: "phone" | "message" | "website"
   ) => {
@@ -144,16 +144,48 @@ export default function CommunityRefugios() {
         window.open(`tel:${refugio.phone}`);
         break;
       case "message":
-        // Crear nombre del chat: usuario_admin (con guión bajo)
-        const currentUserName = user?.username || "Usuario";
-        // Usar el ID de la institución para obtener el nombre del administrador
-        const institutionId = refugio.id;
+        try {
+          // Obtener el nombre del administrador de la institución
+          const currentUserName = user?.username || "Usuario";
+          const institutionId = refugio.id;
 
-        // Redirigir a la página de chat de adopt con el ID de la institución
-        // El backend creará el chat con el formato correcto: usuario_nombreAdmin
-        navigate(
-          `/adopt/chatAdopt?institution_id=${encodeURIComponent(institutionId)}&Nombre=${encodeURIComponent(currentUserName)}`
-        );
+          console.log(
+            "[REFUGIOS] Obteniendo administrador para institución:",
+            institutionId
+          );
+
+          // Obtener el administrador de la institución
+          const response = await fetch(
+            `/api/user/by-institution/${institutionId}`,
+            {
+              credentials: "include",
+            }
+          );
+
+          if (!response.ok) {
+            throw new Error("No se pudo obtener el administrador");
+          }
+
+          const adminUser = await response.json();
+          console.log("[REFUGIOS] Administrador obtenido:", adminUser);
+
+          const adminName = adminUser?.nombre || "Admin";
+          const nombreChat = `${currentUserName}_${adminName}`;
+
+          console.log("[REFUGIOS] Abriendo chat:", {
+            currentUserName,
+            adminName,
+            nombreChat,
+          });
+
+          // Redirigir al chat con el nombre correcto
+          navigate(
+            `/adopt/chatAdopt?Nombre_Chat=${encodeURIComponent(nombreChat)}&Nombre=${encodeURIComponent(currentUserName)}`
+          );
+        } catch (error) {
+          console.error("[REFUGIOS] Error al abrir chat:", error);
+          alert("Error al abrir el chat. Por favor, intenta de nuevo.");
+        }
         break;
       case "website":
         if (refugio.website) {

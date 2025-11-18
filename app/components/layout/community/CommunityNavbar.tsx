@@ -285,9 +285,16 @@ export default function CommunityNavbar({
                     </h3>
                   </div>
                   <div className="max-h-96 overflow-y-auto">
-                    {/* Notificación de mensajes */}
+                    {/* Notificación de mensajes - Redirige según el rol */}
                     <Link
-                      to="/adopt/chatAdopt"
+                      to={
+                        user?.role === USER_ROLES.ADMIN ||
+                        user?.role === USER_ROLES.VETERINARIA ||
+                        user?.role === USER_ROLES.REFUGIO ||
+                        user?.role === USER_ROLES.SYSTEM
+                          ? "/admin/chat"
+                          : "/adopt/chatAdopt"
+                      }
                       onClick={() => setIsNotificationsOpen(false)}
                       className="flex items-center px-4 py-3 hover:bg-rose-50 transition-colors border-b border-rose-50"
                     >
