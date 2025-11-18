@@ -1,4 +1,5 @@
 export { default as ProfileSettings } from "./ProfileSettings";
+export { default as AccountsSettings } from "./AccountsSettings";
 export { default as NotificationSettings } from "./NotificationSettings";
 export { default as PrivacySettings } from "./PrivacySettings";
 export { default as AccountSettings } from "./AccountSettings";

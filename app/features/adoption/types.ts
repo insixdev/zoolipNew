@@ -61,7 +61,8 @@ export type SolicitudAdopcionDTO = {
   estadoSolicitud: "SOLICITADA" | "APROBADO" | "RECHAZADO";
   fecha_inicio: string;
   fecha_finalizado?: string;
-  motivo_decision?: string;
+  motivoDecision?: string; // Motivo de la decisión del admin (aprobado/rechazado)
+  razonSolicitud?: string
 };
 
 /**

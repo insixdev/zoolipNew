@@ -3,7 +3,7 @@ import { Link, useLoaderData } from "react-router";
 import { type LoaderFunctionArgs } from "react-router";
 import { ArrowLeft } from "lucide-react";
 import {
-  ProfileSettings,
+  AccountsSettings,
   NotificationSettings,
   PrivacySettings,
   AccountSettings,
@@ -19,7 +19,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function Settings() {
   const { user } = useLoaderData<typeof loader>();
-  const [activeTab, setActiveTab] = useState("profile");
+  const [activeTab, setActiveTab] = useState("accounts");
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -54,7 +54,7 @@ export default function Settings() {
 
           {/* Main content */}
           <div className="space-y-6 sm:px-6 lg:px-0 lg:col-span-9">
-            {activeTab === "profile" && <ProfileSettings />}
+            {activeTab === "accounts" && <AccountsSettings />}
             {activeTab === "notifications" && <NotificationSettings />}
             {activeTab === "privacy" && <PrivacySettings />}
             {activeTab === "account" && <AccountSettings />}

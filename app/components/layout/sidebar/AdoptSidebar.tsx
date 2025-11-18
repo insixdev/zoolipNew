@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router";
 import { Home, MessageCircle, Heart, Settings, FileText } from "lucide-react";
 import { cn } from "~/lib/generalUtil";
 import { useSmartAuth } from "~/features/auth/useSmartAuth";
+import { USER_ROLES } from "~/lib/constants";
 
 export type AdoptSidebarProps = {
   className?: string;
@@ -17,8 +18,8 @@ const menuItems = [
     requiresAdoptante: false,
   },
   {
-    label: "Mis Adopciones",
-    path: "/adopt/mis-adopciones",
+    label: "Mis Mascotas",
+    path: "/adopt/mis-mascotas",
     icon: Heart,
     requiresAuth: true,
     requiresAdoptante: true, // Solo para adoptantes
@@ -46,6 +47,12 @@ export default function AdoptSidebar({
   const location = useLocation();
   const { user } = useSmartAuth();
 
+  // Debug: Ver qué rol tiene el usuario
+  console.log("[ADOPT SIDEBAR] User:", user);
+  console.log("[ADOPT SIDEBAR] User rol:", user?.role);
+  console.log("[ADOPT SIDEBAR] Expected rol:", USER_ROLES.ADOPTANTE);
+  console.log("[ADOPT SIDEBAR] Match:", user?.role === USER_ROLES.ADOPTANTE);
+
   const isActive = (path: string) => {
     return location.pathname === path;
   };
@@ -72,12 +79,24 @@ export default function AdoptSidebar({
             const active = isActive(item.path);
 
             // Si requiere ser adoptante y el usuario no lo es, no mostrar
-            if (item.requiresAdoptante && user?.rol !== "ADOPTANTE") {
-              return null;
+            if (item.requiresAdoptante) {
+              console.log(`[ADOPT SIDEBAR] Checking ${item.label}:`, {
+                hasUser: !!user,
+                userRol: user?.role,
+                expectedRol: USER_ROLES.ADOPTANTE,
+                matches: user?.role === USER_ROLES.ADOPTANTE,
+              });
+
+              if (!user || user.role !== USER_ROLES.ADOPTANTE) {
+                console.log(`[ADOPT SIDEBAR] Hiding ${item.label} - no access`);
+                return null;
+              }
+
+              console.log(`[ADOPT SIDEBAR] Showing ${item.label} - has access`);
             }
 
             // Si requiere autenticación y no hay usuario, mostrar deshabilitado
-            if (item.requiresAuth && onlyForUsers) {
+            if (item.requiresAuth && !user && onlyForUsers) {
               return (
                 <li key={item.path}>
                   <div

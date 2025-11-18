@@ -33,7 +33,7 @@ export async function registerService(user): Promise<UserResponse> {
 }
 
 /** Función para hacer login */
-export async function loginService(user: UserRequest, cookie: string) {
+export async function loginService(user: UserRequest) {
   try {
     const res = await fetch(`${BASE_AUTH_URL}login`, {
       method: "POST",

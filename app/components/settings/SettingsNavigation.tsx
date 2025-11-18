@@ -1,4 +1,4 @@
-import { User, Bell, Shield, Lock, LucideIcon } from "lucide-react";
+import { Users, Bell, Shield, Lock, LucideIcon } from "lucide-react";
 
 type Tab = {
   id: string;
@@ -12,7 +12,7 @@ type SettingsNavigationProps = {
 };
 
 const tabs: Tab[] = [
-  { id: "profile", label: "Perfil", icon: User },
+  { id: "accounts", label: "Cuentas", icon: Users },
   { id: "notifications", label: "Notificaciones", icon: Bell },
   { id: "privacy", label: "Privacidad", icon: Shield },
   { id: "account", label: "Cuenta", icon: Lock },

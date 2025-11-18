@@ -191,36 +191,8 @@ export async function createSolicitudAdopcionService(
 }
 
 /**
- * Obtiene todas las solicitudes de adopción
+ * Obtiene todas las solicitudes de adopción de la institución actual
  */
-export async function getAllSolicitudesService(
-  cookie: string
-): Promise<SolicitudAdopcionDTO[]> {
-  try {
-    const headers = new Headers();
-    headers.append("Content-Type", "application/json");
-    headers.append("Cookie", cookie);
-
-    const response = await fetch(`${BASE_URL}/getAllSolicitudes`, {
-      method: "GET",
-      headers,
-    });
-
-    if (response.status === 204) {
-      return [];
-    }
-
-    if (!response.ok) {
-      throw new Error(`Error ${response.status}: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Error fetching solicitudes:", error);
-    throw error;
-  }
-}
 
 /**
  * Obtiene una solicitud por ID

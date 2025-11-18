@@ -7,11 +7,12 @@ import type { LoaderFunctionArgs } from "react-router";
 import { requireAdmin } from "~/lib/roleGuards";
 import { AnyAdminRole } from "~/components/auth/AdminGuard";
 import {
-  getAllSolicitudesService,
+  getAllCurrentSolicitudesService,
   completarSolicitudService,
 } from "~/features/adoption/adoptionService";
 import type { SolicitudAdopcionDTO } from "~/features/adoption/types";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { CheckCircle, XCircle, X } from "lucide-react";
 
 // Action para completar adopción
 export async function action({ request }: ActionFunctionArgs) {
@@ -20,21 +21,32 @@ export async function action({ request }: ActionFunctionArgs) {
 
   try {
     const formData = await request.formData();
-    const id_solicitud = Number(formData.get("id_solicitud"));
+    const id_solicitud_adopcion = Number(formData.get("id_solicitud"));
+    const estadoSolicitud = formData.get("estadoSolicitud") as
+      | "APROBADO"
+      | "RECHAZADO";
+    const motivo_decision = formData.get("motivo_decision") as string;
 
-    const solicitudData = {
-      id_solicitud_adopcion: id_solicitud,
-    };
+    console.log("ADMIN SOLICITUDES] Completando solicitud:", {
+      id_solicitud_adopcion,
+      estadoSolicitud,
+      motivo_decision,
+    });
 
-    const result = await completarAdopcionService(solicitudData, cookie);
+    const result = await completarSolicitudService(
+      id_solicitud_adopcion,
+      estadoSolicitud,
+      motivo_decision,
+      cookie
+    );
 
     return {
       success: true,
-      message: "Adopción completada exitosamente",
+      message: `Solicitud ${estadoSolicitud.toLowerCase()} exitosamente`,
       result,
     };
   } catch (error: any) {
-    console.error("📋 [ADMIN SOLICITUDES] Error:", error);
+    console.error("[ADMIN SOLICITUDES] Error:", error);
     return {
       success: false,
       error: error.message || "Error al completar adopción",
@@ -48,15 +60,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const cookie = request.headers.get("Cookie") || "";
 
   try {
-    console.log("📋 [ADMIN SOLICITUDES] Loading solicitudes...");
-    const solicitudes = await getAllSolicitudesService(cookie);
-    console.log(
-      "📋 [ADMIN SOLICITUDES] Solicitudes loaded:",
-      solicitudes.length
-    );
+    const solicitudes = await getAllCurrentSolicitudesService(cookie);
+
+    console.log("[ADMIN SOLICITUDES] Solicitudes loaded:", solicitudes);
     return { solicitudes };
   } catch (error) {
-    console.error("📋 [ADMIN SOLICITUDES] Error loading solicitudes:", error);
+    console.error("[ADMIN SOLICITUDES] Error loading solicitudes:", error);
     return { solicitudes: [] };
   }
 }
@@ -64,12 +73,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function AdminSolicitudes() {
   const { solicitudes } = useLoaderData<typeof loader>();
   const fetcher = useFetcher();
+  const [showModal, setShowModal] = useState(false);
+  const [modalData, setModalData] = useState<{
+    id_solicitud: number;
+    estado: "APROBADO" | "RECHAZADO";
+    titulo: string;
+  } | null>(null);
+  const [motivo, setMotivo] = useState("");
 
   // Mostrar mensaje de éxito/error
   useEffect(() => {
     if (fetcher.data) {
       if (fetcher.data.success) {
         alert(fetcher.data.message);
+        setShowModal(false);
+        setMotivo("");
         // Recargar la página para actualizar la lista
         window.location.reload();
       } else if (fetcher.data.error) {
@@ -78,22 +96,41 @@ export default function AdminSolicitudes() {
     }
   }, [fetcher.data]);
 
-  const handleCompletarAdopcion = (id_solicitud: number) => {
-    if (
-      confirm(
-        "¿Estás seguro de completar esta adopción? El usuario se convertirá en adoptante y la mascota será asignada."
-      )
-    ) {
-      const formData = new FormData();
-      formData.append("id_solicitud", id_solicitud.toString());
-      fetcher.submit(formData, { method: "post" });
+  const handleOpenModal = (
+    id_solicitud: number,
+    estado: "APROBADO" | "RECHAZADO"
+  ) => {
+    setModalData({
+      id_solicitud,
+      estado,
+      titulo:
+        estado === "APROBADO" ? "Aprobar Solicitud" : "Rechazar Solicitud",
+    });
+    setShowModal(true);
+    setMotivo("");
+  };
+
+  const handleSubmitDecision = () => {
+    if (!modalData) return;
+
+    if (!motivo.trim()) {
+      alert("Por favor ingresa un motivo para la decisión");
+      return;
     }
+
+    const formData = new FormData();
+    formData.append("id_solicitud", modalData.id_solicitud.toString());
+    formData.append("estadoSolicitud", modalData.estado);
+    formData.append("motivo_decision", motivo);
+    fetcher.submit(formData, { method: "post" });
   };
 
   const getEstadoColor = (estado: string) => {
-    const estadoLower = estado.toLowerCase();
-    const colors = {
+    const estadoLower = estado?.toLowerCase() || "";
+    const colors: Record<string, string> = {
       pendiente: "bg-yellow-100 text-yellow-800",
+      solicitada: "bg-orange-100 text-orange-800",
+      solicitado: "bg-orange-100 text-orange-800",
       aprobada: "bg-green-100 text-green-800",
       aprobado: "bg-green-100 text-green-800",
       rechazada: "bg-red-100 text-red-800",
@@ -146,13 +183,13 @@ export default function AdminSolicitudes() {
                     ID
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    ID Usuario
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Nombre
+                    Nombre Solicitante
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Mascota
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Razón Solicitud
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Fecha
@@ -191,18 +228,33 @@ export default function AdminSolicitudes() {
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">
-                          {solicitud.nombreSolicitante}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-600">
+                        <div className="text-sm font-medium text-gray-900">
                           {solicitud.nombreSolicitante}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-rose-600">
                           Mascota ID: {solicitud.idMascota}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 max-w-xs">
+                        <div className="text-sm text-gray-900">
+                          {solicitud.razonSolicitud? (
+                            <div className="group relative">
+                              <p className="line-clamp-2 text-gray-700">
+                                {solicitud.razonSolicitud}
+                              </p>
+                              {solicitud?.razonSolicitud.length > 60 && (
+                                <div className="hidden group-hover:block absolute z-10 w-64 p-3 bg-gray-900 text-white text-xs rounded-lg shadow-lg -top-2 left-0 transform -translate-y-full">
+                                  {solicitud.razonSolicitud}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 italic">
+                              Sin razón
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -218,26 +270,43 @@ export default function AdminSolicitudes() {
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {solicitud.estadoSolicitud === "PENDIENTE" ? (
-                          <button
-                            onClick={() =>
-                              handleCompletarAdopcion(
-                                solicitud.idSolicitudAdopcion
-                              )
-                            }
-                            disabled={fetcher.state !== "idle"}
-                            className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:from-green-600 hover:to-emerald-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all shadow-sm hover:shadow-md"
-                          >
-                            {fetcher.state !== "idle"
-                              ? "Procesando..."
-                              : "Completar Adopción"}
-                          </button>
+                        {solicitud.estadoSolicitud?.toUpperCase() ===
+                          "SOLICITADA" ||
+                        solicitud.estadoSolicitud?.toUpperCase() ===
+                          "SOLICITADO" ||
+                        solicitud.estadoSolicitud?.toUpperCase() ===
+                          "PENDIENTE" ? (
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() =>
+                                handleOpenModal(
+                                  solicitud.idSolicitudAdopcion,
+                                  "APROBADO"
+                                )
+                              }
+                              disabled={fetcher.state !== "idle"}
+                              className="px-3 py-1.5 bg-green-500 text-white rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all shadow-sm hover:shadow-md flex items-center gap-1"
+                            >
+                              <CheckCircle size={16} />
+                              Aprobar
+                            </button>
+                            <button
+                              onClick={() =>
+                                handleOpenModal(
+                                  solicitud.idSolicitudAdopcion,
+                                  "RECHAZADO"
+                                )
+                              }
+                              disabled={fetcher.state !== "idle"}
+                              className="px-3 py-1.5 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed font-medium transition-all shadow-sm hover:shadow-md flex items-center gap-1"
+                            >
+                              <XCircle size={16} />
+                              Rechazar
+                            </button>
+                          </div>
                         ) : (
                           <span className="text-gray-500 italic">
-                            {solicitud.estadoSolicitud === "APROBADA" ||
-                            solicitud.estadoSolicitud === "COMPLETADA"
-                              ? "Completada"
-                              : solicitud.estadoSolicitud}
+                            Procesada
                           </span>
                         )}
                       </td>
@@ -249,13 +318,91 @@ export default function AdminSolicitudes() {
           </div>
         </div>
 
-        {solicitudes.length > 0 && (
-          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-800">
-              💡 <strong>Nota:</strong> Al completar una adopción, el usuario
-              automáticamente se convierte en ADOPTANTE y la mascota es asignada
-              a su perfil.
-            </p>
+        {/* Modal para motivo de decisión */}
+        {showModal && modalData && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full animate-[slideUp_0.3s_ease-out]">
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <h3 className="text-xl font-bold text-gray-900">
+                  {modalData.titulo}
+                </h3>
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X size={24} />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-6">
+                <div className="mb-4">
+                  <div
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg ${
+                      modalData.estado === "APROBADO"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-red-100 text-red-700"
+                    }`}
+                  >
+                    {modalData.estado === "APROBADO" ? (
+                      <CheckCircle size={20} />
+                    ) : (
+                      <XCircle size={20} />
+                    )}
+                    <span className="font-semibold">
+                      Solicitud #{modalData.id_solicitud}
+                    </span>
+                  </div>
+                </div>
+
+                <label className="block mb-2 text-sm font-medium text-gray-700">
+                  Motivo de la decisión
+                  <span className="text-red-500 ml-1">*</span>
+                </label>
+                <textarea
+                  value={motivo}
+                  onChange={(e) => setMotivo(e.target.value)}
+                  placeholder={
+                    modalData.estado === "APROBADO"
+                      ? "Ej: El solicitante cumple con todos los requisitos..."
+                      : "Ej: No cumple con los requisitos de espacio..."
+                  }
+                  className="w-full text-black px-4 py-3 border-2 border-gray-200 rounded-lg focus:border-orange-400 focus:outline-none resize-none"
+                  rows={4}
+                  disabled={fetcher.state !== "idle"}
+                />
+                <p className="text-xs text-gray-500 mt-2">
+                  Este motivo será enviado al usuario por correo electrónico
+                </p>
+              </div>
+
+              {/* Footer */}
+              <div className="flex gap-3 p-6 border-t border-gray-200">
+                <button
+                  onClick={() => setShowModal(false)}
+                  disabled={fetcher.state !== "idle"}
+                  className="flex-1 px-4 py-2.5 border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium transition-colors disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSubmitDecision}
+                  disabled={fetcher.state !== "idle" || !motivo.trim()}
+                  className={`flex-1 px-4 py-2.5 text-white rounded-lg font-medium transition-all shadow-sm hover:shadow-md disabled:opacity-50 disabled:cursor-not-allowed ${
+                    modalData.estado === "APROBADO"
+                      ? "bg-green-500 hover:bg-green-600"
+                      : "bg-red-500 hover:bg-red-600"
+                  }`}
+                >
+                  {fetcher.state !== "idle"
+                    ? "Procesando..."
+                    : modalData.estado === "APROBADO"
+                      ? "Aprobar Solicitud"
+                      : "Rechazar Solicitud"}
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

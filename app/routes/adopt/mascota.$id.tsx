@@ -201,7 +201,7 @@ export default function MascotaDetail() {
                 <textarea
                   value={razon}
                   onChange={(e) => setRazon(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 resize-none text-sm"
+                  className="w-full text-black px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-900 focus:border-gray-900 resize-none text-sm"
                   rows={4}
                   placeholder="Cuéntanos por qué serías un buen hogar para esta mascota..."
                   required

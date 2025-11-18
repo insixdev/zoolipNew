@@ -1,52 +1,22 @@
-import { Link, useLoaderData, type LoaderFunctionArgs } from "react-router";
-import { Heart, Calendar, Dog } from "lucide-react";
-import { getAllMascotasService } from "~/features/adoption/adoptionService";
+import { useLoaderData, type LoaderFunctionArgs } from "react-router";
+import { Heart, Calendar, Dog, MapPin } from "lucide-react";
+import { getMisMascotasService } from "~/features/adoption/adoptionService";
+import type { MascotaDTO } from "~/features/adoption/types";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const cookie = request.headers.get("Cookie") || "";
 
   try {
-    console.log("[ADOPT] Loading mascotas...");
-    const allMascotas = await getAllMascotasService(cookie);
-    console.log(" [ADOPT] Total mascotas loaded:", allMascotas.length);
-
-    // Filtrar solo mascotas disponibles (no adoptadas)
-    const mascotas = allMascotas.filter((mascota) => {
-      const estado =
-        mascota.estado?.toUpperCase() ||
-        mascota.estadoAdopcion?.toUpperCase() ||
-        "";
-      const isDisponible =
-        estado === "DISPONIBLE" || estado === "DISPONIBLE_ADOPCION";
-
-      console.log(`[ADOPT] Mascota ${mascota.nombre}:`, {
-        estado: mascota.estado,
-        estadoAdopcion: mascota.estadoAdopcion,
-        isDisponible,
-      });
-
-      return isDisponible;
-    });
-
-
-    // Log para verificar IDs
-    if (mascotas.length > 0) {
-      console.log(" [ADOPT] Primera mascota disponible:", {
-        id: mascotas[0].id,
-        id_mascota: mascotas[0].id_mascota,
-        nombre: mascotas[0].nombre,
-        estado: mascotas[0].estado,
-      });
-    }
+    const mascotas = await getMisMascotasService(cookie);
 
     return { mascotas };
   } catch (error) {
-    console.error("ADOPT] Error loading mascotas:", error);
+    console.error(" [MIS MASCOTAS] Error loading mascotas:", error);
     return { mascotas: [] };
   }
 }
 
-export default function AdoptIndex() {
+export default function MisMascotas() {
   const { mascotas } = useLoaderData<typeof loader>();
 
   // Empty state
@@ -58,18 +28,18 @@ export default function AdoptIndex() {
             <Heart className="text-white" size={48} />
           </div>
           <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            No hay mascotas disponibles
+            Aún no tienes mascotas
           </h2>
           <p className="text-gray-600 text-lg mb-8">
-            Por el momento no hay mascotas en adopción. Vuelve pronto para
-            conocer a tu nuevo mejor amigo.
+            Cuando adoptes una mascota, aparecerá aquí. Explora las mascotas
+            disponibles y encuentra a tu compañero ideal.
           </p>
-          <Link
-            to="/community"
+          <a
+            href="/adopt"
             className="inline-block bg-gradient-to-r from-orange-500 to-pink-500 text-white py-3 px-8 rounded-full hover:from-orange-600 hover:to-pink-600 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:scale-105"
           >
-            Ir a la comunidad
-          </Link>
+            Ver mascotas disponibles
+          </a>
         </div>
       </div>
     );
@@ -94,20 +64,19 @@ export default function AdoptIndex() {
                   <span className="text-sm font-semibold">
                     {mascotas.length}{" "}
                     {mascotas.length === 1
-                      ? "mascota disponible"
-                      : "mascotas disponibles"}
+                      ? "mascota adoptada"
+                      : "mascotas adoptadas"}
                   </span>
                 </div>
 
                 {/* Título con animación de entrada */}
                 <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4 animate-[slideUp_0.8s_ease-out]">
-                  Encuentra a tu compañero ideal
+                  Mis Mascotas
                 </h1>
 
                 {/* Descripción con animación */}
                 <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed animate-[fadeIn_1s_ease-out]">
-                  Cada mascota merece un hogar lleno de amor. Descubre quién
-                  está esperando por ti.
+                  Tus compañeros adoptados
                 </p>
               </div>
             </div>
@@ -122,15 +91,9 @@ export default function AdoptIndex() {
             {mascotas.map((mascota, index) => {
               const mascotaId = mascota.id || mascota.id_mascota;
 
-              if (!mascotaId) {
-                console.error("ADOP Mascota sin ID:", mascota);
-                return null;
-              }
-
               return (
-                <Link
+                <div
                   key={mascotaId}
-                  to={`/adopt/mascota/${mascotaId}`}
                   className="group"
                   style={{
                     animation: `fadeInUp 0.6s ease-out ${index * 0.1}s both`,
@@ -148,11 +111,14 @@ export default function AdoptIndex() {
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
 
-                      {/* Badge de disponibilidad */}
+                      {/* Badge de adoptado */}
                       <div className="absolute top-4 left-4">
-                        <span className="inline-flex items-center gap-1.5 bg-white/95 backdrop-blur-sm text-gray-900 px-3 py-1.5 rounded-lg text-xs font-medium border border-green-200 shadow-sm">
-                          <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
-                          Disponible
+                        <span className="inline-flex items-center gap-1.5 bg-white/95 backdrop-blur-sm text-gray-900 px-3 py-1.5 rounded-lg text-xs font-medium border border-orange-200 shadow-sm">
+                          <Heart
+                            size={14}
+                            className="text-orange-500 fill-orange-500"
+                          />
+                          Adoptado
                         </span>
                       </div>
                     </div>
@@ -196,6 +162,22 @@ export default function AdoptIndex() {
                             </p>
                           </div>
                         </div>
+                        {mascota.nombreInstitucion && (
+                          <div className="flex items-start gap-2">
+                            <MapPin
+                              size={16}
+                              className="text-gray-400 mt-0.5 flex-shrink-0"
+                            />
+                            <div>
+                              <p className="text-xs text-gray-500">
+                                Institución
+                              </p>
+                              <p className="text-sm text-gray-900 font-medium">
+                                {mascota.nombreInstitucion}
+                              </p>
+                            </div>
+                          </div>
+                        )}
                       </div>
 
                       {/* Description Preview */}
@@ -205,42 +187,17 @@ export default function AdoptIndex() {
                         </p>
                       )}
 
-                      {/* CTA Button */}
-                      <button className="w-full bg-white text-gray-900 py-2.5 rounded-lg font-medium border-2 border-gray-900 hover:bg-orange-500 hover:text-white hover:border-orange-500 transition-colors duration-200">
-                        Conocer más
-                      </button>
+                      {/* Info Badge */}
+                      <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
+                        <p className="text-sm text-orange-700 font-medium text-center">
+                          ❤️ Tu compañero adoptado
+                        </p>
+                      </div>
                     </div>
                   </div>
-                </Link>
+                </div>
               );
             })}
-          </div>
-        </div>
-
-        {/* CTA Section */}
-        <div className="max-w-4xl mx-auto px-4 pb-20">
-          <div className="bg-gradient-to-r from-orange-400 via-pink-400 to-purple-400 rounded-3xl p-12 text-center shadow-2xl">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              ¿Listo para adoptar?
-            </h2>
-            <p className="text-white/90 text-lg mb-8 max-w-2xl mx-auto">
-              Adoptar es un acto de amor. Dale a una mascota la oportunidad de
-              tener un hogar lleno de cariño.
-            </p>
-            <div className="flex flex-wrap gap-4 justify-center">
-              <Link
-                to="/community"
-                className="bg-white text-orange-600 px-8 py-3 rounded-full font-semibold hover:bg-gray-100 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
-              >
-                Únete a la comunidad
-              </Link>
-              <Link
-                to="/adopt/solicitudes"
-                className="bg-white/20 backdrop-blur-sm text-white px-8 py-3 rounded-full font-semibold hover:bg-white/30 transition-all duration-300 border-2 border-white/50"
-              >
-                Ver solicitudes
-              </Link>
-            </div>
           </div>
         </div>
       </div>

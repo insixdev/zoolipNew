@@ -159,52 +159,58 @@ export default function RefugioDetails() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {mascotas.map((mascota) => (
-                    <Link
-                      key={mascota.id}
-                      to={`/adopt/mascota/${mascota.id}`}
-                      className="group relative bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300"
-                    >
-                      <div className="aspect-w-16 aspect-h-12 bg-gray-200">
-                        <img
-                          src={
-                            mascota.imagen_url ||
-                            "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400&h=300&fit=crop"
-                          }
-                          alt={mascota.nombre}
-                          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      </div>
-                      <div className="p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className="text-lg font-semibold text-gray-900 group-hover:text-rose-600 transition-colors">
-                            {mascota.nombre}
-                          </h3>
-                          <span
-                            className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                              mascota.sexo === "Macho"
-                                ? "bg-blue-100 text-blue-800"
-                                : "bg-pink-100 text-pink-800"
-                            }`}
-                          >
-                            {mascota.sexo || "N/A"}
-                          </span>
+                  {mascotas.map((mascota) => {
+                    const mascotaId =
+                      mascota.id || mascota.id_mascota || mascota.id_Mascota;
+
+                    return (
+                      <Link
+                        key={mascotaId}
+                        to={`/adopt/mascota/${mascotaId}`}
+                        className="group relative bg-white border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow duration-300"
+                      >
+                        <div className="aspect-w-16 aspect-h-12 bg-gray-200">
+                          <img
+                            src={
+                              mascota.imagen_url ||
+                              "https://images.unsplash.com/photo-1587300003388-59208cc962cb?w=400&h=300&fit=crop"
+                            }
+                            alt={mascota.nombre}
+                            className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
                         </div>
-                        <div className="flex items-center gap-4 text-sm text-gray-600">
-                          <span>
-                            {mascota.edad} {mascota.edad === 1 ? "año" : "años"}
-                          </span>
-                          <span>•</span>
-                          <span>{mascota.raza}</span>
+                        <div className="p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <h3 className="text-lg font-semibold text-gray-900 group-hover:text-rose-600 transition-colors">
+                              {mascota.nombre}
+                            </h3>
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                                mascota.sexo === "Macho"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : "bg-pink-100 text-pink-800"
+                              }`}
+                            >
+                              {mascota.sexo || "N/A"}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-4 text-sm text-gray-600">
+                            <span>
+                              {mascota.edad}{" "}
+                              {mascota.edad === 1 ? "año" : "años"}
+                            </span>
+                            <span>•</span>
+                            <span>{mascota.raza}</span>
+                          </div>
+                          {mascota.descripcion && (
+                            <p className="mt-2 text-sm text-gray-500 line-clamp-2">
+                              {mascota.descripcion}
+                            </p>
+                          )}
                         </div>
-                        {mascota.descripcion && (
-                          <p className="mt-2 text-sm text-gray-500 line-clamp-2">
-                            {mascota.descripcion}
-                          </p>
-                        )}
-                      </div>
-                    </Link>
-                  ))}
+                      </Link>
+                    );
+                  })}
                 </div>
               )}
             </div>
