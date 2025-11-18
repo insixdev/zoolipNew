@@ -175,112 +175,122 @@ export default function AdoptChat() {
     scrollToBottom();
   }, [messages]);
 
-  // Cargar mensajes históricos del chat
-  useEffect(() => {
-    // Evitar bucle infinito: solo cargar si el chat cambió
-    if (
-      !nombreChat ||
-      chats.length === 0 ||
-      lastLoadedChat.current === nombreChat
-    ) {
+  // Función para cargar mensajes
+  const loadMessages = async (forceReload = false) => {
+    if (!nombreChat || chats.length === 0) {
       return;
     }
 
-    const loadMessages = async () => {
-      // Buscar el chat actual en la lista de chats
-      const currentChat = chats.find((c) => c.nombreChat === nombreChat);
-      if (!currentChat) {
-        console.log("[CHAT] Chat no encontrado");
-        return;
-      }
+    // Si ya se cargó este chat y no es forzado, no recargar
+    if (lastLoadedChat.current === nombreChat && !forceReload) {
+      console.log("[CHAT] Mensajes ya cargados, saltando...");
+      return;
+    }
 
-      try {
-        console.log("[CHAT] Cargando mensajes del chat:", currentChat.idChat);
-        lastLoadedChat.current = nombreChat; // Marcar como cargado
-        setIsLoadingMessages(true);
+    // Buscar el chat actual en la lista de chats
+    const currentChat = chats.find((c) => c.nombreChat === nombreChat);
+    if (!currentChat) {
+      console.log("[CHAT] Chat no encontrado");
+      return;
+    }
 
-        const url = `${BASE_CHAT_URL}/obtenerMensajesPorChat?id_chat=${currentChat.idChat}`;
-        const response = await fetch(url, {
-          credentials: "include",
-        });
+    try {
+      console.log("[CHAT] Cargando mensajes del chat:", currentChat.idChat);
+      lastLoadedChat.current = nombreChat; // Marcar como cargado
+      setIsLoadingMessages(true);
 
-        if (response.ok) {
-          const mensajes = await response.json();
-          console.log("[CHAT] Mensajes cargados:", mensajes?.length || 0);
+      const url = `${BASE_CHAT_URL}/obtenerMensajesPorChat?id_chat=${currentChat.idChat}`;
+      const response = await fetch(url, {
+        credentials: "include",
+      });
 
-          // Debug: mostrar el primer mensaje completo
-          if (mensajes && mensajes.length > 0) {
-            console.log("[CHAT] Primer mensaje completo:", mensajes[0]);
-            console.log("[CHAT] Campos disponibles:", Object.keys(mensajes[0]));
+      if (response.ok) {
+        const mensajes = await response.json();
+        console.log("[CHAT] Mensajes cargados:", mensajes?.length || 0);
+
+        // Debug: mostrar el primer mensaje completo
+        if (mensajes && mensajes.length > 0) {
+          console.log("[CHAT] Primer mensaje completo:", mensajes[0]);
+          console.log("[CHAT] Campos disponibles:", Object.keys(mensajes[0]));
+        }
+
+        const transformedMessages = (mensajes || []).map((msg: any) => {
+          // Probar múltiples variaciones de nombres de campos
+          let sender =
+            msg.nombre_usuario ||
+            msg.nombreUsuario ||
+            msg.nombre_emisor ||
+            msg.nombreEmisor ||
+            msg.emisor ||
+            msg.nombre || // Campo genérico
+            msg.sender ||
+            "Usuario";
+          let message = msg.contenido || msg.mensaje || msg.message || "";
+          let timestamp =
+            msg.fecha_envio ||
+            msg.fechaEnvio ||
+            msg.fecha_hora ||
+            msg.fechaHora ||
+            msg.timestamp;
+
+          // Si el mensaje es un JSON string, parsearlo
+          if (
+            message &&
+            typeof message === "string" &&
+            message.startsWith("{")
+          ) {
+            try {
+              const parsedMessage = JSON.parse(message);
+              sender = parsedMessage.sender || sender;
+              message = parsedMessage.message || message;
+              timestamp = parsedMessage.timestamp || timestamp;
+            } catch (e) {
+              // Si falla el parseo, usar el mensaje original
+              console.log("[CHAT] No se pudo parsear mensaje JSON:", message);
+            }
           }
 
-          const transformedMessages = (mensajes || []).map((msg: any) => {
-            // Probar múltiples variaciones de nombres de campos
-            let sender =
-              msg.nombre_usuario ||
-              msg.nombreUsuario ||
-              msg.nombre_emisor ||
-              msg.nombreEmisor ||
-              msg.emisor ||
-              msg.nombre || // Campo genérico
-              msg.sender ||
-              "Usuario";
-            let message = msg.contenido || msg.mensaje || msg.message || "";
-            let timestamp =
-              msg.fecha_envio ||
-              msg.fechaEnvio ||
-              msg.fecha_hora ||
-              msg.fechaHora ||
-              msg.timestamp;
+          console.log("[CHAT] Mensaje:", { sender, message, timestamp });
 
-            // Si el mensaje es un JSON string, parsearlo
-            if (
-              message &&
-              typeof message === "string" &&
-              message.startsWith("{")
-            ) {
-              try {
-                const parsedMessage = JSON.parse(message);
-                sender = parsedMessage.sender || sender;
-                message = parsedMessage.message || message;
-                timestamp = parsedMessage.timestamp || timestamp;
-              } catch (e) {
-                // Si falla el parseo, usar el mensaje original
-                console.log("[CHAT] No se pudo parsear mensaje JSON:", message);
-              }
-            }
+          return {
+            id:
+              msg.id_mensaje?.toString() ||
+              msg.idMensaje?.toString() ||
+              `${Date.now()}-${Math.random()}`,
+            sender: sender,
+            message: message,
+            timestamp: timestamp
+              ? new Date(timestamp).toLocaleTimeString("es-MX", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : new Date().toLocaleTimeString("es-MX", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                }),
+          };
+        });
 
-            console.log("[CHAT] Mensaje:", { sender, message, timestamp });
+        console.log("[CHAT] Mensajes transformados:", transformedMessages);
 
-            return {
-              id:
-                msg.id_mensaje?.toString() ||
-                msg.idMensaje?.toString() ||
-                `${Date.now()}-${Math.random()}`,
-              sender: sender,
-              message: message,
-              timestamp: timestamp
-                ? new Date(timestamp).toLocaleTimeString("es-MX", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
-                : new Date().toLocaleTimeString("es-MX", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  }),
-            };
-          });
+        // Ordenar mensajes por ID (que incluye timestamp) para mantener orden cronológico
+        const sortedMessages = transformedMessages.sort((a, b) => {
+          const idA = parseInt(a.id.split("-")[0]) || 0;
+          const idB = parseInt(b.id.split("-")[0]) || 0;
+          return idA - idB;
+        });
 
-          console.log("[CHAT] Mensajes transformados:", transformedMessages);
-          setMessages(transformedMessages);
-        }
-      } catch (error) {
-        console.error("[CHAT] Error cargando mensajes:", error);
-      } finally {
-        setIsLoadingMessages(false);
+        setMessages(sortedMessages);
       }
-    };
+    } catch (error) {
+      console.error("[CHAT] Error cargando mensajes:", error);
+    } finally {
+      setIsLoadingMessages(false);
+    }
+  };
 
+  // Cargar mensajes cuando cambia el chat
+  useEffect(() => {
     loadMessages();
   }, [nombreChat, chats]);
 
@@ -456,6 +466,12 @@ export default function AdoptChat() {
       return;
     }
 
+    const messageData = {
+      sender: nombreUsuario,
+      message: inputMessage.trim(),
+      timestamp: new Date().toISOString(),
+    };
+
     // Agregar el mensaje localmente de inmediato (optimistic update)
     const newMessage: Message = {
       id: `${Date.now()}-${Math.random()}`,
@@ -468,12 +484,9 @@ export default function AdoptChat() {
     };
     setMessages((prev) => [...prev, newMessage]);
 
-    // Enviar como TEXTO PLANO (el backend espera texto plano)
-    const messageToSend = inputMessage.trim();
-    console.log("[WS] Enviando mensaje (TEXTO PLANO):", messageToSend);
-    console.log("[WS] Longitud del mensaje:", messageToSend.length);
-
-    wsRef.current.send(messageToSend);
+    // Enviar como JSON (igual que el admin)
+    console.log("[WS] Enviando mensaje:", messageData);
+    wsRef.current.send(JSON.stringify(messageData));
     setInputMessage("");
 
     // Hacer scroll al final después de agregar el mensaje
@@ -620,7 +633,7 @@ export default function AdoptChat() {
         ) : (
           <div className="flex-1 flex flex-col bg-white min-w-0 overflow-hidden">
             {/* Mensajes */}
-            <div className="flex-1 overflow-hidden p-4 bg-gray-50 flex flex-col-reverse">
+            <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
               <div className="space-y-3 flex flex-col">
                 {messages.length === 0 ? (
                   <div className="text-center py-12">

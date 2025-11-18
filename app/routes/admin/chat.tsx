@@ -218,7 +218,15 @@ export default function AdminChat() {
             "[ADMIN CHAT] Mensajes transformados:",
             transformedMessages
           );
-          setMessages(transformedMessages);
+
+          // Ordenar mensajes por ID (que incluye timestamp) para mantener orden cronológico
+          const sortedMessages = transformedMessages.sort((a, b) => {
+            const idA = parseInt(a.id.split("-")[0]) || 0;
+            const idB = parseInt(b.id.split("-")[0]) || 0;
+            return idA - idB;
+          });
+
+          setMessages(sortedMessages);
         }
       } catch (error) {
         console.error("[ADMIN CHAT] Error cargando mensajes:", error);
@@ -501,7 +509,7 @@ export default function AdminChat() {
         ) : (
           <div className="flex-1 flex flex-col bg-white min-w-0 overflow-hidden">
             {/* Mensajes */}
-            <div className="flex-1 overflow-hidden p-4 bg-gray-50 flex flex-col-reverse">
+            <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
               <div className="space-y-3 flex flex-col">
                 {messages.length === 0 ? (
                   <div className="text-center py-12">
