@@ -1,21 +1,21 @@
 import { MessageCircle, Send, Users } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import { useSearchParams } from "react-router";
+import { useSearchParams, useLoaderData } from "react-router";
 import { requireAuth } from "~/lib/authGuard";
 import { useSmartAuth } from "~/features/auth/useSmartAuth";
 import { getUserFromRequest } from "~/server/me";
 import { ADMIN_ROLES } from "~/lib/constants";
 import { redirect } from "react-router";
 
-// Loader para verificar autenticación y rol de administrador
+// Loader para verificar autenticación, rol de administrador y cargar chats
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireAuth(request);
 
   // Verificar que el usuario sea administrador
   const userResult = await getUserFromRequest(request);
 
-  if (!userResult || !userResult.user) {
+  if (!userResult || !("user" in userResult) || !userResult.user) {
     throw redirect("/login");
   }
 
@@ -26,7 +26,28 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw redirect("/community");
   }
 
-  return null;
+  // Cargar los chats del administrador
+  const cookie = request.headers.get("Cookie") || "";
+  let chats = [];
+
+  try {
+    const response = await fetch(
+      "http://localhost:3050/api/chat/obtenerChatsPorUsuarioCurrent",
+      {
+        headers: {
+          Cookie: cookie,
+        },
+      }
+    );
+
+    if (response.ok) {
+      chats = await response.json();
+    }
+  } catch (error) {
+    console.error("[ADMIN CHAT LOADER] Error cargando chats:", error);
+  }
+
+  return { chats: chats || [] };
 }
 
 type Message = {
@@ -48,16 +69,27 @@ const BASE_CHAT_URL = "http://localhost:3050/api/chat";
 const BASE_WS_URL = "ws://localhost:3050/chat";
 
 export default function AdminChat() {
+  const loaderData = useLoaderData<typeof loader>();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useSmartAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isConnected, setIsConnected] = useState(false);
   const [isReconnecting, setIsReconnecting] = useState(false);
-  const [chats, setChats] = useState<ChatDTO[]>([]);
-  const [isLoadingChats, setIsLoadingChats] = useState(true);
   const wsRef = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastLoadedChat = useRef<string>("");
+
+  // Transformar los chats del loader
+  const chats: ChatDTO[] = (loaderData.chats || []).map((chat: any) => ({
+    idChat: chat.idChat || chat.id_chat,
+    nombreChat: chat.nombreChat || chat.nombre_chat || "Chat",
+    nombreUsuario: chat.nombreUsuario || chat.nombre_usuario || "",
+    nombreAdministrador:
+      chat.nombreAdministrador || chat.nombre_administrador || "Admin",
+  }));
+
+  const isLoadingChats = false; // Ya no necesitamos estado de carga
 
   // Obtener parámetros de la URL (soportar ambos formatos por compatibilidad)
   const nombreChat =
@@ -68,49 +100,11 @@ export default function AdminChat() {
   console.log("[ADMIN CHAT] Parametros URL:", {
     nombreChat,
     nombreUsuario,
+    chatsLength: chats.length,
     searchParams: Object.fromEntries(searchParams.entries()),
   });
 
-  // Cargar lista de chats del administrador actual (desde cookie)
-  useEffect(() => {
-    const loadChats = async () => {
-      try {
-        console.log(
-          "[ADMIN CHAT] Cargando lista de chats del administrador..."
-        );
-        setIsLoadingChats(true);
-        // Usar el endpoint específico para administradores
-        const response = await fetch("/api/chat/admin-current", {
-          credentials: "include",
-        });
-
-        console.log("[ADMIN CHAT] Respuesta de chats:", response.status);
-
-        if (response.ok) {
-          const data = await response.json();
-          console.log("[ADMIN CHAT] Datos recibidos:", data);
-
-          // Transformar el formato si es necesario
-          const transformedChats = (data.chats || []).map((chat: any) => ({
-            idChat: chat.idChat || chat.id_chat,
-            nombreChat: chat.nombreChat || chat.nombre_chat || "Chat",
-            nombreUsuario: chat.nombreUsuario || chat.nombre_usuario || "",
-            nombreAdministrador:
-              chat.nombreAdministrador || chat.nombre_administrador || "Admin",
-          }));
-
-          console.log("[ADMIN CHAT] Chats transformados:", transformedChats);
-          setChats(transformedChats);
-        }
-      } catch (error) {
-        console.error("[ADMIN CHAT] Error cargando chats:", error);
-      } finally {
-        setIsLoadingChats(false);
-      }
-    };
-
-    loadChats();
-  }, []);
+  console.log("[ADMIN CHAT] Chats cargados:", chats);
 
   // Scroll automático al último mensaje
   const scrollToBottom = () => {
@@ -123,21 +117,23 @@ export default function AdminChat() {
 
   // Cargar mensajes históricos del chat
   useEffect(() => {
-    const loadMessages = async () => {
-      if (!nombreChat || chats.length === 0) return;
+    // Evitar bucle infinito: solo cargar si el chat cambió
+    if (
+      !nombreChat ||
+      chats.length === 0 ||
+      lastLoadedChat.current === nombreChat
+    ) {
+      return;
+    }
 
-      // Buscar el chat actual en la lista de chats
+    const loadMessages = async () => {
       const currentChat = chats.find((c) => c.nombreChat === nombreChat);
-      if (!currentChat) {
-        console.log("[ADMIN CHAT] Chat no encontrado en la lista");
-        return;
-      }
+      if (!currentChat) return;
 
       try {
-        console.log(
-          "[ADMIN CHAT] Cargando mensajes del chat:",
-          currentChat.idChat
-        );
+        console.log("[ADMIN CHAT] Cargando mensajes:", currentChat.idChat);
+        lastLoadedChat.current = nombreChat; // Marcar como cargado
+
         const response = await fetch(
           `${BASE_CHAT_URL}/obtenerMensajesPorChat?id_chat=${currentChat.idChat}`,
           {
@@ -147,19 +143,50 @@ export default function AdminChat() {
 
         if (response.ok) {
           const mensajes = await response.json();
-          console.log("[ADMIN CHAT] Mensajes cargados:", mensajes);
+          console.log("[ADMIN CHAT] Mensajes cargados (raw):", mensajes);
+          console.log(
+            "[ADMIN CHAT] Cantidad de mensajes:",
+            mensajes?.length || 0
+          );
 
           // Transformar mensajes del backend al formato del frontend
-          const transformedMessages = (mensajes || []).map((msg: any) => ({
-            id: msg.id_mensaje?.toString() || `${Date.now()}-${Math.random()}`,
-            sender: msg.nombre_usuario || "Usuario",
-            message: msg.contenido || "",
-            timestamp: new Date(msg.fecha_envio).toLocaleTimeString("es-MX", {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-          }));
+          const transformedMessages = (mensajes || []).map((msg: any) => {
+            const sender =
+              msg.nombre_usuario ||
+              msg.nombreUsuario ||
+              msg.nombre_emisor ||
+              msg.nombreEmisor ||
+              "Usuario";
+            const message = msg.contenido || msg.mensaje || "";
+            const timestamp =
+              msg.fecha_envio ||
+              msg.fechaEnvio ||
+              msg.fecha_hora ||
+              msg.fechaHora;
 
+            return {
+              id:
+                msg.id_mensaje?.toString() ||
+                msg.idMensaje?.toString() ||
+                `${Date.now()}-${Math.random()}`,
+              sender: sender,
+              message: message,
+              timestamp: timestamp
+                ? new Date(timestamp).toLocaleTimeString("es-MX", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : new Date().toLocaleTimeString("es-MX", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }),
+            };
+          });
+
+          console.log(
+            "[ADMIN CHAT] Mensajes transformados:",
+            transformedMessages
+          );
           setMessages(transformedMessages);
         }
       } catch (error) {
@@ -202,31 +229,37 @@ export default function AdminChat() {
       };
 
       ws.onmessage = (event) => {
-        console.log("[WS] Mensaje recibido:", event.data);
-        try {
-          const data = JSON.parse(event.data);
-          const newMessage: Message = {
-            id: `${Date.now()}-${Math.random()}`,
-            sender: data.sender || data.nombre || "Desconocido",
-            message: data.message || data.mensaje || event.data,
-            timestamp: new Date().toLocaleTimeString("es-MX", {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-          };
-          setMessages((prev) => [...prev, newMessage]);
-        } catch (error) {
-          const newMessage: Message = {
-            id: `${Date.now()}-${Math.random()}`,
-            sender: "Sistema",
-            message: event.data,
-            timestamp: new Date().toLocaleTimeString("es-MX", {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-          };
-          setMessages((prev) => [...prev, newMessage]);
+        console.log("[ADMIN WS] Mensaje recibido (raw):", event.data);
+        console.log("[ADMIN WS] Tipo de dato:", typeof event.data);
+
+        // El backend envía texto plano
+        // Formato esperado: "nombreUsuario: mensaje" o solo "mensaje"
+        const messageText = event.data;
+
+        // Intentar extraer el sender del mensaje si viene en formato "usuario: mensaje"
+        let sender = "Usuario";
+        let message = messageText;
+
+        if (messageText.includes(":")) {
+          const parts = messageText.split(":");
+          sender = parts[0].trim();
+          message = parts.slice(1).join(":").trim();
         }
+
+        console.log("[ADMIN WS] Mensaje parseado:", { sender, message });
+
+        const newMessage: Message = {
+          id: `${Date.now()}-${Math.random()}`,
+          sender: sender,
+          message: message,
+          timestamp: new Date().toLocaleTimeString("es-MX", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        };
+
+        console.log("[ADMIN WS] Mensaje transformado:", newMessage);
+        setMessages((prev) => [...prev, newMessage]);
       };
 
       ws.onerror = (error) => {

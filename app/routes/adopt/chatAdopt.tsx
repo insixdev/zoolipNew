@@ -1,13 +1,13 @@
 import { MessageCircle, Send, ArrowLeft, Users } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import { useSearchParams, Link, redirect } from "react-router";
+import { useSearchParams, Link, redirect, useLoaderData } from "react-router";
 import { requireAuth } from "~/lib/authGuard";
 import { useSmartAuth } from "~/features/auth/useSmartAuth";
 import { getUserFromRequest } from "~/server/me";
 import { ADMIN_ROLES } from "~/lib/constants";
 
-// Loader para verificar autenticación y redirigir admins
+// Loader para verificar autenticación, redirigir admins y cargar chats
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireAuth(request);
 
@@ -37,7 +37,32 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
   }
 
-  return null;
+  // Cargar los chats del usuario
+  const cookie = request.headers.get("Cookie") || "";
+  let chats = [];
+
+  try {
+    console.log("[CHAT LOADER] Cargando chats del usuario...");
+    const response = await fetch(
+      "http://localhost:3050/api/chat/obtenerChatsPorUsuarioCurrent",
+      {
+        headers: {
+          Cookie: cookie,
+        },
+      }
+    );
+
+    if (response.ok) {
+      chats = await response.json();
+      console.log("[CHAT LOADER] Chats cargados:", chats);
+    } else {
+      console.error("[CHAT LOADER] Error:", response.status);
+    }
+  } catch (error) {
+    console.error("[CHAT LOADER] Error cargando chats:", error);
+  }
+
+  return { chats: chats || [] };
 }
 
 type Message = {
@@ -58,16 +83,29 @@ const BASE_CHAT_URL = "http://localhost:3050/api/chat";
 const BASE_WS_URL = "ws://localhost:3050/chat";
 
 export default function AdoptChat() {
+  const loaderData = useLoaderData<typeof loader>();
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useSmartAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isConnected, setIsConnected] = useState(false);
   const [isReconnecting, setIsReconnecting] = useState(false);
-  const [chats, setChats] = useState<ChatDTO[]>([]);
-  const [isLoadingChats, setIsLoadingChats] = useState(true);
+  const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const wsRef = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const hasLoadedAdminName = useRef(false);
+  const lastLoadedChat = useRef<string>("");
+
+  // Transformar los chats del loader
+  const chats: ChatDTO[] = (loaderData.chats || []).map((chat: any) => ({
+    idChat: chat.idChat || chat.id_chat,
+    nombreChat: chat.nombreChat || chat.nombre_chat || "Chat",
+    nombreUsuario: chat.nombreUsuario || chat.nombre_usuario || "",
+    nombreAdministrador:
+      chat.nombreAdministrador || chat.nombre_administrador || "Admin",
+  }));
+
+  const isLoadingChats = false; // Ya no necesitamos estado de carga
 
   // Obtener parámetros de la URL (soportar ambos formatos por compatibilidad)
   const nombreChat =
@@ -86,9 +124,11 @@ export default function AdoptChat() {
 
   // Obtener nombre del administrador si se proporciona institution_id
   useEffect(() => {
-    const getAdminName = async () => {
-      if (!institutionId) return;
+    if (!institutionId || hasLoadedAdminName.current) return;
 
+    hasLoadedAdminName.current = true;
+
+    const getAdminName = async () => {
       try {
         console.log(
           "[CHAT] Obteniendo nombre del administrador para institución:",
@@ -122,45 +162,9 @@ export default function AdoptChat() {
     };
 
     getAdminName();
-  }, [institutionId, nombreUsuario]);
+  }, [institutionId, nombreUsuario, setSearchParams]);
 
-  // Cargar lista de chats del usuario actual (desde cookie)
-  useEffect(() => {
-    const loadChats = async () => {
-      try {
-        console.log("[CHAT] Cargando lista de chats...");
-        setIsLoadingChats(true);
-        const response = await fetch("/api/chat/current", {
-          credentials: "include",
-        });
-
-        console.log("[CHAT] Respuesta de chats:", response.status);
-
-        if (response.ok) {
-          const data = await response.json();
-          console.log("[CHAT] Datos recibidos:", data);
-
-          // Transformar el formato si es necesario
-          const transformedChats = (data.chats || []).map((chat: any) => ({
-            idChat: chat.id_chat || chat.idChat,
-            nombreChat: chat.nombreChat || chat.nombre_chat || "Chat",
-            nombreUsuario: chat.nombreUsuario || chat.nombre_usuario || "",
-            nombreAdministrador:
-              chat.nombreAdministrador || chat.nombre_administrador || "Admin",
-          }));
-
-          console.log("[CHAT] Chats transformados:", transformedChats);
-          setChats(transformedChats);
-        }
-      } catch (error) {
-        console.error("[CHAT] Error cargando chats:", error);
-      } finally {
-        setIsLoadingChats(false);
-      }
-    };
-
-    loadChats();
-  }, []);
+  console.log("[CHAT] Chats cargados desde loader:", chats);
 
   // Scroll automático al último mensaje
   const scrollToBottom = () => {
@@ -173,49 +177,135 @@ export default function AdoptChat() {
 
   // Cargar mensajes históricos del chat
   useEffect(() => {
-    const loadMessages = async () => {
-      if (!nombreChat || chats.length === 0) return;
+    // Evitar bucle infinito: solo cargar si el chat cambió
+    if (
+      !nombreChat ||
+      chats.length === 0 ||
+      lastLoadedChat.current === nombreChat
+    ) {
+      return;
+    }
 
+    const loadMessages = async () => {
       // Buscar el chat actual en la lista de chats
       const currentChat = chats.find((c) => c.nombreChat === nombreChat);
       if (!currentChat) {
-        console.log("[CHAT] Chat no encontrado en la lista");
+        console.log("[CHAT] Chat no encontrado");
         return;
       }
 
       try {
         console.log("[CHAT] Cargando mensajes del chat:", currentChat.idChat);
-        const response = await fetch(
-          `${BASE_CHAT_URL}/obtenerMensajesPorChat?id_chat=${currentChat.idChat}`,
-          {
-            credentials: "include",
-          }
-        );
+        lastLoadedChat.current = nombreChat; // Marcar como cargado
+        setIsLoadingMessages(true);
+
+        const url = `${BASE_CHAT_URL}/obtenerMensajesPorChat?id_chat=${currentChat.idChat}`;
+        const response = await fetch(url, {
+          credentials: "include",
+        });
 
         if (response.ok) {
           const mensajes = await response.json();
-          console.log("[CHAT] Mensajes cargados:", mensajes);
+          console.log("[CHAT] Mensajes cargados:", mensajes?.length || 0);
 
-          // Transformar mensajes del backend al formato del frontend
-          const transformedMessages = (mensajes || []).map((msg: any) => ({
-            id: msg.id_mensaje?.toString() || `${Date.now()}-${Math.random()}`,
-            sender: msg.nombre_usuario || "Usuario",
-            message: msg.contenido || "",
-            timestamp: new Date(msg.fecha_envio).toLocaleTimeString("es-MX", {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-          }));
+          // Debug: mostrar el primer mensaje completo
+          if (mensajes && mensajes.length > 0) {
+            console.log("[CHAT] Primer mensaje completo:", mensajes[0]);
+            console.log("[CHAT] Campos disponibles:", Object.keys(mensajes[0]));
+          }
 
+          const transformedMessages = (mensajes || []).map((msg: any) => {
+            // Probar múltiples variaciones de nombres de campos
+            const sender =
+              msg.nombre_usuario ||
+              msg.nombreUsuario ||
+              msg.nombre_emisor ||
+              msg.nombreEmisor ||
+              msg.emisor ||
+              "Usuario";
+            const message = msg.contenido || msg.mensaje || msg.message || "";
+            const timestamp =
+              msg.fecha_envio ||
+              msg.fechaEnvio ||
+              msg.fecha_hora ||
+              msg.fechaHora;
+
+            console.log("[CHAT] Mensaje:", { sender, message, timestamp });
+
+            return {
+              id:
+                msg.id_mensaje?.toString() ||
+                msg.idMensaje?.toString() ||
+                `${Date.now()}-${Math.random()}`,
+              sender: sender,
+              message: message,
+              timestamp: timestamp
+                ? new Date(timestamp).toLocaleTimeString("es-MX", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })
+                : new Date().toLocaleTimeString("es-MX", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  }),
+            };
+          });
+
+          console.log("[CHAT] Mensajes transformados:", transformedMessages);
           setMessages(transformedMessages);
         }
       } catch (error) {
         console.error("[CHAT] Error cargando mensajes:", error);
+      } finally {
+        setIsLoadingMessages(false);
       }
     };
 
     loadMessages();
   }, [nombreChat, chats]);
+
+  // Crear o verificar que el chat existe antes de conectar WebSocket
+  useEffect(() => {
+    const ensureChatExists = async () => {
+      if (!nombreChat || !nombreUsuario) {
+        console.log("[CHAT] No se puede verificar chat - faltan parametros");
+        return;
+      }
+
+      try {
+        console.log("[CHAT] Verificando/creando chat:", nombreChat);
+
+        // Extraer nombres del chat (formato: usuario_admin)
+        const [usuario, admin] = nombreChat.split("_");
+
+        const response = await fetch(
+          "http://localhost:3050/api/chat/crearChat",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            credentials: "include",
+            body: JSON.stringify({
+              nombreChat: nombreChat,
+              nombreUsuario: usuario,
+              nombreAdministrador: admin,
+            }),
+          }
+        );
+
+        if (response.ok) {
+          console.log("[CHAT] Chat verificado/creado exitosamente");
+        } else {
+          console.log("[CHAT] Chat ya existe o error:", response.status);
+        }
+      } catch (error) {
+        console.error("[CHAT] Error verificando/creando chat:", error);
+      }
+    };
+
+    ensureChatExists();
+  }, [nombreChat, nombreUsuario]);
 
   // Conectar al WebSocket con reconexión automática
   useEffect(() => {
@@ -249,32 +339,37 @@ export default function AdoptChat() {
       };
 
       ws.onmessage = (event) => {
-        console.log("[WS] Mensaje recibido:", event.data);
-        try {
-          const data = JSON.parse(event.data);
-          const newMessage: Message = {
-            id: `${Date.now()}-${Math.random()}`,
-            sender: data.sender || data.nombre || "Desconocido",
-            message: data.message || data.mensaje || event.data,
-            timestamp: new Date().toLocaleTimeString("es-MX", {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-          };
-          setMessages((prev) => [...prev, newMessage]);
-        } catch (error) {
-          // Si no es JSON, mostrar como mensaje de texto plano
-          const newMessage: Message = {
-            id: `${Date.now()}-${Math.random()}`,
-            sender: "Sistema",
-            message: event.data,
-            timestamp: new Date().toLocaleTimeString("es-MX", {
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-          };
-          setMessages((prev) => [...prev, newMessage]);
+        console.log("[WS] Mensaje recibido (raw):", event.data);
+        console.log("[WS] Tipo de dato:", typeof event.data);
+
+        // El backend envía texto plano
+        // Formato esperado: "nombreUsuario: mensaje" o solo "mensaje"
+        const messageText = event.data;
+
+        // Intentar extraer el sender del mensaje si viene en formato "usuario: mensaje"
+        let sender = "Otro usuario";
+        let message = messageText;
+
+        if (messageText.includes(":")) {
+          const parts = messageText.split(":");
+          sender = parts[0].trim();
+          message = parts.slice(1).join(":").trim();
         }
+
+        console.log("[WS] Mensaje parseado:", { sender, message });
+
+        const newMessage: Message = {
+          id: `${Date.now()}-${Math.random()}`,
+          sender: sender,
+          message: message,
+          timestamp: new Date().toLocaleTimeString("es-MX", {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+        };
+
+        console.log("[WS] Mensaje transformado:", newMessage);
+        setMessages((prev) => [...prev, newMessage]);
       };
 
       ws.onerror = (error) => {
@@ -326,12 +421,6 @@ export default function AdoptChat() {
       return;
     }
 
-    const messageData = {
-      sender: nombreUsuario,
-      message: inputMessage.trim(),
-      timestamp: new Date().toISOString(),
-    };
-
     // Agregar el mensaje localmente de inmediato (optimistic update)
     const newMessage: Message = {
       id: `${Date.now()}-${Math.random()}`,
@@ -344,8 +433,12 @@ export default function AdoptChat() {
     };
     setMessages((prev) => [...prev, newMessage]);
 
-    console.log("[WS] Enviando mensaje:", messageData);
-    wsRef.current.send(JSON.stringify(messageData));
+    // Enviar como TEXTO PLANO (el backend espera texto plano)
+    const messageToSend = inputMessage.trim();
+    console.log("[WS] Enviando mensaje (TEXTO PLANO):", messageToSend);
+    console.log("[WS] Longitud del mensaje:", messageToSend.length);
+
+    wsRef.current.send(messageToSend);
     setInputMessage("");
 
     // Hacer scroll al final después de agregar el mensaje

@@ -191,7 +191,7 @@ export default function LandingNavbar({
                 >
                   Hola, {user.username}
                 </span>
-                <LinkRouter to="community/profile">
+                <LinkRouter to="/community/profile">
                   <Button variant="secondary" size="sm">
                     Mi Perfil
                   </Button>
