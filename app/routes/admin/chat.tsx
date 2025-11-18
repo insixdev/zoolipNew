@@ -26,13 +26,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw redirect("/community");
   }
 
-  // Cargar los chats del administrador
+  // Cargar los chats del administrador con previews (optimizado)
   const cookie = request.headers.get("Cookie") || "";
   let chats = [];
 
   try {
+    console.log("[ADMIN CHAT LOADER] Cargando chats con previews...");
     const response = await fetch(
-      "http://localhost:3050/api/chat/obtenerChatsPorUsuarioCurrent",
+      "http://localhost:3050/api/chat/obtenerChatsConPreviews",
       {
         headers: {
           Cookie: cookie,
@@ -42,6 +43,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
     if (response.ok) {
       chats = await response.json();
+      console.log("[ADMIN CHAT LOADER] Chats con previews cargados:", chats);
+    } else {
+      console.error("[ADMIN CHAT LOADER] Error:", response.status);
+      // Fallback al endpoint sin previews
+      const fallbackResponse = await fetch(
+        "http://localhost:3050/api/chat/obtenerChatsPorUsuarioCurrent",
+        {
+          headers: {
+            Cookie: cookie,
+          },
+        }
+      );
+      if (fallbackResponse.ok) {
+        chats = await fallbackResponse.json();
+      }
     }
   } catch (error) {
     console.error("[ADMIN CHAT LOADER] Error cargando chats:", error);
@@ -76,11 +92,14 @@ export default function AdminChat() {
   const [inputMessage, setInputMessage] = useState("");
   const [isConnected, setIsConnected] = useState(false);
   const [isReconnecting, setIsReconnecting] = useState(false);
+  const [chatPreviews, setChatPreviews] = useState<
+    Record<number, { lastMessage: string; count: number; hasMessages: boolean }>
+  >({});
   const wsRef = useRef<WebSocket | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const lastLoadedChat = useRef<string>("");
 
-  // Transformar los chats del loader
+  // Transformar los chats del loader y extraer previews
   const chats: ChatDTO[] = (loaderData.chats || []).map((chat: any) => ({
     idChat: chat.idChat || chat.id_chat,
     nombreChat: chat.nombreChat || chat.nombre_chat || "Chat",
@@ -89,7 +108,136 @@ export default function AdminChat() {
       chat.nombreAdministrador || chat.nombre_administrador || "Admin",
   }));
 
+  // Extraer previews si vienen del backend
+  const previewsFromLoader: Record<
+    number,
+    { lastMessage: string; count: number; hasMessages: boolean }
+  > = {};
+  (loaderData.chats || []).forEach((chat: any) => {
+    const chatId = chat.idChat || chat.id_chat;
+    const hasUltimoMensaje = !!(chat.ultimoMensaje || chat.ultimo_mensaje);
+    const hasCantidad = !!(chat.cantidadMensajes || chat.cantidad_mensajes);
+
+    if (hasUltimoMensaje || hasCantidad) {
+      let lastMessage = chat.ultimoMensaje || chat.ultimo_mensaje || "";
+
+      // Si el mensaje es JSON, parsearlo
+      if (
+        lastMessage &&
+        typeof lastMessage === "string" &&
+        lastMessage.startsWith("{")
+      ) {
+        try {
+          const parsed = JSON.parse(lastMessage);
+          lastMessage = parsed.message || lastMessage;
+        } catch (e) {
+          // Usar mensaje original
+        }
+      }
+
+      previewsFromLoader[chatId] = {
+        lastMessage:
+          lastMessage.length > 50
+            ? lastMessage.substring(0, 50) + "..."
+            : lastMessage,
+        count: chat.cantidadMensajes || chat.cantidad_mensajes || 0,
+        hasMessages:
+          hasUltimoMensaje ||
+          (chat.cantidadMensajes || chat.cantidad_mensajes || 0) > 0,
+      };
+    }
+  });
+
   const isLoadingChats = false; // Ya no necesitamos estado de carga
+
+  // Verificar chats sin preview para obtener su último mensaje
+  useEffect(() => {
+    const verifyChatsWithoutPreview = async () => {
+      const chatsToVerify = chats.filter(
+        (chat) => !previewsFromLoader[chat.idChat] && !chatPreviews[chat.idChat]
+      );
+
+      if (chatsToVerify.length === 0) return;
+
+      console.log(
+        "[ADMIN CHAT] Verificando chats sin preview:",
+        chatsToVerify.length
+      );
+
+      for (const chat of chatsToVerify) {
+        try {
+          const response = await fetch(
+            `${BASE_CHAT_URL}/obtenerUltimoMensajePorChat?id_chat=${chat.idChat}`,
+            { credentials: "include" }
+          );
+
+          if (response.ok) {
+            const ultimoMensaje = await response.json();
+
+            if (ultimoMensaje && ultimoMensaje.contenido) {
+              let message =
+                ultimoMensaje.contenido || ultimoMensaje.mensaje || "";
+
+              // Si es JSON, parsearlo
+              if (
+                message &&
+                typeof message === "string" &&
+                message.startsWith("{")
+              ) {
+                try {
+                  const parsed = JSON.parse(message);
+                  message = parsed.message || message;
+                } catch (e) {
+                  // Usar mensaje original
+                }
+              }
+
+              setChatPreviews((prev) => ({
+                ...prev,
+                [chat.idChat]: {
+                  lastMessage:
+                    message.length > 50
+                      ? message.substring(0, 50) + "..."
+                      : message,
+                  count: 1,
+                  hasMessages: true,
+                },
+              }));
+            } else {
+              // No hay mensajes, marcar como sin mensajes
+              setChatPreviews((prev) => ({
+                ...prev,
+                [chat.idChat]: {
+                  lastMessage: "",
+                  count: 0,
+                  hasMessages: false,
+                },
+              }));
+            }
+          } else if (response.status === 204) {
+            // No hay mensajes
+            setChatPreviews((prev) => ({
+              ...prev,
+              [chat.idChat]: {
+                lastMessage: "",
+                count: 0,
+                hasMessages: false,
+              },
+            }));
+          }
+        } catch (error) {
+          console.error(
+            `[ADMIN CHAT] Error verificando último mensaje del chat ${chat.idChat}:`,
+            error
+          );
+        }
+      }
+    };
+
+    if (chats.length > 0) {
+      verifyChatsWithoutPreview();
+    }
+  }, [chats]);
 
   // Obtener parámetros de la URL (soportar ambos formatos por compatibilidad)
   const nombreChat =
@@ -105,6 +253,67 @@ export default function AdminChat() {
   });
 
   console.log("[ADMIN CHAT] Chats cargados:", chats);
+
+  // TODO: Optimizar - esto hace una petición por cada chat
+  // Mejor crear un endpoint en el backend que devuelva chats con previews
+  // Cargar previews de mensajes para cada chat
+  /* useEffect(() => {
+    const loadChatPreviews = async () => {
+      const previews: Record<number, { lastMessage: string; count: number }> =
+        {};
+
+      for (const chat of chats) {
+        try {
+          const response = await fetch(
+            `${BASE_CHAT_URL}/obtenerMensajesPorChat?id_chat=${chat.idChat}`,
+            { credentials: "include" }
+          );
+
+          if (response.ok) {
+            const mensajes = await response.json();
+            if (mensajes && mensajes.length > 0) {
+              const lastMsg = mensajes[mensajes.length - 1];
+              let message =
+                lastMsg.contenido || lastMsg.mensaje || lastMsg.message || "";
+
+              // Si es JSON, parsearlo
+              if (
+                message &&
+                typeof message === "string" &&
+                message.startsWith("{")
+              ) {
+                try {
+                  const parsed = JSON.parse(message);
+                  message = parsed.message || message;
+                } catch (e) {
+                  // Usar mensaje original
+                }
+              }
+
+              previews[chat.idChat] = {
+                lastMessage:
+                  message.length > 50
+                    ? message.substring(0, 50) + "..."
+                    : message,
+                count: mensajes.length,
+              };
+            }
+          }
+        } catch (error) {
+          console.error(
+            `[ADMIN CHAT] Error cargando preview del chat ${chat.idChat}:`,
+            error
+          );
+        }
+      }
+
+      setChatPreviews(previews);
+    };
+
+    if (chats.length > 0) {
+      loadChatPreviews();
+    }
+  }, [chats]); */
 
   // Scroll automático al último mensaje
   const scrollToBottom = () => {
@@ -227,6 +436,32 @@ export default function AdminChat() {
           });
 
           setMessages(sortedMessages);
+
+          // Actualizar preview en estado con el último mensaje cargado
+          if (sortedMessages.length > 0) {
+            const lastMsg = sortedMessages[sortedMessages.length - 1];
+            setChatPreviews((prev) => ({
+              ...prev,
+              [currentChat.idChat]: {
+                lastMessage:
+                  lastMsg.message.length > 50
+                    ? lastMsg.message.substring(0, 50) + "..."
+                    : lastMsg.message,
+                count: sortedMessages.length,
+                hasMessages: true,
+              },
+            }));
+          } else {
+            // No hay mensajes
+            setChatPreviews((prev) => ({
+              ...prev,
+              [currentChat.idChat]: {
+                lastMessage: "",
+                count: 0,
+                hasMessages: false,
+              },
+            }));
+          }
         }
       } catch (error) {
         console.error("[ADMIN CHAT] Error cargando mensajes:", error);
@@ -289,6 +524,22 @@ export default function AdminChat() {
 
           console.log("[ADMIN WS] Mensaje transformado:", newMessage);
           setMessages((prev) => [...prev, newMessage]);
+
+          // Actualizar preview del chat actual con el nuevo mensaje
+          const currentChat = chats.find((c) => c.nombreChat === nombreChat);
+          if (currentChat) {
+            setChatPreviews((prev) => ({
+              ...prev,
+              [currentChat.idChat]: {
+                lastMessage:
+                  newMessage.message.length > 50
+                    ? newMessage.message.substring(0, 50) + "..."
+                    : newMessage.message,
+                count: (prev[currentChat.idChat]?.count || 0) + 1,
+                hasMessages: true,
+              },
+            }));
+          }
         } catch (error) {
           // Si no es JSON, tratar como texto plano
           console.log("[ADMIN WS] No es JSON, tratando como texto plano");
@@ -313,6 +564,22 @@ export default function AdminChat() {
           };
 
           setMessages((prev) => [...prev, newMessage]);
+
+          // Actualizar preview del chat actual con el nuevo mensaje
+          const currentChat = chats.find((c) => c.nombreChat === nombreChat);
+          if (currentChat) {
+            setChatPreviews((prev) => ({
+              ...prev,
+              [currentChat.idChat]: {
+                lastMessage:
+                  newMessage.message.length > 50
+                    ? newMessage.message.substring(0, 50) + "..."
+                    : newMessage.message,
+                count: (prev[currentChat.idChat]?.count || 0) + 1,
+                hasMessages: true,
+              },
+            }));
+          }
         }
       };
 
@@ -399,7 +666,7 @@ export default function AdminChat() {
   };
 
   return (
-    <div className="h-screen bg-gray-100 flex flex-col overflow-hidden">
+    <div className="h-screen bg-gray-100 flex flex-col">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-3 flex-shrink-0">
         <div className="flex items-center justify-between">
@@ -435,18 +702,28 @@ export default function AdminChat() {
       </div>
 
       {/* Chat Container */}
-      <div className="flex-1 flex min-h-0 overflow-hidden">
+      <div className="flex-1 flex min-h-0">
         {/* Lista de chats */}
-        <div className="w-80 bg-white border-r border-gray-200 flex flex-col flex-shrink-0 overflow-hidden">
-          <div className="p-4 border-b border-gray-200">
+        <div className="w-80 bg-white border-r border-gray-200 flex flex-col flex-shrink-0">
+          <div className="p-4 border-b border-gray-200 flex-shrink-0">
             <h2 className="font-semibold text-gray-900 flex items-center gap-2">
               <Users size={18} />
               Conversaciones
             </h2>
-            <p className="text-xs text-gray-500 mt-1">{chats.length} chats</p>
+            <p className="text-xs text-gray-500 mt-1">
+              {
+                chats.filter((chat) => {
+                  const preview =
+                    chatPreviews[chat.idChat] ||
+                    previewsFromLoader[chat.idChat];
+                  return !preview || preview.hasMessages !== false;
+                }).length
+              }{" "}
+              chats
+            </p>
           </div>
 
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-y-auto">
             {isLoadingChats ? (
               <div className="p-4 text-center text-gray-500">
                 Cargando chats...
@@ -465,22 +742,46 @@ export default function AdminChat() {
                 </p>
               </div>
             ) : (
-              chats.map((chat) => (
-                <button
-                  key={chat.idChat}
-                  onClick={() => handleSelectChat(chat)}
-                  className={`w-full p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors text-left ${
-                    nombreChat === chat.nombreChat ? "bg-purple-50" : ""
-                  }`}
-                >
-                  <h3 className="font-medium text-gray-900 text-sm mb-1">
-                    {chat.nombreChat.replace(/_/g, " ")}
-                  </h3>
-                  <p className="text-xs text-gray-600">
-                    Usuario: {chat.nombreUsuario}
-                  </p>
-                </button>
-              ))
+              chats
+                .filter((chat) => {
+                  // Filtrar chats sin mensajes
+                  const preview =
+                    chatPreviews[chat.idChat] ||
+                    previewsFromLoader[chat.idChat];
+                  // Solo mostrar si tiene preview con mensajes o si aún no se ha verificado
+                  return !preview || preview.hasMessages !== false;
+                })
+                .map((chat) => {
+                  // Usar preview del estado si existe, sino del loader
+                  const preview =
+                    chatPreviews[chat.idChat] ||
+                    previewsFromLoader[chat.idChat];
+                  return (
+                    <button
+                      key={chat.idChat}
+                      onClick={() => handleSelectChat(chat)}
+                      className={`w-full p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors text-left ${
+                        nombreChat === chat.nombreChat ? "bg-purple-50" : ""
+                      }`}
+                    >
+                      <div className="flex justify-between items-start mb-1">
+                        <h3 className="font-medium text-gray-900 text-sm">
+                          {chat.nombreUsuario}
+                        </h3>
+                        {preview && preview.count > 0 && (
+                          <span className="text-xs text-gray-500 ml-2">
+                            {preview.count}
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-gray-500 truncate">
+                        {preview && preview.lastMessage
+                          ? preview.lastMessage
+                          : "Cargando..."}
+                      </p>
+                    </button>
+                  );
+                })
             )}
           </div>
         </div>
@@ -507,7 +808,7 @@ export default function AdminChat() {
             </div>
           </div>
         ) : (
-          <div className="flex-1 flex flex-col bg-white min-w-0 overflow-hidden">
+          <div className="flex-1 flex flex-col bg-white min-w-0">
             {/* Mensajes */}
             <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
               <div className="space-y-3 flex flex-col">
@@ -554,32 +855,27 @@ export default function AdminChat() {
                     );
                   })
                 )}
+                <div ref={messagesEndRef} />
               </div>
             </div>
 
             {/* Input de mensaje */}
-            <div className="p-4 pb-6 border-t border-gray-200 bg-white flex-shrink-0">
+            <div className="p-4 border-t border-gray-200 bg-white flex-shrink-0">
               <form
                 onSubmit={handleSendMessage}
-                className="flex items-end gap-3"
+                className="flex items-center gap-3"
               >
-                <textarea
+                <input
+                  type="text"
                   value={inputMessage}
                   onChange={(e) => setInputMessage(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage(e);
-                    }
-                  }}
                   placeholder={
                     isConnected
-                      ? "Escribe un mensaje... (Enter para enviar, Shift+Enter para nueva línea)"
+                      ? "Escribe un mensaje..."
                       : "Conectando al chat..."
                   }
                   disabled={!isConnected}
-                  rows={3}
-                  className="flex-1 px-4 py-3 text-sm border border-gray-300 rounded-2xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed resize-none"
+                  className="flex-1 px-4 py-3 text-sm border border-gray-300 rounded-full focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
                 <button
                   type="submit"

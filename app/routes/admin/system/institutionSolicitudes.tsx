@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   useFetcher,
   Link,
@@ -12,6 +12,7 @@ import {
   FaCheck,
   FaTimes,
 } from "react-icons/fa";
+import { CheckCircle, AlertCircle, X as XIcon } from "lucide-react";
 import { AdministradorOnly } from "~/components/auth/AdminGuard";
 
 type InstitutionRequest = {
@@ -179,6 +180,21 @@ export default function InstitutionSolicitudes() {
     Record<string, "accept" | "reject" | "">
   >({});
   const [processing, setProcessing] = useState<Record<string, boolean>>({});
+  const [notification, setNotification] = useState<{
+    show: boolean;
+    type: "success" | "error";
+    message: string;
+  }>({ show: false, type: "success", message: "" });
+
+  // Auto-ocultar notificación después de 5 segundos
+  useEffect(() => {
+    if (notification.show) {
+      const timer = setTimeout(() => {
+        setNotification({ ...notification, show: false });
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification.show]);
 
   const formatDate = (dateString: string) => {
     if (!dateString) return "Fecha no disponible";
@@ -245,6 +261,11 @@ export default function InstitutionSolicitudes() {
       // you'd handle it by reverting the optimistic change. Here we assume success.
       setTimeout(() => {
         setProcessing((p) => ({ ...p, [req.id]: false }));
+        setNotification({
+          show: true,
+          type: "success",
+          message: `Solicitud ${action === "accept" ? "aceptada" : "rechazada"} exitosamente`,
+        });
       }, 600);
     } catch (err) {
       // revert on error
@@ -252,7 +273,11 @@ export default function InstitutionSolicitudes() {
         prev.map((r) => (r.id === req.id ? { ...r, status: "pending" } : r))
       );
       setProcessing((p) => ({ ...p, [req.id]: false }));
-      alert("Error al procesar la solicitud. Intenta nuevamente.");
+      setNotification({
+        show: true,
+        type: "error",
+        message: "Error al procesar la solicitud. Intenta nuevamente.",
+      });
     }
   };
 
@@ -281,6 +306,59 @@ export default function InstitutionSolicitudes() {
       }
     >
       <div className="max-w-6xl mx-auto p-6">
+        {/* Notificación Toast */}
+        {notification.show && (
+          <div className="fixed top-4 right-4 z-50 animate-[slideInRight_0.3s_ease-out]">
+            <div
+              className={`flex items-start gap-3 p-4 rounded-lg shadow-lg max-w-md ${
+                notification.type === "success"
+                  ? "bg-green-50 border-2 border-green-200"
+                  : "bg-red-50 border-2 border-red-200"
+              }`}
+            >
+              <div className="flex-shrink-0">
+                {notification.type === "success" ? (
+                  <CheckCircle className="text-green-600" size={24} />
+                ) : (
+                  <AlertCircle className="text-red-600" size={24} />
+                )}
+              </div>
+              <div className="flex-1">
+                <h4
+                  className={`font-semibold mb-1 ${
+                    notification.type === "success"
+                      ? "text-green-900"
+                      : "text-red-900"
+                  }`}
+                >
+                  {notification.type === "success" ? "¡Éxito!" : "Error"}
+                </h4>
+                <p
+                  className={`text-sm ${
+                    notification.type === "success"
+                      ? "text-green-700"
+                      : "text-red-700"
+                  }`}
+                >
+                  {notification.message}
+                </p>
+              </div>
+              <button
+                onClick={() =>
+                  setNotification({ ...notification, show: false })
+                }
+                className={`flex-shrink-0 ${
+                  notification.type === "success"
+                    ? "text-green-400 hover:text-green-600"
+                    : "text-red-400 hover:text-red-600"
+                }`}
+              >
+                <XIcon size={20} />
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Header mejorado */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">

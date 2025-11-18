@@ -53,6 +53,46 @@ export async function action({ request, params }: ActionFunctionArgs) {
   try {
     await requireAdmin(request);
 
+    // Obtener el ID del usuario actual del token
+    const { getUserFieldFromCookie, field } = await import("~/lib/authUtil");
+    const userId = getUserFieldFromCookie(cookieHeader, field.ID);
+
+    console.log("[EDITAR MASCOTA] ID de usuario:", userId);
+
+    if (!userId) {
+      return Response.json(
+        { success: false, error: "No se pudo obtener el ID del usuario" },
+        { status: 401 }
+      );
+    }
+
+    // Obtener el ID de la institución del usuario actual
+    const { getInstitutionByIdUsuarioService } = await import(
+      "~/features/entities/institucion/institutionService"
+    );
+
+    let institutionId;
+    try {
+      const institution = await getInstitutionByIdUsuarioService(
+        Number(userId),
+        cookieHeader
+      );
+      institutionId = institution.id_institucion;
+      console.log(
+        "[EDITAR MASCOTA] ID de institución obtenido:",
+        institutionId
+      );
+    } catch (error) {
+      console.error("[EDITAR MASCOTA] Error obteniendo institución:", error);
+      return Response.json(
+        {
+          success: false,
+          error: "Institución no encontrada para el usuario actual",
+        },
+        { status: 404 }
+      );
+    }
+
     const { editPetService } = await import("~/features/mascotas/petsService");
 
     const pet = {
@@ -65,7 +105,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       race: formData.get("raza") as string,
       species: formData.get("especie") as string,
       id_institution: {
-        id_institucion: parseInt(formData.get("id_institucion") as string),
+        id_institucion: institutionId,
       },
     };
 
@@ -175,12 +215,6 @@ export default function EditarMascota() {
 
         <div className="bg-white rounded-lg shadow-md p-6">
           <fetcher.Form method="post" onSubmit={handleSubmit}>
-            <input
-              type="hidden"
-              name="id_institucion"
-              value={mascota.id_institucion?.id_institucion || ""}
-            />
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Especie */}
               <div>

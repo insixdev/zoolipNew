@@ -12,7 +12,7 @@ import {
 } from "~/features/adoption/adoptionService";
 import type { SolicitudAdopcionDTO } from "~/features/adoption/types";
 import { useEffect, useState } from "react";
-import { CheckCircle, XCircle, X } from "lucide-react";
+import { CheckCircle, XCircle, X, AlertCircle } from "lucide-react";
 
 // Action para completar adopción
 export async function action({ request }: ActionFunctionArgs) {
@@ -80,21 +80,46 @@ export default function AdminSolicitudes() {
     titulo: string;
   } | null>(null);
   const [motivo, setMotivo] = useState("");
+  const [notification, setNotification] = useState<{
+    show: boolean;
+    type: "success" | "error";
+    message: string;
+  }>({ show: false, type: "success", message: "" });
 
   // Mostrar mensaje de éxito/error
   useEffect(() => {
     if (fetcher.data) {
       if (fetcher.data.success) {
-        alert(fetcher.data.message);
+        setNotification({
+          show: true,
+          type: "success",
+          message: fetcher.data.message,
+        });
         setShowModal(false);
         setMotivo("");
-        // Recargar la página para actualizar la lista
-        window.location.reload();
+        // Recargar la página después de 2 segundos
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
       } else if (fetcher.data.error) {
-        alert(`Error: ${fetcher.data.error}`);
+        setNotification({
+          show: true,
+          type: "error",
+          message: fetcher.data.error,
+        });
       }
     }
   }, [fetcher.data]);
+
+  // Auto-ocultar notificación después de 5 segundos
+  useEffect(() => {
+    if (notification.show) {
+      const timer = setTimeout(() => {
+        setNotification({ ...notification, show: false });
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification.show]);
 
   const handleOpenModal = (
     id_solicitud: number,
@@ -114,7 +139,11 @@ export default function AdminSolicitudes() {
     if (!modalData) return;
 
     if (!motivo.trim()) {
-      alert("Por favor ingresa un motivo para la decisión");
+      setNotification({
+        show: true,
+        type: "error",
+        message: "Por favor ingresa un motivo para la decisión",
+      });
       return;
     }
 
@@ -164,6 +193,59 @@ export default function AdminSolicitudes() {
       }
     >
       <div>
+        {/* Notificación Toast */}
+        {notification.show && (
+          <div className="fixed top-4 right-4 z-50 animate-[slideInRight_0.3s_ease-out]">
+            <div
+              className={`flex items-start gap-3 p-4 rounded-lg shadow-lg max-w-md ${
+                notification.type === "success"
+                  ? "bg-green-50 border-2 border-green-200"
+                  : "bg-red-50 border-2 border-red-200"
+              }`}
+            >
+              <div className="flex-shrink-0">
+                {notification.type === "success" ? (
+                  <CheckCircle className="text-green-600" size={24} />
+                ) : (
+                  <AlertCircle className="text-red-600" size={24} />
+                )}
+              </div>
+              <div className="flex-1">
+                <h4
+                  className={`font-semibold mb-1 ${
+                    notification.type === "success"
+                      ? "text-green-900"
+                      : "text-red-900"
+                  }`}
+                >
+                  {notification.type === "success" ? "¡Éxito!" : "Error"}
+                </h4>
+                <p
+                  className={`text-sm ${
+                    notification.type === "success"
+                      ? "text-green-700"
+                      : "text-red-700"
+                  }`}
+                >
+                  {notification.message}
+                </p>
+              </div>
+              <button
+                onClick={() =>
+                  setNotification({ ...notification, show: false })
+                }
+                className={`flex-shrink-0 ${
+                  notification.type === "success"
+                    ? "text-green-400 hover:text-green-600"
+                    : "text-red-400 hover:text-red-600"
+                }`}
+              >
+                <X size={20} />
+              </button>
+            </div>
+          </div>
+        )}
+
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-800">
             Solicitudes de Adopción
@@ -239,7 +321,7 @@ export default function AdminSolicitudes() {
                       </td>
                       <td className="px-6 py-4 max-w-xs">
                         <div className="text-sm text-gray-900">
-                          {solicitud.razonSolicitud? (
+                          {solicitud.razonSolicitud ? (
                             <div className="group relative">
                               <p className="line-clamp-2 text-gray-700">
                                 {solicitud.razonSolicitud}
