@@ -216,19 +216,39 @@ export default function AdoptChat() {
 
           const transformedMessages = (mensajes || []).map((msg: any) => {
             // Probar múltiples variaciones de nombres de campos
-            const sender =
+            let sender =
               msg.nombre_usuario ||
               msg.nombreUsuario ||
               msg.nombre_emisor ||
               msg.nombreEmisor ||
               msg.emisor ||
+              msg.nombre || // Campo genérico
+              msg.sender ||
               "Usuario";
-            const message = msg.contenido || msg.mensaje || msg.message || "";
-            const timestamp =
+            let message = msg.contenido || msg.mensaje || msg.message || "";
+            let timestamp =
               msg.fecha_envio ||
               msg.fechaEnvio ||
               msg.fecha_hora ||
-              msg.fechaHora;
+              msg.fechaHora ||
+              msg.timestamp;
+
+            // Si el mensaje es un JSON string, parsearlo
+            if (
+              message &&
+              typeof message === "string" &&
+              message.startsWith("{")
+            ) {
+              try {
+                const parsedMessage = JSON.parse(message);
+                sender = parsedMessage.sender || sender;
+                message = parsedMessage.message || message;
+                timestamp = parsedMessage.timestamp || timestamp;
+              } catch (e) {
+                // Si falla el parseo, usar el mensaje original
+                console.log("[CHAT] No se pudo parsear mensaje JSON:", message);
+              }
+            }
 
             console.log("[CHAT] Mensaje:", { sender, message, timestamp });
 
@@ -342,34 +362,49 @@ export default function AdoptChat() {
         console.log("[WS] Mensaje recibido (raw):", event.data);
         console.log("[WS] Tipo de dato:", typeof event.data);
 
-        // El backend envía texto plano
-        // Formato esperado: "nombreUsuario: mensaje" o solo "mensaje"
-        const messageText = event.data;
+        try {
+          // Intentar parsear como JSON primero
+          const data = JSON.parse(event.data);
+          console.log("[WS] Mensaje parseado como JSON:", data);
 
-        // Intentar extraer el sender del mensaje si viene en formato "usuario: mensaje"
-        let sender = "Otro usuario";
-        let message = messageText;
+          const newMessage: Message = {
+            id: `${Date.now()}-${Math.random()}`,
+            sender:
+              data.sender || data.nombre_usuario || data.nombre || "Usuario",
+            message: data.message || data.contenido || data.mensaje || "",
+            timestamp: new Date().toLocaleTimeString("es-MX", {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+          };
 
-        if (messageText.includes(":")) {
-          const parts = messageText.split(":");
-          sender = parts[0].trim();
-          message = parts.slice(1).join(":").trim();
+          console.log("[WS] Mensaje transformado:", newMessage);
+          setMessages((prev) => [...prev, newMessage]);
+        } catch (error) {
+          // Si no es JSON, tratar como texto plano
+          console.log("[WS] No es JSON, tratando como texto plano");
+          const messageText = event.data;
+          let sender = "Usuario";
+          let message = messageText;
+
+          if (messageText.includes(":")) {
+            const parts = messageText.split(":");
+            sender = parts[0].trim();
+            message = parts.slice(1).join(":").trim();
+          }
+
+          const newMessage: Message = {
+            id: `${Date.now()}-${Math.random()}`,
+            sender: sender,
+            message: message,
+            timestamp: new Date().toLocaleTimeString("es-MX", {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+          };
+
+          setMessages((prev) => [...prev, newMessage]);
         }
-
-        console.log("[WS] Mensaje parseado:", { sender, message });
-
-        const newMessage: Message = {
-          id: `${Date.now()}-${Math.random()}`,
-          sender: sender,
-          message: message,
-          timestamp: new Date().toLocaleTimeString("es-MX", {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-        };
-
-        console.log("[WS] Mensaje transformado:", newMessage);
-        setMessages((prev) => [...prev, newMessage]);
       };
 
       ws.onerror = (error) => {
