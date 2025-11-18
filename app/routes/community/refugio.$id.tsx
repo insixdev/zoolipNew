@@ -14,6 +14,7 @@ import {
 } from "react-icons/fa";
 import { getInstitutionByIdService } from "~/features/entities/institucion/institutionService";
 import { getMascotasByInstitucionService } from "~/features/adoption/adoptionService";
+import { useSmartAuth } from "~/features/auth/useSmartAuth";
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
   const institutionId = params.id;
@@ -24,7 +25,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   }
 
   try {
-    console.log("🏠 [REFUGIO] Loading institution ID:", institutionId);
+    console.log("[REFUGIO] Loading institution ID:", institutionId);
 
     // Cargar institución
     const institution = await getInstitutionByIdService(
@@ -32,7 +33,22 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
       cookieHeader
     );
 
-    console.log("🏠 [REFUGIO] Institution loaded:", institution);
+    console.log("[REFUGIO] Institution loaded:", institution);
+
+    // Cargar administrador de la institución
+    let adminUser = null;
+    try {
+      const { getUserByInstitutionIdService } = await import(
+        "~/features/user/userService"
+      );
+      adminUser = await getUserByInstitutionIdService(
+        Number(institutionId),
+        cookieHeader
+      );
+      console.log("[REFUGIO] Admin user loaded:", adminUser);
+    } catch (adminError) {
+      console.warn("[REFUGIO] Error loading admin user:", adminError);
+    }
 
     // Cargar mascotas (si falla, devolver array vacío)
     let mascotas = [];
@@ -41,21 +57,47 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
         Number(institutionId),
         cookieHeader
       );
-      console.log("🐕 [REFUGIO] Mascotas loaded:", mascotas.length);
+      console.log("[REFUGIO] Mascotas loaded:", mascotas.length);
     } catch (mascotasError) {
-      console.warn("⚠️ [REFUGIO] Error loading mascotas:", mascotasError);
+      console.warn("[REFUGIO] Error loading mascotas:", mascotasError);
       // No lanzar error, solo devolver array vacío
     }
 
-    return { institution, mascotas };
+    return { institution, mascotas, adminUser };
   } catch (error) {
-    console.error("❌ [REFUGIO] Error loading institution:", error);
+    console.error("[REFUGIO] Error loading institution:", error);
     throw new Response("Institución no encontrada", { status: 404 });
   }
 }
 
 export default function RefugioDetails() {
-  const { institution, mascotas } = useLoaderData<typeof loader>();
+  const { institution, mascotas, adminUser } = useLoaderData<typeof loader>();
+  const { user } = useSmartAuth();
+
+  // Función para abrir el chat
+  const handleOpenChat = () => {
+    const currentUserName = user?.username || "Usuario";
+    // Usar el nombre del administrador del DTO
+    const adminName = adminUser?.nombre || "Admin";
+    const nombreChat = `${currentUserName}_${adminName}`;
+
+    console.log("[REFUGIO] Abriendo chat:", {
+      currentUserName,
+      adminName,
+      adminUser,
+      nombreChat,
+    });
+
+    if (!adminUser || !adminUser.nombre) {
+      alert(
+        "Error: No se pudo obtener el administrador del refugio. Por favor, intenta de nuevo."
+      );
+      return;
+    }
+
+    // Redirigir a la página de chat de adopt con los parámetros
+    window.location.href = `/adopt/chatAdopt?Nombre_Chat=${encodeURIComponent(nombreChat)}&Nombre=${encodeURIComponent(currentUserName)}`;
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 md:pl-64">
@@ -179,34 +221,70 @@ export default function RefugioDetails() {
                             className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
                           />
                         </div>
+                        <div className="absolute top-2 right-2">
+                          <span className="inline-flex items-center gap-1 bg-white/95 backdrop-blur-sm text-gray-900 px-2 py-1 rounded-lg text-xs font-medium border border-green-200 shadow-sm">
+                            <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                            Disponible
+                          </span>
+                        </div>
                         <div className="p-4">
                           <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-lg font-semibold text-gray-900 group-hover:text-rose-600 transition-colors">
-                              {mascota.nombre}
+                            <h3 className="text-lg font-semibold text-gray-900 group-hover:text-orange-600 transition-colors">
+                              {mascota.nombre || mascota.especie || "Mascota"}
                             </h3>
                             <span
                               className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                mascota.sexo === "Macho"
+                                mascota.sexo?.toUpperCase() === "MACHO" ||
+                                mascota.sexo?.toUpperCase() === "M"
                                   ? "bg-blue-100 text-blue-800"
-                                  : "bg-pink-100 text-pink-800"
+                                  : mascota.sexo?.toUpperCase() === "HEMBRA" ||
+                                      mascota.sexo?.toUpperCase() === "F"
+                                    ? "bg-pink-100 text-pink-800"
+                                    : "bg-gray-100 text-gray-800"
                               }`}
                             >
-                              {mascota.sexo || "N/A"}
+                              {mascota.sexo?.toUpperCase() === "M"
+                                ? "Macho"
+                                : mascota.sexo?.toUpperCase() === "F"
+                                  ? "Hembra"
+                                  : mascota.sexo || "Sin especificar"}
                             </span>
                           </div>
-                          <div className="flex items-center gap-4 text-sm text-gray-600">
-                            <span>
-                              {mascota.edad}{" "}
-                              {mascota.edad === 1 ? "año" : "años"}
-                            </span>
-                            <span>•</span>
-                            <span>{mascota.raza}</span>
+                          <div className="space-y-1 mb-2">
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <span>
+                                {mascota.edad !== undefined &&
+                                mascota.edad !== null
+                                  ? `${mascota.edad} ${mascota.edad === 1 ? "año" : "años"}`
+                                  : "Edad no especificada"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-gray-600">
+                              <span>{mascota.raza || "Raza mixta"}</span>
+                            </div>
+                            {mascota.tamanio && (
+                              <div className="flex items-center gap-2 text-sm text-gray-600">
+                                <span>Tamaño: {mascota.tamanio}</span>
+                              </div>
+                            )}
+                            {mascota.estadoSalud && (
+                              <div className="flex items-center gap-2 text-sm text-gray-600">
+                                <span>{mascota.estadoSalud}</span>
+                              </div>
+                            )}
                           </div>
                           {mascota.descripcion && (
-                            <p className="mt-2 text-sm text-gray-500 line-clamp-2">
+                            <p className="mt-2 text-sm text-gray-500 line-clamp-2 mb-3">
                               {mascota.descripcion}
                             </p>
                           )}
+                          <div className="mt-3 pt-3 border-t border-gray-100">
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-orange-600 font-medium group-hover:text-orange-700">
+                                Ver detalles
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       </Link>
                     );
@@ -252,13 +330,19 @@ export default function RefugioDetails() {
                   </div>
                 </div>
               </div>
-              <div className="mt-6">
+              <div className="mt-6 space-y-3">
                 <a
                   href={`mailto:${institution.email}`}
                   className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-rose-600 hover:bg-rose-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500"
                 >
-                  Contactar
+                  Enviar Email
                 </a>
+                <button
+                  onClick={handleOpenChat}
+                  className="w-full flex justify-center py-2 px-4 border-2 border-rose-600 rounded-md shadow-sm text-sm font-medium text-rose-600 bg-white hover:bg-rose-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-rose-500"
+                >
+                  Enviar Mensaje
+                </button>
               </div>
             </div>
 

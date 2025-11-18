@@ -98,6 +98,7 @@ export default function CommunityRefugios() {
     image:
       "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=600&h=300&fit=crop",
     logo: "https://i.pravatar.cc/100?img=" + (inst.id_institucion % 60),
+    location: "Ubicación no disponible", // Agregar ubicación por defecto
     address: "Dirección no disponible",
     phone: "Teléfono no disponible",
     email: inst.email,
@@ -143,9 +144,15 @@ export default function CommunityRefugios() {
         window.open(`tel:${refugio.phone}`);
         break;
       case "message":
-        console.log(`Abrir chat con ${refugio.name}`);
-        alert(
-          `Abriendo chat con ${refugio.name}...\n\nEn una implementación real, esto abriría el sistema de mensajería interno de la app.`
+        // Crear nombre del chat: usuario_admin (con guión bajo)
+        const currentUserName = user?.username || "Usuario";
+        // Usar el ID de la institución para obtener el nombre del administrador
+        const institutionId = refugio.id;
+
+        // Redirigir a la página de chat de adopt con el ID de la institución
+        // El backend creará el chat con el formato correcto: usuario_nombreAdmin
+        navigate(
+          `/adopt/chatAdopt?institution_id=${encodeURIComponent(institutionId)}&Nombre=${encodeURIComponent(currentUserName)}`
         );
         break;
       case "website":

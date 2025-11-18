@@ -73,6 +73,10 @@ export function AuthRoleComponent({
   useEffect(() => {
     if (!user || hasSubmitted.current) return;
 
+    console.log("[AuthRoleComponent] User data:", user);
+    console.log("[AuthRoleComponent] User role:", user.user?.role || user.role);
+    console.log("[AuthRoleComponent] Allowed roles:", allowedRoles);
+
     hasSubmitted.current = true;
     fetcher.submit(
       {

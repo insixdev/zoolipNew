@@ -47,8 +47,8 @@ const menuItems = [
     icon: Info,
   },
   {
-    label: "Chat",
-    path: "/community/chatCommunity",
+    label: "Mensajes",
+    path: "/adopt/chatAdopt",
     icon: MessageCircle,
   },
   {

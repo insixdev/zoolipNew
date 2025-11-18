@@ -8,6 +8,7 @@ import {
   Settings,
   User,
   Shield,
+  MessageCircle,
 } from "lucide-react";
 import { ADMIN_ROLES, type AdminRole } from "~/lib/constants";
 
@@ -55,6 +56,7 @@ export function AdminSidebar({ adminRole }: AdminSidebarProps) {
             icon: ClipboardList,
             label: "Solicitudes",
           },
+          { to: "/admin/chat", icon: MessageCircle, label: "Chat" },
         ];
 
       case ADMIN_ROLES.REFUGIO:
@@ -66,6 +68,7 @@ export function AdminSidebar({ adminRole }: AdminSidebarProps) {
             icon: ClipboardList,
             label: "Solicitudes",
           },
+          { to: "/admin/chat", icon: MessageCircle, label: "Chat" },
         ];
 
       default:

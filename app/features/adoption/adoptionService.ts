@@ -25,11 +25,24 @@ export async function getAllMascotasService(
       headers,
     });
 
+    // Si no hay contenido, devolver array vacío
+    if (response.status === 204) {
+      console.log("[ADOPTION SERVICE] No hay mascotas (204)");
+      return [];
+    }
+
     if (!response.ok) {
       throw new Error(`Error ${response.status}: ${response.statusText}`);
     }
 
-    const data = await response.json();
+    // Verificar si hay contenido antes de parsear
+    const text = await response.text();
+    if (!text || text.trim() === "") {
+      console.log("[ADOPTION SERVICE] Respuesta vacía");
+      return [];
+    }
+
+    const data = JSON.parse(text);
     console.log("[ADOPTION SERVICE] Mascotas obtenidas:", data);
 
     // Mapear los campos del backend al formato esperado

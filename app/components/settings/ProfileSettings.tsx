@@ -63,10 +63,8 @@ export default function ProfileSettings() {
       cleanFormData.append("imagen_url", imagen_url.trim());
     }
 
-    // Solo enviar biografía si tiene valor
-    if (biografia && biografia.trim()) {
-      cleanFormData.append("biografia", biografia.trim());
-    }
+    // Siempre enviar biografía (puede estar vacía para borrarla)
+    cleanFormData.append("biografia", biografia ? biografia.trim() : "");
 
     fetcher.submit(cleanFormData, {
       method: "post",
@@ -177,7 +175,7 @@ export default function ProfileSettings() {
             <textarea
               name="biografia"
               rows={3}
-              defaultValue=""
+              defaultValue={user?.biografia || ""}
               placeholder="Cuéntanos sobre ti..."
               className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-rose-500 focus:border-rose-500 sm:text-sm text-gray-900"
             />

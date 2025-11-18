@@ -41,8 +41,8 @@ export async function action({ request }: ActionFunctionArgs) {
       updateData.imagen_url = imagen_url.trim();
     }
 
-    // Solo agregar biografía si tiene valor
-    if (biografia && biografia.trim()) {
+    // Siempre agregar biografía (puede estar vacía para borrarla)
+    if (biografia !== null && biografia !== undefined) {
       updateData.biografia = biografia.trim();
     }
 

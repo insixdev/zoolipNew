@@ -250,3 +250,50 @@ export async function getUsersWithLimitService(
     throw error;
   }
 }
+
+/**
+ * Obtiene el usuario administrador de una institución
+ * Endpoint: GET /getUsuarioByIdInstitucion?id_institucion={id}
+ */
+export async function getUserByInstitutionIdService(
+  institutionId: number,
+  cookie: string
+): Promise<UsuarioDTO> {
+  try {
+    const headers = new Headers();
+    headers.append("Content-Type", "application/json");
+    headers.append("Cookie", cookie);
+
+    const url = `http://localhost:3050/api/usuario/getUsuarioByIdInstitucion?id_institucion=${institutionId}`;
+
+    console.log("[USER SERVICE] Fetching user by institution:", url);
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers,
+    });
+
+    console.log("[USER SERVICE] Response status:", response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("[USER SERVICE] Error response:", errorText);
+      throw new Error(`Error ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+    console.log("[USER SERVICE] User data received:", data);
+    console.log("[USER SERVICE] DTO fields:", {
+      id: data.id,
+      nombre: data.nombre,
+      rol: data.rol,
+      email: data.email,
+      biografia: data.biografia,
+      imagenUrl: data.imagenUrl,
+    });
+    return data;
+  } catch (error) {
+    console.error("[USER SERVICE] Error fetching user by institution:", error);
+    throw error;
+  }
+}

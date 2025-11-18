@@ -263,7 +263,7 @@ export default function CommunityNavbar({
                   <div className="max-h-96 overflow-y-auto">
                     {/* Notificación de mensajes */}
                     <Link
-                      to="/community/chatCommunity"
+                      to="/adopt/chatAdopt"
                       onClick={() => setIsNotificationsOpen(false)}
                       className="flex items-center px-4 py-3 hover:bg-rose-50 transition-colors border-b border-rose-50"
                     >

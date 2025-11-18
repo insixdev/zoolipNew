@@ -23,7 +23,7 @@ export type UserIdPost = {
  * Request para crear una nueva publicación
  */
 export type PublicationCreateRequest = {
-  id_usuario: UserIdPost;
+  id_usuario?: UserIdPost; // Opcional - el backend lo obtiene de la cookie
   tipo: "CONSULTA" | "PUBLICACION";
   imagen_url: string | null; // null para consultas
   fecha_edicion: string;

@@ -32,6 +32,7 @@ export async function createPublicationService(
       tiene_imagen: !!publication.imagen_url,
       imagen_url: publication.imagen_url,
     });
+    console.log("[SERVICE] PERRRA:", publication );
 
     const res = await fetch(`${BASE_PUBLICATION_URL}crear`, {
       method: "POST",

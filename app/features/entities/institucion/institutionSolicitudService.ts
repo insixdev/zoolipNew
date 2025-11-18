@@ -3,6 +3,7 @@ import {
   InstitutionSolicitudUpdateRequest,
   InstitutionSolicitudResponse,
   InstitutionSolicitudGetResponse,
+  InstitutionSolicitudDTO,
 } from "./types";
 
 /** URL base del backend para solicitudes de institución */
@@ -48,15 +49,6 @@ export async function createInstitutionSolicitudService(
   }
 }
 
-export type getAllSolicitudes = {
-  id_solicitud: number;
-  nombre_institucion: string;
-  tipo: string;
-  email_contacto: string;
-  telefono_contacto: string;
-  razon_solicitud: string;
-  estado: string;
-};
 /**
  * Obtiene todas las solicitudes de institución (solo admin)
  * @param cookie - Cookie de autenticación (requerida para admin)
@@ -65,7 +57,7 @@ export type getAllSolicitudes = {
  */
 export async function getAllInstitutionSolicitudesService(
   cookie: string
-): Promise<[]> {
+): Promise<InstitutionSolicitudDTO[]> {
   try {
     const hd = new Headers();
     hd.append("Content-Type", "application/json");

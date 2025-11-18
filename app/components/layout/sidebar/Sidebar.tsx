@@ -37,8 +37,8 @@ const menuItems = [
     icon: FileText,
   },
   {
-    label: "Chat",
-    path: "/community/chatCommunity",
+    label: "Mensajes",
+    path: "/adopt/chatAdopt",
     icon: MessageCircle,
   },
   {

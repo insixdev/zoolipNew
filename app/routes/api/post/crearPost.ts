@@ -1,6 +1,5 @@
 import { createPublicationService } from "~/features/post/postService";
-import { PublicationCreateRequest, UserIdPost } from "~/features/post/types";
-import { getUserFieldFromCookie } from "~/lib/authUtil";
+import { PublicationCreateRequest } from "~/features/post/types";
 import { toLocalISOString } from "~/lib/generalUtil";
 
 //action para crear post
@@ -13,20 +12,6 @@ export async function action({ request }) {
       {
         status: "error",
         message: "No autenticado",
-      },
-      { status: 401 }
-    );
-  }
-
-  const userIdFormCookie = getUserFieldFromCookie(cookie, "id_usuario");
-  console.log("userIdFormCookie:", userIdFormCookie);
-
-  if (!userIdFormCookie) {
-    console.error("No user ID in cookie");
-    return Response.json(
-      {
-        status: "error",
-        message: "Usuario no encontrado",
       },
       { status: 401 }
     );
@@ -58,16 +43,12 @@ export async function action({ request }) {
     postValidation.post.imagen_url
   );
 
-  const id: UserIdPost = {
-    id: Number(userIdFormCookie),
-  };
-
   const now = toLocalISOString(new Date(Date.now()));
 
   const isConsulta = postValidation.post.tipo === "CONSULTA";
 
   const postRequest: PublicationCreateRequest = {
-    id_usuario: id,
+    // id_usuario se obtiene del backend desde la cookie, no se envía
     topico: postValidation.post.topico || "General",
     contenido: postValidation.post.contenido,
     likes: 0,
@@ -86,7 +67,6 @@ export async function action({ request }) {
   };
 
   console.log("[CREATE POST] Enviando al backend:", {
-    id_usuario: postRequest.id_usuario,
     topico: postRequest.topico,
     tipo: postRequest.tipo,
     imagen_url: postRequest.imagen_url,

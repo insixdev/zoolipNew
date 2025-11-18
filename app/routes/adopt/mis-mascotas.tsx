@@ -114,11 +114,7 @@ export default function MisMascotas() {
                       {/* Badge de adoptado */}
                       <div className="absolute top-4 left-4">
                         <span className="inline-flex items-center gap-1.5 bg-white/95 backdrop-blur-sm text-gray-900 px-3 py-1.5 rounded-lg text-xs font-medium border border-orange-200 shadow-sm">
-                          <Heart
-                            size={14}
-                            className="text-orange-500 fill-orange-500"
-                          />
-                          Adoptado
+                                                    Adoptado
                         </span>
                       </div>
                     </div>
@@ -190,7 +186,7 @@ export default function MisMascotas() {
                       {/* Info Badge */}
                       <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
                         <p className="text-sm text-orange-700 font-medium text-center">
-                          ❤️ Tu compañero adoptado
+                          Tu compañero adoptado
                         </p>
                       </div>
                     </div>

@@ -7,14 +7,12 @@ export default function AccountsSettings() {
   const { user } = useSmartAuth();
   const fetcher = useFetcher();
 
-  // Cargar cuentas asociadas al email cuando el componente se monta
+  // Cargar cuentas asociadas al usuario actual (desde cookie)
   useEffect(() => {
-    if (user?.email) {
-      fetcher.load(
-        `/api/user/accounts?email=${encodeURIComponent(user.email)}`
-      );
+    if (user) {
+      fetcher.load("/api/user/accounts");
     }
-  }, [user?.email]);
+  }, [user?.id]);
 
   const accounts = fetcher.data?.accounts || [];
   const isLoading = fetcher.state === "loading";
@@ -79,16 +77,20 @@ export default function AccountsSettings() {
                         className={`px-2 py-0.5 rounded-full text-xs font-medium ${
                           account.rol === "ROLE_ADOPTANTE"
                             ? "bg-green-100 text-green-700"
-                            : account.rol === "ROLE_ADMINISTRADOR"
-                              ? "bg-purple-100 text-purple-700"
-                              : account.rol === "ROLE_VETERINARIA"
-                                ? "bg-blue-100 text-blue-700"
-                                : account.rol === "ROLE_REFUGIO"
-                                  ? "bg-orange-100 text-orange-700"
-                                  : "bg-gray-100 text-gray-700"
+                            : account.rol === "ROLE_USER"
+                              ? "bg-blue-100 text-blue-700"
+                              : account.rol === "ROLE_ADMINISTRADOR"
+                                ? "bg-purple-100 text-purple-700"
+                                : account.rol === "ROLE_VETERINARIA"
+                                  ? "bg-teal-100 text-teal-700"
+                                  : account.rol === "ROLE_REFUGIO"
+                                    ? "bg-orange-100 text-orange-700"
+                                    : "bg-gray-100 text-gray-700"
                         }`}
                       >
-                        {account.rol?.replace("ROLE_", "")}
+                        {account.rol === "ROLE_USER"
+                          ? "USUARIO"
+                          : account.rol?.replace("ROLE_", "")}
                       </span>
                     </div>
 
@@ -142,14 +144,6 @@ export default function AccountsSettings() {
             </p>
           </div>
         )}
-
-        {/* Info adicional */}
-        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-sm text-blue-800">
-            💡 <strong>Nota:</strong> Todas las cuentas con el mismo email
-            pueden acceder a la plataforma con diferentes roles y permisos.
-          </p>
-        </div>
       </div>
     </div>
   );

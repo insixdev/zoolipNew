@@ -4,6 +4,7 @@ import { type LoaderFunctionArgs } from "react-router";
 import { ArrowLeft } from "lucide-react";
 import {
   AccountsSettings,
+  ProfileSettings,
   NotificationSettings,
   PrivacySettings,
   AccountSettings,
@@ -55,6 +56,7 @@ export default function Settings() {
           {/* Main content */}
           <div className="space-y-6 sm:px-6 lg:px-0 lg:col-span-9">
             {activeTab === "accounts" && <AccountsSettings />}
+            {activeTab === "profile" && <ProfileSettings />}
             {activeTab === "notifications" && <NotificationSettings />}
             {activeTab === "privacy" && <PrivacySettings />}
             {activeTab === "account" && <AccountSettings />}

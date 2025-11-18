@@ -11,8 +11,22 @@ type SettingsNavigationProps = {
   onTabChange: (tabId: string) => void;
 };
 
+import { Users, Bell, Shield, Lock, User, LucideIcon } from "lucide-react";
+
+type Tab = {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+};
+
+type SettingsNavigationProps = {
+  activeTab: string;
+  onTabChange: (tabId: string) => void;
+};
+
 const tabs: Tab[] = [
   { id: "accounts", label: "Cuentas", icon: Users },
+  { id: "profile", label: "Editar Perfil", icon: User },
   { id: "notifications", label: "Notificaciones", icon: Bell },
   { id: "privacy", label: "Privacidad", icon: Shield },
   { id: "account", label: "Cuenta", icon: Lock },

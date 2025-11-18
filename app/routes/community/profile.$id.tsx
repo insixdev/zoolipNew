@@ -215,13 +215,13 @@ export default function UserProfile() {
                   )}
                   {user.fecha_registro && (
                     <p className="text-sm text-gray-600">
-                      📍 Miembro desde{" "}
+                      📍{" "}
                       <span suppressHydrationWarning>
                         {new Date(user.fecha_registro).toLocaleDateString(
                           "es-ES",
                           {
                             year: "numeric",
-                            month: "long",
+                            month: "short",
                           }
                         )}
                       </span>

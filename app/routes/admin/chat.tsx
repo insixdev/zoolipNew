@@ -1,39 +1,29 @@
-import { MessageCircle, Send, ArrowLeft, Users } from "lucide-react";
+import { MessageCircle, Send, Users } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import { useSearchParams, Link, redirect } from "react-router";
+import { useSearchParams } from "react-router";
 import { requireAuth } from "~/lib/authGuard";
 import { useSmartAuth } from "~/features/auth/useSmartAuth";
 import { getUserFromRequest } from "~/server/me";
 import { ADMIN_ROLES } from "~/lib/constants";
+import { redirect } from "react-router";
 
-// Loader para verificar autenticación y redirigir admins
+// Loader para verificar autenticación y rol de administrador
 export async function loader({ request }: LoaderFunctionArgs) {
   await requireAuth(request);
 
-  // Verificar si el usuario es administrador
+  // Verificar que el usuario sea administrador
   const userResult = await getUserFromRequest(request);
 
-  if (userResult && userResult.user) {
-    const userRole = userResult.user.role;
-    const isAdmin = Object.values(ADMIN_ROLES).includes(userRole as any);
+  if (!userResult || !userResult.user) {
+    throw redirect("/login");
+  }
 
-    // Si es admin, redirigir al chat de admin
-    if (isAdmin) {
-      const url = new URL(request.url);
-      const nombreChat =
-        url.searchParams.get("Nombre_Chat") ||
-        url.searchParams.get("Nombre_chat");
+  const userRole = userResult.user.role;
+  const isAdmin = Object.values(ADMIN_ROLES).includes(userRole as any);
 
-      // Redirigir al chat de admin con los mismos parámetros si existen
-      if (nombreChat) {
-        throw redirect(
-          `/admin/chat?Nombre_Chat=${encodeURIComponent(nombreChat)}`
-        );
-      } else {
-        throw redirect("/admin/chat");
-      }
-    }
+  if (!isAdmin) {
+    throw redirect("/community");
   }
 
   return null;
@@ -57,7 +47,7 @@ type ChatDTO = {
 const BASE_CHAT_URL = "http://localhost:3050/api/chat";
 const BASE_WS_URL = "ws://localhost:3050/chat";
 
-export default function AdoptChat() {
+export default function AdminChat() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { user } = useSmartAuth();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -72,88 +62,48 @@ export default function AdoptChat() {
   // Obtener parámetros de la URL (soportar ambos formatos por compatibilidad)
   const nombreChat =
     searchParams.get("Nombre_Chat") || searchParams.get("Nombre_chat") || "";
-  const institutionId = searchParams.get("institution_id") || "";
-  const nombreUsuario =
-    searchParams.get("Nombre") || user?.username || "Usuario";
-  const [adminName, setAdminName] = useState<string>("");
+  // Usar el nombre del usuario actual (administrador)
+  const nombreUsuario = user?.nombre || user?.username || "Admin";
 
-  console.log("[CHAT] Parametros URL:", {
+  console.log("[ADMIN CHAT] Parametros URL:", {
     nombreChat,
-    institutionId,
     nombreUsuario,
     searchParams: Object.fromEntries(searchParams.entries()),
   });
 
-  // Obtener nombre del administrador si se proporciona institution_id
-  useEffect(() => {
-    const getAdminName = async () => {
-      if (!institutionId) return;
-
-      try {
-        console.log(
-          "[CHAT] Obteniendo nombre del administrador para institución:",
-          institutionId
-        );
-        const response = await fetch(
-          `/api/chat/admin-name?institution_id=${institutionId}`,
-          {
-            credentials: "include",
-          }
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          console.log("[CHAT] Nombre del administrador:", data.adminName);
-          setAdminName(data.adminName);
-
-          // Actualizar el nombre del chat con el formato correcto
-          const chatName = `${nombreUsuario}_${data.adminName}`;
-          setSearchParams({
-            Nombre_Chat: chatName,
-            Nombre: nombreUsuario,
-          });
-        }
-      } catch (error) {
-        console.error(
-          "[CHAT] Error obteniendo nombre del administrador:",
-          error
-        );
-      }
-    };
-
-    getAdminName();
-  }, [institutionId, nombreUsuario]);
-
-  // Cargar lista de chats del usuario actual (desde cookie)
+  // Cargar lista de chats del administrador actual (desde cookie)
   useEffect(() => {
     const loadChats = async () => {
       try {
-        console.log("[CHAT] Cargando lista de chats...");
+        console.log(
+          "[ADMIN CHAT] Cargando lista de chats del administrador..."
+        );
         setIsLoadingChats(true);
-        const response = await fetch("/api/chat/current", {
+        // Usar el endpoint específico para administradores
+        const response = await fetch("/api/chat/admin-current", {
           credentials: "include",
         });
 
-        console.log("[CHAT] Respuesta de chats:", response.status);
+        console.log("[ADMIN CHAT] Respuesta de chats:", response.status);
 
         if (response.ok) {
           const data = await response.json();
-          console.log("[CHAT] Datos recibidos:", data);
+          console.log("[ADMIN CHAT] Datos recibidos:", data);
 
           // Transformar el formato si es necesario
           const transformedChats = (data.chats || []).map((chat: any) => ({
-            idChat: chat.id_chat || chat.idChat,
+            idChat: chat.idChat || chat.id_chat,
             nombreChat: chat.nombreChat || chat.nombre_chat || "Chat",
             nombreUsuario: chat.nombreUsuario || chat.nombre_usuario || "",
             nombreAdministrador:
               chat.nombreAdministrador || chat.nombre_administrador || "Admin",
           }));
 
-          console.log("[CHAT] Chats transformados:", transformedChats);
+          console.log("[ADMIN CHAT] Chats transformados:", transformedChats);
           setChats(transformedChats);
         }
       } catch (error) {
-        console.error("[CHAT] Error cargando chats:", error);
+        console.error("[ADMIN CHAT] Error cargando chats:", error);
       } finally {
         setIsLoadingChats(false);
       }
@@ -179,12 +129,15 @@ export default function AdoptChat() {
       // Buscar el chat actual en la lista de chats
       const currentChat = chats.find((c) => c.nombreChat === nombreChat);
       if (!currentChat) {
-        console.log("[CHAT] Chat no encontrado en la lista");
+        console.log("[ADMIN CHAT] Chat no encontrado en la lista");
         return;
       }
 
       try {
-        console.log("[CHAT] Cargando mensajes del chat:", currentChat.idChat);
+        console.log(
+          "[ADMIN CHAT] Cargando mensajes del chat:",
+          currentChat.idChat
+        );
         const response = await fetch(
           `${BASE_CHAT_URL}/obtenerMensajesPorChat?id_chat=${currentChat.idChat}`,
           {
@@ -194,7 +147,7 @@ export default function AdoptChat() {
 
         if (response.ok) {
           const mensajes = await response.json();
-          console.log("[CHAT] Mensajes cargados:", mensajes);
+          console.log("[ADMIN CHAT] Mensajes cargados:", mensajes);
 
           // Transformar mensajes del backend al formato del frontend
           const transformedMessages = (mensajes || []).map((msg: any) => ({
@@ -210,7 +163,7 @@ export default function AdoptChat() {
           setMessages(transformedMessages);
         }
       } catch (error) {
-        console.error("[CHAT] Error cargando mensajes:", error);
+        console.error("[ADMIN CHAT] Error cargando mensajes:", error);
       }
     };
 
@@ -245,7 +198,7 @@ export default function AdoptChat() {
       ws.onopen = () => {
         console.log("[WS] WebSocket conectado");
         setIsConnected(true);
-        reconnectAttempts = 0; // Reset intentos al conectar exitosamente
+        reconnectAttempts = 0;
       };
 
       ws.onmessage = (event) => {
@@ -263,7 +216,6 @@ export default function AdoptChat() {
           };
           setMessages((prev) => [...prev, newMessage]);
         } catch (error) {
-          // Si no es JSON, mostrar como mensaje de texto plano
           const newMessage: Message = {
             id: `${Date.now()}-${Math.random()}`,
             sender: "Sistema",
@@ -286,7 +238,6 @@ export default function AdoptChat() {
         console.log("[WS] WebSocket desconectado", event.code, event.reason);
         setIsConnected(false);
 
-        // Intentar reconectar si no fue un cierre intencional
         if (event.code !== 1000 && reconnectAttempts < maxReconnectAttempts) {
           setIsReconnecting(true);
           reconnectAttempts++;
@@ -358,25 +309,18 @@ export default function AdoptChat() {
       Nombre_Chat: chat.nombreChat,
       Nombre: nombreUsuario,
     });
-    // Los mensajes se cargarán automáticamente por el useEffect
   };
 
   return (
-    <div className="md:pl-64 h-screen bg-gray-100 flex flex-col overflow-hidden">
+    <div className="h-screen bg-gray-100 flex flex-col overflow-hidden">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 px-6 py-3 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <Link
-              to="/community/refugios"
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <ArrowLeft size={20} className="text-gray-600" />
-            </Link>
             <div>
               <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                <MessageCircle className="text-orange-500" size={24} />
-                {nombreChat ? nombreChat.replace(/_/g, " ") : "Chats"}
+                <MessageCircle className="text-purple-500" size={24} />
+                {nombreChat ? nombreChat.replace(/_/g, " ") : "Chat Admin"}
               </h1>
               {nombreChat && (
                 <div className="flex items-center gap-2 mt-1">
@@ -410,7 +354,7 @@ export default function AdoptChat() {
           <div className="p-4 border-b border-gray-200">
             <h2 className="font-semibold text-gray-900 flex items-center gap-2">
               <Users size={18} />
-              Mis Conversaciones
+              Conversaciones
             </h2>
             <p className="text-xs text-gray-500 mt-1">{chats.length} chats</p>
           </div>
@@ -427,17 +371,11 @@ export default function AdoptChat() {
                   size={48}
                 />
                 <p className="text-sm font-medium text-gray-700 mb-2">
-                  No tienes conversaciones
+                  No hay conversaciones
                 </p>
-                <p className="text-xs text-gray-500 mb-4">
-                  Inicia un chat desde el perfil de un refugio
+                <p className="text-xs text-gray-500">
+                  Los usuarios iniciarán chats contigo
                 </p>
-                <Link
-                  to="/community/refugios"
-                  className="inline-block px-4 py-2 bg-orange-500 text-white text-sm rounded-lg hover:bg-orange-600 transition-colors"
-                >
-                  Ver refugios
-                </Link>
               </div>
             ) : (
               chats.map((chat) => (
@@ -445,14 +383,14 @@ export default function AdoptChat() {
                   key={chat.idChat}
                   onClick={() => handleSelectChat(chat)}
                   className={`w-full p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors text-left ${
-                    nombreChat === chat.nombreChat ? "bg-orange-50" : ""
+                    nombreChat === chat.nombreChat ? "bg-purple-50" : ""
                   }`}
                 >
                   <h3 className="font-medium text-gray-900 text-sm mb-1">
                     {chat.nombreChat.replace(/_/g, " ")}
                   </h3>
                   <p className="text-xs text-gray-600">
-                    Con: {chat.nombreAdministrador}
+                    Usuario: {chat.nombreUsuario}
                   </p>
                 </button>
               ))
@@ -467,22 +405,14 @@ export default function AdoptChat() {
               <MessageCircle className="mx-auto text-gray-300 mb-4" size={64} />
               <h3 className="text-xl font-semibold text-gray-900 mb-2">
                 {chats.length === 0
-                  ? "Comienza una conversación"
+                  ? "Esperando conversaciones"
                   : "Selecciona un chat"}
               </h3>
               <p className="text-gray-600 mb-4">
                 {chats.length === 0
-                  ? "Visita el perfil de un refugio y presiona el botón 'Enviar Mensaje' para iniciar un chat"
-                  : "Elige una conversación de la lista para comenzar"}
+                  ? "Los usuarios podrán iniciar conversaciones contigo desde los refugios"
+                  : "Elige una conversación de la lista para responder"}
               </p>
-              {chats.length === 0 && (
-                <Link
-                  to="/community/refugios"
-                  className="inline-block px-6 py-3 bg-gradient-to-r from-orange-500 to-pink-500 text-white rounded-lg hover:from-orange-600 hover:to-pink-600 transition-all shadow-md hover:shadow-lg font-semibold"
-                >
-                  Explorar refugios
-                </Link>
-              )}
             </div>
           </div>
         ) : (
@@ -497,7 +427,7 @@ export default function AdoptChat() {
                       size={48}
                     />
                     <p className="text-gray-500">
-                      No hay mensajes aún. Inicia la conversación!
+                      No hay mensajes aún en esta conversación
                     </p>
                   </div>
                 ) : (
@@ -511,7 +441,7 @@ export default function AdoptChat() {
                         <div
                           className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl ${
                             isCurrentUser
-                              ? "bg-orange-500 text-white"
+                              ? "bg-purple-500 text-white"
                               : "bg-white text-gray-900 shadow-sm border border-gray-200"
                           }`}
                         >
@@ -524,7 +454,7 @@ export default function AdoptChat() {
                             {message.message}
                           </p>
                           <p
-                            className={`text-xs mt-1 ${isCurrentUser ? "text-orange-100" : "text-gray-500"}`}
+                            className={`text-xs mt-1 ${isCurrentUser ? "text-purple-100" : "text-gray-500"}`}
                           >
                             {message.timestamp}
                           </p>
@@ -558,12 +488,12 @@ export default function AdoptChat() {
                   }
                   disabled={!isConnected}
                   rows={3}
-                  className="flex-1 px-4 py-3 text-sm border border-gray-300 rounded-2xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed resize-none"
+                  className="flex-1 px-4 py-3 text-sm border border-gray-300 rounded-2xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none text-gray-900 disabled:bg-gray-100 disabled:cursor-not-allowed resize-none"
                 />
                 <button
                   type="submit"
                   disabled={!isConnected || !inputMessage.trim()}
-                  className="p-3 bg-orange-500 text-white rounded-full hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
+                  className="p-3 bg-purple-500 text-white rounded-full hover:bg-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
                 >
                   <Send size={20} />
                 </button>

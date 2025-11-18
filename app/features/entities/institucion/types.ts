@@ -6,7 +6,7 @@ export enum InstitutionType {
 }
 export type idadmin = {
   id: number;
-}
+};
 /**
  * Request para agregar una nueva institución
  */
@@ -105,5 +105,21 @@ export type InstitutionSolicitudGetResponse = {
   estado: string;
   fecha_creacion: string;
   fecha_ultima_actualizacion: string;
+  motivo_rechazo?: string;
+};
+
+/**
+ * DTO de solicitud de institución obtenida del backend (lista)
+ */
+export type InstitutionSolicitudDTO = {
+  idSolicitud: number;
+  id_solicitud?: number; // Alternativa del backend
+  nombre_institucion: string;
+  tipo: string;
+  email_contacto: string;
+  telefono_contacto: string;
+  razon_solicitud: string;
+  estado: string;
+  fecha_solicitud?: string;
   motivo_rechazo?: string;
 };

@@ -76,6 +76,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
       "[COMMUNITY LOADER] Post types:",
       posts.map((p) => ({ id: p.id, type: p.publicationType }))
     );
+    if(!cookie){
+      return { posts: publicacionesOnly, isPublic: true };
+    }
 
     const postsWithCommentCount = await Promise.all(
       publicacionesOnly.map(async (post) => {

@@ -118,9 +118,41 @@ export async function getChatsByUserService(
 }
 
 /**
+ * Obtiene chats del usuario actual (desde cookie/token)
+ * @param cookie - Cookie de autenticación
+ * @returns Promise con array de chats
+ * @throws Error si falla la petición
+ */
+export async function getCurrentUserChatsService(
+  cookie: string
+): Promise<ChatGetResponse[]> {
+  try {
+    const hd = new Headers();
+    hd.append("Content-Type", "application/json");
+    hd.append("Cookie", cookie);
+
+    const res = await fetch(`${BASE_CHAT_URL}obtenerChatsPorUsuarioCurrent`, {
+      method: "GET",
+      headers: hd,
+    });
+
+    // Si no hay chats, el backend devuelve null
+    if (res.status === 204 || !res.ok) {
+      return [];
+    }
+
+    const data = await res.json();
+    return data || [];
+  } catch (err) {
+    console.error("Get current user chats error:", err);
+    return [];
+  }
+}
+
+/**
  * Obtiene mensajes de un chat
  * @param chatId - ID del chat
- * @param cookie - Cookie de autenticación
+ * @cookie - Cookie de autenticación
  * @returns Promise con array de mensajes
  * @throws Error si falla la petición
  */

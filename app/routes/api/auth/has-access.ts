@@ -31,7 +31,14 @@ export async function action({ request }) {
     }
     // El user viene como { user: { role: 'ROLE_USER' }, status: 'ok', message: '...' }
     const userRole = user.user?.role || user.role;
+
+    console.log("[HAS-ACCESS] User role:", userRole);
+    console.log("[HAS-ACCESS] Allowed roles:", allowedRoles);
+
     const hasAccess = canAccessRoute(userRole, allowedRoles);
+
+    console.log("[HAS-ACCESS] Has access:", hasAccess);
+
     if (hasAccess) {
       return Response.json({ hasAccess: true, ok: true, user });
     } else {

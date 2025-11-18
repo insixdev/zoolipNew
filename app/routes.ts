@@ -11,6 +11,7 @@ export default [
 
   route("admin", "routes/admin/_layout.tsx", [
     index("routes/admin/dashboard.tsx"), // /admin - dashboard principal
+    route("chat", "routes/admin/chat.tsx"), // /admin/chat
     route("system", "routes/admin/system/system.tsx"), // /admin/system
     route(
       "system/institutionSolicitudes",
@@ -46,7 +47,6 @@ export default [
     route("refugios", "routes/community/refugios.tsx"), // /community/refugios
     route("refugio/:id", "routes/community/refugio.$id.tsx"), // /community/refugio/:id
     route("following", "routes/community/following.tsx"), // /community/following
-    route("chatCommunity", "routes/community/chatCommunity.tsx"), // /community/chatCommunity
     route("hashtag/:hashtag", "routes/community/communityTrendingView.tsx"), // /community/hashtag/AdopcionResponsable
     route("donaciones", "routes/community/donaciones.tsx"), // /community/donaciones
     route(
@@ -135,4 +135,8 @@ export default [
 
   // User API routes
   route("api/user/update", "routes/api/user/update.ts"),
+  route("api/user/accounts", "routes/api/user/accounts.ts"),
+
+  // Chat API routes
+  route("api/chat/current", "routes/api/chat/current.ts"),
 ] satisfies RouteConfig;
