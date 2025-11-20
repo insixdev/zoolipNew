@@ -405,7 +405,7 @@ export default function CommunityIndex() {
           : post
       );
 
-      console.log("🔵 [COMMENT] Posts after:", updated.length);
+      console.log("[COMMENT] Posts after:", updated.length);
       return updated;
     });
 
@@ -484,6 +484,7 @@ export default function CommunityIndex() {
         const newPosts = parsedPosts.filter(
           (post: any) => post.publicationType !== "CONSULTA"
         );
+
 
         console.log(
           "[LOAD MORE INDEX] Nuevas publicaciones cargadas:",
@@ -573,6 +574,7 @@ export default function CommunityIndex() {
       postsListLength: postsList.length,
       hasMoreFromServer,
     });
+    
 
     // Si ya mostramos todos los posts locales, cargar desde el servidor
     if (visiblePostsCount >= postsList.length && postsList.length > 0) {
@@ -604,17 +606,6 @@ export default function CommunityIndex() {
   return (
     <div className="w-full mx-auto md:pl-72 px-6 pt-6 pb-10 pr-12">
       {/* Botón temporal para debug - REMOVER EN PRODUCCIÓN */}
-      <button
-        onClick={() => {
-          localStorage.clear();
-          console.log("[DEBUG] localStorage limpiado");
-          window.location.reload();
-        }}
-        className="fixed bottom-4 right-4 z-50 px-4 py-2 bg-red-500 text-white rounded-lg shadow-lg hover:bg-red-600 text-sm"
-      >
-        Limpiar Likes
-      </button>
-
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-12">
         {/* Feed principal */}
         <div className="xl:col-span-3 space-y-6 max-w-2xl">
