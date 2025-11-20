@@ -1,3 +1,4 @@
+import { redirect } from "react-router";
 import { createPublicationService } from "~/features/post/postService";
 import { PublicationCreateRequest } from "~/features/post/types";
 import { toLocalISOString } from "~/lib/generalUtil";
@@ -88,6 +89,17 @@ export async function action({ request }) {
     );
   } catch (err) {
     console.error("[CREATE POST] Error al crear publicacion:", err);
+    if(err === "Token invalidado"){
+      // quitar token; si falla, se redirige a login
+      // quitar cookie
+      return redirect("/login",{
+        headers: {
+          "Set-Cookie": "token=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax",
+        }
+      },
+      )
+
+    }
     return Response.json(
       { status: "error", message: `Error al crear publicación: ${err}` },
       { status: 500 }
