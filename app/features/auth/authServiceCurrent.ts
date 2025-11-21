@@ -66,6 +66,8 @@ export async function fetchMe(
     // Verificar si hay contenido antes de parsear
     const text = await res.text();
 
+    console.log("SUCIAS AS", text);
+
     if (!text || text.trim() === "") {
       console.error("Empty response from /me endpoint");
       return {

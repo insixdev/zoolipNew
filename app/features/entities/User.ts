@@ -4,6 +4,8 @@ export type User = {
   email: string;
   username: string;
   role: string;
+  biografia: string | null;
+  imagen_url: string | null;
 };
 
 

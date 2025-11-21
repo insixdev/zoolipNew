@@ -13,6 +13,7 @@ import {
 import CommentsSection from "../comentarios/CommentsSection";
 import type { Comment } from "../comentarios/CommentItem";
 import { ADMIN_ROLES } from "~/lib/constants";
+import { formatTimestamp } from "~/routes/community/buscar";
 
 type PostAuthor = {
   username: string;
@@ -127,10 +128,10 @@ export default function PostCard({
   };
 
   const handleAddComment = (content: string) => {
-    console.log("🟡 [POSTCARD] handleAddComment called");
-    console.log("🟡 [POSTCARD] PostId:", postId);
-    console.log("🟡 [POSTCARD] Content:", content);
-    console.log("🟡 [POSTCARD] onAddComment exists?", !!onAddComment);
+    console.log(" [POSTCARD] handleAddComment called");
+    console.log(" [POSTCARD] PostId:", postId);
+    console.log(" [POSTCARD] Content:", content);
+    console.log(" [POSTCARD] onAddComment exists?", !!onAddComment);
     onAddComment?.(postId, content);
   };
 
@@ -183,13 +184,13 @@ export default function PostCard({
                     )}
                   </div>
                   <p className="text-xs text-gray-500">
-                    {post.author.username} · {post.fecha_creacion}
+                    {post.author.username} . {formatTimestamp(post.fecha_creacion)} . 
                   </p>
                 </div>
               </Link>
             ) : (
               <>
-                <Avatar className="w-10 h-10 flex-shrink-0">
+                <Avatar className="w-10 h-10 py-50 flex flex-shrink">
                   <AvatarImage
                     src={post.author.avatar}
                     alt={post.author.username}
@@ -223,7 +224,7 @@ export default function PostCard({
                     )}
                   </div>
                   <p className="text-xs text-gray-500">
-                    {post.author.username} · {post.fecha_creacion}
+                    {post.author.username} · {formatTimestamp(post.fecha_creacion)} 
                   </p>
                 </div>
               </>
@@ -300,10 +301,6 @@ export default function PostCard({
             onClick={() => onSave?.(postId)}
             className="text-gray-600 hover:text-rose-600 transition-colors"
           >
-            <Bookmark
-              size={18}
-              className={post.isSaved ? "fill-rose-500 text-rose-500" : ""}
-            />
           </button>
         </div>
       </div>

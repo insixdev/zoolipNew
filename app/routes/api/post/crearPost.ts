@@ -2,8 +2,62 @@ import { redirect } from "react-router";
 import { createPublicationService } from "~/features/post/postService";
 import { PublicationCreateRequest } from "~/features/post/types";
 import { toLocalISOString } from "~/lib/generalUtil";
+import { writeFile, mkdir } from "fs/promises";
+import { existsSync } from "fs";
+import path from "path";
 
-//action para crear post
+const UPLOAD_DIR = path.join(process.cwd(), "public", "upload");
+
+// Asegurar que el directorio de uploads existe
+async function ensureUploadDir() {
+  if (!existsSync(UPLOAD_DIR)) {
+    await mkdir(UPLOAD_DIR, { recursive: true });
+  }
+}
+
+// Procesar upload de imagen localmente
+async function uploadImageFile(imagenFile: File): Promise<string | null> {
+  if (!imagenFile || imagenFile.size === 0) {
+    return null;
+  }
+
+  try {
+    await ensureUploadDir();
+
+    console.log(
+      "[CREATE POST] Procesando imagen localmente:",
+      imagenFile.name,
+      `(${(imagenFile.size / 1024).toFixed(2)} KB)`
+    );
+
+    // Validar tamaño (máximo 5MB)
+    if (imagenFile.size > 5 * 1024 * 1024) {
+      console.error("[CREATE POST] Archivo muy grande");
+      return null;
+    }
+
+    // Generar nombre único
+    const timestamp = Date.now();
+    const randomString = Math.random().toString(36).substring(2, 15);
+    const extension = imagenFile.name.split(".").pop() || "jpg";
+    const fileName = `${timestamp}-${randomString}.${extension}`;
+    const filePath = path.join(UPLOAD_DIR, fileName);
+
+    // Guardar archivo
+    const arrayBuffer = await imagenFile.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    await writeFile(filePath, buffer);
+
+    const fileUrl = `/upload/${fileName}`;
+    console.log("[CREATE POST] Imagen guardada localmente:", fileUrl);
+    return fileUrl;
+  } catch (err) {
+    console.error("[CREATE POST] Error al guardar imagen:", err);
+    return null;
+  }
+}
+
+//action para crear post con soporte para imagen_file en memoria
 export async function action({ request }) {
   const cookie = request.headers.get("Cookie");
 
@@ -19,15 +73,37 @@ export async function action({ request }) {
   }
 
   const formData = await request.formData();
-  const data = Object.fromEntries(formData);
-  console.log("[CREATE POST] Datos recibidos del formulario:", {
-    topico: data.topico,
-    contenido: data.contenido?.toString().substring(0, 50),
-    tipo: data.tipo,
-    imagen_url: data.imagen_url,
+  
+  // Procesar imagen_file si existe (archivo en multipart del cliente)
+  let imagenUrl = formData.get("imagen_url")?.toString() || "";
+  const imagenFile = formData.get("imagen_file") as File | null;
+
+  // Si hay archivo imagen_file, procesar localmente
+  if (imagenFile && imagenFile.size > 0) {
+    const uploadedUrl = await uploadImageFile(imagenFile);
+    if (uploadedUrl) {
+      imagenUrl = uploadedUrl;
+    }
+    // Si falla el upload, continuar sin imagen (no bloquear el post)
+  }
+
+  // Crear objeto de datos para validación
+  const dataObj: Record<string, any> = {
+    topico: formData.get("topico"),
+    contenido: formData.get("contenido"),
+    tipo: formData.get("tipo"),
+    imagen_url: imagenUrl,
+  };
+
+  console.log("[CREATE POST] Datos procesados del formulario:", {
+    topico: dataObj.topico,
+    contenido: dataObj.contenido?.toString().substring(0, 50),
+    tipo: dataObj.tipo,
+    imagen_url: dataObj.imagen_url,
+    tiene_imagen: !!dataObj.imagen_url,
   });
 
-  const postValidation = postBasicValidation(data);
+  const postValidation = postBasicValidation(dataObj);
 
   if (!postValidation.post) {
     console.error("[CREATE POST] Validacion fallida:", postValidation.message);
@@ -40,28 +116,29 @@ export async function action({ request }) {
     );
   }
   console.log(
-    "[CREATE POST] Post validado correctamente, imagen_url:",
-    postValidation.post.imagen_url
+    "[CREATE POST] Post validado correctamente, imagen_file:",
+    imagenFile?.name
   );
 
   const now = toLocalISOString(new Date(Date.now()));
 
   const isConsulta = postValidation.post.tipo === "CONSULTA";
 
+  // Usar la imagen convertida a base64 si existe, sino usar imagen_url
+  const finalImagenUrl =
+    !isConsulta && postValidation.post.imagen_url && postValidation.post.imagen_url.trim() !== ""
+      ? postValidation.post.imagen_url
+      : null;
+
   const postRequest: PublicationCreateRequest = {
     // id_usuario se obtiene del backend desde la cookie, no se envía
     topico: postValidation.post.topico || "General",
     contenido: postValidation.post.contenido,
     likes: 0,
-    // Solo incluir imagen_url si NO es una consulta Y si existe una URL válida
-    imagen_url: isConsulta
-      ? null
-      : postValidation.post.imagen_url &&
-          postValidation.post.imagen_url.trim() !== ""
-        ? postValidation.post.imagen_url
-        : null,
+    // Incluir imagen_url (que puede ser base64 o URL)
+    imagen_url: finalImagenUrl,
     // Solo incluir fecha_pregunta si ES una consulta
-    fecha_pregunta: isConsulta ? now : "",
+    fecha_pregunta: now,
     fecha_edicion: "",
     fecha_duda_resuelta: "",
     tipo: postValidation.post.tipo,
@@ -70,14 +147,10 @@ export async function action({ request }) {
   console.log("[CREATE POST] Enviando al backend:", {
     topico: postRequest.topico,
     tipo: postRequest.tipo,
-    imagen_url: postRequest.imagen_url,
     imagen_url_length: postRequest.imagen_url?.length || 0,
     contenido_length: postRequest.contenido.length,
+    con_imagen: !!postRequest.imagen_url,
   });
-  console.log(
-    "[CREATE POST] JSON completo:",
-    JSON.stringify(postRequest, null, 2)
-  );
 
   try {
     const postRes = await createPublicationService(postRequest, cookie);
@@ -89,16 +162,13 @@ export async function action({ request }) {
     );
   } catch (err) {
     console.error("[CREATE POST] Error al crear publicacion:", err);
-    if(err === "Token invalidado"){
-      // quitar token; si falla, se redirige a login
-      // quitar cookie
-      return redirect("/login",{
+    if (err === "Token invalidado") {
+      return redirect("/login", {
         headers: {
-          "Set-Cookie": "token=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax",
-        }
-      },
-      )
-
+          "Set-Cookie":
+            "token=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax",
+        },
+      });
     }
     return Response.json(
       { status: "error", message: `Error al crear publicación: ${err}` },

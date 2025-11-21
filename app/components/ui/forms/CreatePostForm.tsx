@@ -190,21 +190,7 @@ export default function CreatePostForm({
               )}
             </div>
 
-            {/* Location */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                <MapPin size={16} className="inline mr-2" />
-                Ubicación (opcional)
-              </label>
-              <input
-                type="text"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
-                placeholder="¿Dónde estás?"
-                className="w-full p-3 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-gray-900"
-              />
-            </div>
-
+            {/* Location *
             {/* Tags */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">

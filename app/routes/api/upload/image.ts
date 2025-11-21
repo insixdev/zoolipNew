@@ -4,7 +4,7 @@ import { existsSync } from "fs";
 import path from "path";
 import { getHeaderCookie } from "~/server/cookies";
 
-const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads");
+const UPLOAD_DIR = path.join(process.cwd(), "public", "upload");
 
 // Asegurar que el directorio de uploads existe
 async function ensureUploadDir() {
@@ -74,7 +74,7 @@ export async function action({ request }: ActionFunctionArgs) {
     await writeFile(filePath, buffer);
 
     // URL pública del archivo
-    const fileUrl = `/uploads/${fileName}`;
+    const fileUrl = `/upload/${fileName}`;
 
     console.log("[UPLOAD API] File saved successfully:", fileUrl);
 

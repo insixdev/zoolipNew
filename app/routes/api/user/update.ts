@@ -54,6 +54,8 @@ export async function action({ request }: ActionFunctionArgs) {
       cookie
     );
 
+    console.log("[UPDATE USER] Result:", result);
+
     // Limpiar TODAS las cookies de autenticación para forzar re-login
     // Limpiamos tanto AUTH_TOKEN como auth_token por si hay inconsistencias
     const cookieHeaders = [

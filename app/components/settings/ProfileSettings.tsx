@@ -88,6 +88,7 @@ export default function ProfileSettings() {
       <div className="px-4 py-5 sm:p-6">
         <h3 className="text-lg leading-6 font-medium text-gray-900 mb-6">
           Información del Perfil
+
         </h3>
 
         {/* Avatar */}
@@ -183,6 +184,7 @@ export default function ProfileSettings() {
 
           {/* URL de imagen (opcional) */}
           <div className="mt-6 col-span-2">
+
             <label className="block text-sm font-medium text-gray-700">
               URL de imagen de perfil (opcional)
             </label>
@@ -193,10 +195,13 @@ export default function ProfileSettings() {
               placeholder="https://ejemplo.com/mi-foto.jpg"
               className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-rose-500 focus:border-rose-500 sm:text-sm text-gray-900"
             />
+
           </div>
 
           {/* Botón Guardar */}
           <div className="mt-6 flex justify-end col-span-2">
+
+        <p className="pt-0 text-sm text-gray-400 opacity-60 mr-10"> tendras que inciar sesion de vuelta cuando guardes</p>
             <button
               type="submit"
               disabled={isSaving}

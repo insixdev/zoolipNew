@@ -46,7 +46,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function CommunityBuscar() {
-  const { token, posts } = useLoaderData<typeof loader>();
+  const {token, posts } = useLoaderData<typeof loader>();
   const [searchQuery, setSearchQuery] = useState("");
   const [commentsMap, setCommentsMap] = useState<Record<string, any[]>>({});
   const [postsState, setPostsState] = useState<any[]>([]);
@@ -72,8 +72,6 @@ export default function CommunityBuscar() {
       name: user.nombre || user.username,
       username: `@${user.username}`,
       avatar: `https://i.pravatar.cc/150?img=${user.id || 1}`,
-      followers: "0",
-      isFollowing: false,
       bio: user.email || "",
       role: user.role || user.rol,
     }));
@@ -85,7 +83,7 @@ export default function CommunityBuscar() {
       id: String(post.id_publicacion || post.idPublicacion || 0),
       type: "post" as const,
       author: post.nombreUsuario || "Usuario",
-      authorId: post.id_usuario || post.idUsuario,
+      authorId: post.id|| post.idUsuario,
       username: `@${post.nombreUsuario || "usuario"}`,
       avatar: `https://i.pravatar.cc/150?img=${post.id_publicacion || post.idPublicacion || 1}`,
       content: post.contenido,
@@ -94,7 +92,7 @@ export default function CommunityBuscar() {
       likes: post.likes || 0,
       comments: 0,
       timestamp: formatTimestamp(
-        post.fecha_pregunta || post.fechaPregunta || ""
+        post.fechaEdicion || post.fechaPregunta || ""
       ),
       role: post.rolUsuario || post.rol_usuario,
     }));
@@ -241,14 +239,12 @@ export default function CommunityBuscar() {
     console.log("Like comment:", commentId, "on post:", postId);
   };
 
-  // Actualizar comentarios cuando se cargan
   useEffect(() => {
     if (getCommentsFetcher.data) {
       const maybeData: any = getCommentsFetcher.data;
       const fetchedComments = maybeData?.comments ?? maybeData;
 
       if (Array.isArray(fetchedComments)) {
-        // Encontrar el postId correspondiente
         const postId = postsState.find(
           (p) => getCommentsFetcher.state === "idle"
         )?.id;
@@ -351,13 +347,33 @@ export default function CommunityBuscar() {
 }
 
 // Helper para formatear timestamp
-function formatTimestamp(dateString: string): string {
+export function formatTimestamp(dateString: string): string {
   if (!dateString) return "Hace un momento";
 
   try {
-    const date = new Date(dateString);
+    // Validar que sea string
+    if (typeof dateString !== "string") {
+      return "Hace un momento";
+    }
+
+    // Si no tiene Z ni zona horaria, agregamos Z
+    // Pero primero validar que sea un formato ISO válido
+    const hasTimezone = /Z$|[+-]\d\d:\d\d$/.test(dateString);
+    const normalized = hasTimezone ? dateString : dateString + "Z";
+
+    const date = new Date(normalized);
+    
+    // Validar que la fecha sea válida
+    if (isNaN(date.getTime())) {
+      return "Hace un momento";
+    }
+
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
+    
+    // Si la diferencia es negativa (fecha en el futuro), devolver "Ahora"
+    if (diffMs < 0) return "Ahora";
+    
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
@@ -366,8 +382,11 @@ function formatTimestamp(dateString: string): string {
     if (diffMins < 60) return `${diffMins}m`;
     if (diffHours < 24) return `${diffHours}h`;
     if (diffDays < 7) return `${diffDays}d`;
+
     return date.toLocaleDateString();
-  } catch {
+  } catch (error) {
+    console.warn("[formatTimestamp] Error parsing date:", dateString, error);
     return "Hace un momento";
   }
 }
+

@@ -11,7 +11,6 @@ import { Pregunta } from "~/components/community/consultas/Pregunta";
 import { AuthRoleComponent } from "~/components/auth/AuthRoleComponent";
 import { USER_ROLES } from "~/lib/constants";
 import { useSmartAuth } from "~/features/auth/useSmartAuth";
-import { getAllPublicPublicationsService } from "~/features/post/postService";
 import { postParseResponse } from "~/features/post/postResponseParse";
 import { useEffect, useRef, useState } from "react";
 
@@ -27,15 +26,20 @@ import {
 
 const ITEMS_PER_PAGE = 10;
 
-// Loader para obtener solo las consultas
+// Loader para obtener todas las publicaciones y filtrar consultas
 export async function loader({ request }: LoaderFunctionArgs) {
   const cookie = request.headers.get("Cookie");
   console.log("[CONSULTAS LOADER] Cookie:", cookie ? "present" : "not present");
 
   try {
-    // Usar el endpoint público para la carga inicial (últimas 10)
-    console.log("[CONSULTAS LOADER] Fetching initial public publications...");
-    const fetchedPosts = await getAllPublicPublicationsService(
+    // Usar paginación para obtener TODAS las publicaciones, empezando desde ID 1
+    console.log("[CONSULTAS LOADER] Fetching all publications with pagination...");
+    const { getPublicationsWithPaginationService } = await import(
+      "~/features/post/postService"
+    );
+
+    const fetchedPosts = await getPublicationsWithPaginationService(
+      1, // Empezar desde ID 1
       cookie || undefined
     );
     console.log(
@@ -45,6 +49,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
     const allPosts = postParseResponse(fetchedPosts);
     console.log("[CONSULTAS LOADER] Total posts parsed:", allPosts.length);
+    console.log("[CONSULTAS LOADER] Post types breakdown:", {
+      total: allPosts.length,
+      consultas: allPosts.filter(p => p.publicationType === "CONSULTA").length,
+      publicaciones: allPosts.filter(p => p.publicationType === "PUBLICACION").length,
+      otros: allPosts.filter(p => p.publicationType !== "CONSULTA" && p.publicationType !== "PUBLICACION").length,
+      byType: allPosts.map(p => ({ id: p.id, type: p.publicationType })).slice(0, 5),
+    });
 
     // Filtrar solo consultas
     // Solo mostramos posts con tipo explícito "CONSULTA"
@@ -52,14 +63,30 @@ export async function loader({ request }: LoaderFunctionArgs) {
       (post) => post.publicationType === "CONSULTA"
     );
 
-    console.log("[CONSULTAS LOADER] Total posts:", allPosts.length);
     console.log("[CONSULTAS LOADER] Consultas filtered:", consultasOnly.length);
+    console.log("[CONSULTAS LOADER] Consultas IDs:", consultasOnly.map(c => c.id));
+
+    // Obtener la última ID de las consultas filtradas para "cargar más"
+    const lastConsultaId = consultasOnly.length > 0 
+      ? consultasOnly[consultasOnly.length - 1]?.id 
+      : null;
+
+    // Obtener la última ID de TODAS las publicaciones (para saber dónde seguir buscando)
+    const lastAllPostId = allPosts.length > 0 
+      ? allPosts[allPosts.length - 1]?.id 
+      : null;
+
+    // Siempre mostrar "Cargar más" si hay posts (aunque sean pocas consultas)
+    // para poder cargar más aunque la mayoría sean publicaciones
+    const hasMore = allPosts.length >= 5;
 
     // Los posts ya vienen con el contador de comentarios del backend
-    // Retornar todas las consultas encontradas
+    // Retornar todas las consultas encontradas + metadatos para paginación
     return {
       consultas: consultasOnly,
-      hasMore: consultasOnly.length >= 10, // Si hay 10 o más, probablemente hay más en el servidor
+      hasMore: hasMore,
+      lastConsultaId: lastConsultaId, // Última ID de consulta filtrada
+      lastAllPostId: lastAllPostId,   // Última ID de todas las publicaciones (para paginación)
     };
   } catch (error) {
     console.error("[CONSULTAS LOADER] Error:", error);
@@ -92,6 +119,7 @@ export default function CommunityConsultas() {
   });
   const [hasMore, setHasMore] = useState(true); // Siempre true al inicio
   const [isLoading, setIsLoading] = useState(false);
+  const [lastAllPostId, setLastAllPostId] = useState(loaderData?.lastAllPostId || null);
   const loadMoreFetcher = useFetcher();
   const likeFetcher = useFetcher();
 
@@ -108,13 +136,16 @@ export default function CommunityConsultas() {
       ? lastRequestedCommentsPostId.current
       : null;
 
-  // Sincronizar consultas cuando cambian desde el loader
+  // Sincronizar consultas y metadatos de paginación cuando cambian desde el loader
   useEffect(() => {
     if (loaderData?.consultas && loaderData.consultas.length > 0) {
       setDisplayedConsultas(syncConsultasWithLikes(loaderData.consultas));
       setHasMore(loaderData.hasMore);
+      if (loaderData.lastAllPostId) {
+        setLastAllPostId(loaderData.lastAllPostId);
+      }
     }
-  }, [loaderData?.consultas]);
+  }, [loaderData?.consultas, loaderData?.lastAllPostId]);
 
   // Manejar la respuesta del fetcher de cargar más
   useEffect(() => {
@@ -201,25 +232,27 @@ export default function CommunityConsultas() {
 
   // Cargar más consultas desde el backend
   const handleLoadMore = () => {
-    if (isLoading || !hasMore || displayedConsultas.length === 0) {
+    if (isLoading || !hasMore) {
       console.log("[LOAD MORE] Skipping:", {
         isLoading,
         hasMore,
-        length: displayedConsultas.length,
       });
       return;
     }
 
     setIsLoading(true);
 
-    // Obtener el ID de la última consulta visible
-    const lastConsulta = displayedConsultas[displayedConsultas.length - 1];
-    const lastId = lastConsulta.id;
+    // Usar la última ID de TODAS las publicaciones para continuar paginación
+    // Esto permite cargar más aunque haya muchas publicaciones sin consultas intercaladas
+    const currentLastId = lastAllPostId || 1;
 
-    console.log("[LOAD MORE] Cargando más consultas desde ID:", lastId);
+    console.log("[LOAD MORE] Cargando más consultas desde ID:", currentLastId, {
+      lastAllPostId: lastAllPostId,
+      lastDisplayedConsultaId: displayedConsultas.length > 0 ? displayedConsultas[displayedConsultas.length - 1].id : null,
+    });
 
-    // Llamar al endpoint con el ID de la última consulta
-    loadMoreFetcher.load(`/api/post/obtenerTodas?lastId=${lastId}`);
+    // Llamar al endpoint con la última ID de todas las publicaciones
+    loadMoreFetcher.load(`/api/post/obtenerTodas?lastId=${currentLastId}`);
   };
 
   const parseConsultaContent = (content: string) => {

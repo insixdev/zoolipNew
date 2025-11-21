@@ -163,16 +163,6 @@ export default function PostCard({
           </div>
 
           {/* Bookmark Button */}
-          <button onClick={() => onSave?.(post.id)} className="group">
-            <Bookmark
-              size={22}
-              className={`transition-colors ${
-                post.isSaved
-                  ? "fill-orange-500 text-orange-500"
-                  : "text-gray-600 group-hover:text-orange-500"
-              }`}
-            />
-          </button>
         </div>
       </CardFooter>
     </Card>

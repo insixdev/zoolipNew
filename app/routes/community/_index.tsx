@@ -369,9 +369,6 @@ export default function CommunityIndex() {
   };
 
   const handleAddComment = (postId: string, content: string) => {
-    console.log("🔵 [COMMENT] handleAddComment called!");
-    console.log("🔵 [COMMENT] PostId:", postId);
-    console.log("🔵 [COMMENT] Content:", content);
 
     // Guardar el postId para recargar comentarios después
     lastCommentedPostId.current = postId;
@@ -381,7 +378,6 @@ export default function CommunityIndex() {
     formData.append("id_publicacion", postId);
     formData.append("contenido", content);
 
-    console.log("🔵 [COMMENT] Submitting to /api/comments/crear");
     console.log("🔵 [COMMENT] FormData:", {
       id_publicacion: postId,
       contenido: content,
@@ -392,12 +388,9 @@ export default function CommunityIndex() {
       action: "/api/comments/crear",
     });
 
-    console.log("🔵 [COMMENT] Fetcher state:", createCommentFetcher.state);
 
     // Actualizar contador de comentarios optimistamente
     setPostsList((prev) => {
-      console.log("🔵 [COMMENT] Updating comment count optimistically");
-      console.log("🔵 [COMMENT] Posts before:", prev.length);
 
       const updated = prev.map((post) =>
         post.id?.toString() === postId
@@ -405,7 +398,7 @@ export default function CommunityIndex() {
           : post
       );
 
-      console.log("[COMMENT] Posts after:", updated.length);
+      console.log(" [COMMENT] Posts after:", updated.length);
       return updated;
     });
 
