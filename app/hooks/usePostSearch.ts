@@ -4,9 +4,13 @@ import { useState, useEffect, useRef, useCallback } from "react";
 type SearchPost = {
   id_publicacion?: number;
   idPublicacion?: number;
+  id?: number;
+  id_usuario?: number;
+  idUsuario?: number;
   topico: string;
   contenido: string;
   nombreUsuario: string;
+  nombre_usuario?: string;
   likes: number;
   fecha_pregunta?: string;
   fechaPregunta?: string;
@@ -14,6 +18,14 @@ type SearchPost = {
   fechaEdicion?: string;
   fecha_duda_resuelta?: string;
   fechaDudaResuelta?: string;
+  imagen_url?: string;
+  imagenUrl?: string;
+  imagen_usuario?: string;
+  imagenUsuario?: string;
+  tipo?: string;
+  Tipo?: string;
+  rolUsuario?: string;
+  rol_usuario?: string;
 };
 
 type SearchUser = {
@@ -24,6 +36,8 @@ type SearchUser = {
   email: string;
   role?: string;
   rol?: string;
+  imagen_url?: string;
+  imagenUrl?: string;
 };
 
 export function usePostSearch() {

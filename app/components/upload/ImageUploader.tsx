@@ -66,10 +66,16 @@ export default function ImageUploader({
 
       const data = await response.json();
 
+      console.log("[ImageUploader] Upload response:", data);
+
       if (data.status === "success") {
-        onUploadSuccess(data.data.fileUrl);
+        const fileUrl = data.data.fileUrl;
+        console.log("[ImageUploader] ✓ Upload success, fileUrl:", fileUrl);
+        onUploadSuccess(fileUrl);
       } else {
-        setError(data.message || "Error al subir la imagen");
+        const errorMsg = data.message || "Error al subir la imagen";
+        console.error("[ImageUploader] ✗ Upload failed:", errorMsg);
+        setError(errorMsg);
         setPreview(currentImage || null);
       }
     } catch (err) {

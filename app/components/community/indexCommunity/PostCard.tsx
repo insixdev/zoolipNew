@@ -13,7 +13,7 @@ import {
 import CommentsSection from "../comentarios/CommentsSection";
 import type { Comment } from "../comentarios/CommentItem";
 import { ADMIN_ROLES } from "~/lib/constants";
-import { formatTimestamp } from "~/routes/community/buscar";
+import { formatTimestamp } from "~/lib/formatTimestamp";
 
 type PostAuthor = {
   username: string;
@@ -150,15 +150,20 @@ export default function PostCard({
                 className="flex items-center gap-3 hover:opacity-80 transition-opacity"
                 onClick={(e) => e.stopPropagation()}
               >
-                <Avatar className="w-10 h-10 flex-shrink-0">
-                  <AvatarImage
-                    src={post.author.avatar}
-                    alt={post.author.username}
-                  />
-                  <AvatarFallback>
-                    {post.author.username?.[0] ?? "U"}
-                  </AvatarFallback>
-                </Avatar>
+                {post.author.avatar ? (
+                  <Avatar className="w-10 h-10 flex-shrink-0">
+                    <AvatarImage
+                      src={post.author.avatar}
+                      alt={post.author.username}
+                    />
+                  </Avatar>
+                ) : (
+                  <Avatar className="w-10 h-10 flex-shrink-0">
+                    <AvatarFallback>
+                      {post.author.username?.[0] ?? "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                )}
                 <div>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <p className="font-semibold text-gray-900 text-sm hover:underline">
@@ -190,16 +195,21 @@ export default function PostCard({
               </Link>
             ) : (
               <>
-                <Avatar className="w-10 h-10 py-50 flex flex-shrink">
-                  <AvatarImage
-                    src={post.author.avatar}
-                    alt={post.author.username}
-                  />
-                  <AvatarFallback>
-                    {post.author.username?.[0] ?? "U"}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
+             {post.author.avatar ? (
+               <Avatar className="w-10 h-10 flex-shrink-0">
+                 <AvatarImage
+                   src={post.author.avatar}
+                   alt={post.author.username}
+                 />
+               </Avatar>
+             ) : (
+               <Avatar className="w-10 h-10 flex-shrink-0">
+                 <AvatarFallback>
+                   {post.author.username?.[0] ?? "U"}
+                 </AvatarFallback>
+               </Avatar>
+             )}
+              <div>
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <p className="font-semibold text-gray-900 text-sm">
                       {post.author.username}

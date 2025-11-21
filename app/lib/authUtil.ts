@@ -47,6 +47,8 @@ export interface UserTokenPayload {
   sub: string;
   email: string;
   role: string;
+  biografia?: string;
+  imagen_url?: string;
   exp?: number;
   iat?: number;
   [key: string]: any;

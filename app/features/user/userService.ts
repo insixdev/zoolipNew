@@ -9,7 +9,9 @@ export type UsuarioDTO = {
   activo?: boolean;
 };
 
-const BASE_URL = process.env.BASE_AUTH_URL || "http://localhost:3050/api/auth";
+const BASE_URL = typeof process !== 'undefined' && process.env.BASE_AUTH_URL 
+  ? process.env.BASE_AUTH_URL 
+  : "http://localhost:3050/api/auth";
 
 /**
  * Obtiene todos los usuarios (accounts)
@@ -68,6 +70,17 @@ export async function getUserByIdService(
     }
 
     const data = await response.json();
+    
+    // Procesar imagenUrl para agregar .png si no tiene extensión
+    if (data.imagenUrl && !data.imagenUrl.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) {
+      data.imagenUrl += ".png";
+    }
+    
+    // Convertir imagenUrl a imagen_url para consistencia
+    if (data.imagenUrl && !data.imagen_url) {
+      data.imagen_url = data.imagenUrl;
+    }
+    
     return data;
   } catch (error) {
     console.error("Error fetching user by id:", error);
@@ -78,10 +91,11 @@ export async function getUserByIdService(
 /**
  * Tipo para actualizar usuario
  * El ID y rol se obtienen del token, no se envían en el body
+ * Todos los campos son opcionales - solo se envían los que tienen valor
  */
 export type UpdateUserRequest = {
-  nombre: string;
-  email: string;
+  nombre?: string;
+  email?: string;
   imagen_url?: string;
   biografia?: string;
 };
@@ -101,7 +115,14 @@ export async function updateUserService(
     headers.append("Content-Type", "application/json");
     headers.append("Cookie", cookie);
 
-    const url = "http://localhost:3050/api/usuario/updateCurrentUser";
+    const url = "http://localhost:3050/api/auth/updateCurrentUser";
+    
+    console.log("[USER SERVICE] Enviando a backend:", {
+      url,
+      userData,
+      hasImagenUrl: !!userData.imagen_url,
+      imagenUrlValue: userData.imagen_url,
+    });
 
     const response = await fetch(url, {
       method: "POST",
@@ -109,11 +130,14 @@ export async function updateUserService(
       body: JSON.stringify(userData),
     });
 
+    console.log("[USER SERVICE] Response status:", response.status);
+
     if (!response.ok) {
       throw new Error(`Error ${response.status}: ${response.body}`);
     }
 
     const data = await response.json();
+    console.log("[USER SERVICE] Response data:", data);
     return data;
   } catch (error) {
     console.error("USER SERVICE Error updating user:", error);
@@ -261,6 +285,17 @@ export async function getUserByInstitutionIdService(
       biografia: data.biografia,
       imagenUrl: data.imagenUrl,
     });
+    
+    // Procesar imagenUrl para agregar .png si no tiene extensión
+    if (data.imagenUrl && !data.imagenUrl.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) {
+      data.imagenUrl += ".png";
+    }
+    
+    // Convertir imagenUrl a imagen_url para consistencia
+    if (data.imagenUrl && !data.imagen_url) {
+      data.imagen_url = data.imagenUrl;
+    }
+    
     return data;
   } catch (error) {
     console.error("[USER SERVICE] Error fetching user by institution:", error);

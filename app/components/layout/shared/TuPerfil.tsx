@@ -74,9 +74,17 @@ export function TuPerfil() {
         }}
         className="flex items-center space-x-2 focus:outline-none group"
       >
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-100 to-rose-200 flex items-center justify-center text-rose-700 font-medium group-hover:shadow-lg transition-all border-2 border-white shadow-sm">
-          {getUserInitials()}
-        </div>
+        {user?.imagen_url ? (
+          <img 
+            src={user.imagen_url} 
+            alt={user.username}
+            className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm group-hover:shadow-lg transition-all"
+          />
+        ) : (
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-rose-100 to-rose-200 flex items-center justify-center text-rose-700 font-medium group-hover:shadow-lg transition-all border-2 border-white shadow-sm">
+            {getUserInitials()}
+          </div>
+        )}
         <span className="text-sm font-medium text-gray-700 group-hover:text-rose-600">
           {user?.username || "Perfil"}
         </span>
@@ -108,6 +116,11 @@ export function TuPerfil() {
                 {user.username}
               </p>
               <p className="text-xs text-gray-500">{user.email}</p>
+              {user.biografia && (
+                <p className="text-xs text-gray-600 mt-2 italic">
+                  {user.biografia}
+                </p>
+              )}
             </div>
           )}
 

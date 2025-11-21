@@ -1,5 +1,6 @@
 import type { Comment } from "~/components/community/comentarios/CommentItem";
 import type { CommentGetResponse } from "./types";
+import { formatTimestamp } from "~/lib/formatTimestamp";
 
 /**
  * Parsea la respuesta del backend de comentarios al formato del frontend
@@ -10,22 +11,38 @@ export function parseCommentsResponse(
   comments: CommentGetResponse[]
 ): Comment[] {
   try {
+    // Validar entrada
+    if (!comments) {
+      console.warn("[COMMENT PARSE] Comments is null or undefined");
+      return [];
+    }
+    
     if (!Array.isArray(comments)) {
-      console.error("parseCommentsResponse: input is not an array", comments);
+      console.error("[COMMENT PARSE] Input is not an array:", comments);
+      return [];
+    }
+    
+    if (comments.length === 0) {
+      console.log("[COMMENT PARSE] No comments to parse");
       return [];
     }
 
     const parsedComments: Comment[] = comments
       .filter((c) => {
         if (!c || typeof c !== "object") {
-          console.warn("Invalid comment object:", c);
+          console.warn("[COMMENT PARSE] Invalid comment object:", c);
           return false;
         }
         // Soportar tanto snake_case como camelCase
         const commentId =
           (c as any).id_comentario || (c as any).idComentario || c.idComentario;
         if (!commentId) {
-          console.warn("Comment without id:", c);
+          console.warn("[COMMENT PARSE] Comment without id:", c);
+          return false;
+        }
+        // Validar que al menos tenga contenido
+        if (!c.contenido) {
+          console.warn("[COMMENT PARSE] Comment without content:", c);
           return false;
         }
         return true;
@@ -36,22 +53,52 @@ export function parseCommentsResponse(
         // Obtener el ID del comentario
         const commentId = c.id_comentario || c.idComentario || 0;
 
-        // Obtener el nombre del usuario
-        const userName = c.nombreUsuario || c.nombre_usuario || "Usuario";
+        // Obtener el nombre del usuario (soportar tanto nombreUsuario como nombre_usuario)
+        const userName = c.nombreUsuario || c.nombre_usuario || c.name || c.nombre || "Usuario";
 
-        // Obtener el ID del usuario (puede ser null)
-        const userId = c.id_usuario || c.idUsuario || null;
+        // Obtener el ID del usuario (puede ser null o no venir del backend)
+        // Si no viene, intentar generar uno basado en el hash del nombre de usuario
+        let userId = c.id_usuario || c.idUsuario || null;
+        
+        if (!userId && userName && userName !== "Usuario") {
+          // Generar un pseudo-ID basado en el nombre para poder navegar al perfil
+          // (aunque sea diferente al real, al menos permite intentar navegar)
+          const hash = userName.split('').reduce((acc, char) => {
+            return ((acc << 5) - acc) + char.charCodeAt(0);
+          }, 0);
+          userId = Math.abs(hash) % 100000; // ID pseudo dentro de rango razonable
+          console.log(`[COMMENT PARSE] Generated pseudo userId ${userId} for ${userName}`);
+        }
 
         // Obtener el rol del usuario (puede ser null)
         const userRole = c.rolUsuario || c.rol_usuario || null;
 
+        // Obtener la imagen del usuario
+        let avatarUrl = c.imagen_usuario || c.imagenUsuario || c.imagen_url || c.imagenUrl || null;
+        
+        // Si no tiene extensión, agregar .png por defecto
+        if (avatarUrl && !avatarUrl.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) {
+          avatarUrl += ".png";
+        }
+        
+        // Si la URL es relativa (empieza con /upload/), dejarla así
+        // Si es relativa pero no tiene /upload/, agregar el prefijo
+        let avatarDisplay: string | null = null;
+        if (avatarUrl) {
+          if (avatarUrl.startsWith("/") && !avatarUrl.startsWith("/upload/")) {
+            avatarDisplay = `/upload/${avatarUrl}`;
+          } else {
+            avatarDisplay = avatarUrl;
+          }
+        }
+
         // Log para debug - ver qué datos llegan del backend
-        console.log(`[COMMENT PARSE] Comment data:`, {
-          commentId,
+        console.log(`[COMMENT PARSE] Comment ${commentId}:`, {
           userName,
           userId,
           userRole,
-          rawData: c,
+          avatarUrl,
+          hasCookie: !!c.id_usuario,
         });
 
         // Crear el comentario parseado
@@ -61,9 +108,9 @@ export function parseCommentsResponse(
           author: {
             name: userName,
             username: userName.toLowerCase(),
-            avatar: `https://i.pravatar.cc/150?u=${userName}`,
-            // Solo incluir userId si no es null
-            ...(userId !== null && { userId: userId }),
+            avatar: avatarDisplay,
+            // Incluir userId si existe (necesario para navegar al perfil)
+            ...(userId !== null && userId !== undefined && { userId }),
             // Solo incluir role si no es null
             ...(userRole !== null && { role: userRole }),
           },
@@ -77,7 +124,10 @@ export function parseCommentsResponse(
         return parsedComment;
       });
 
-    console.log(`Parsed ${parsedComments.length} comments successfully`);
+    console.log(`[COMMENT PARSE] Total parsed: ${parsedComments.length} comments successfully`);
+    if (parsedComments.length > 0) {
+      console.log(`[COMMENT PARSE] First comment:`, JSON.stringify(parsedComments[0], null, 2));
+    }
     return parsedComments;
   } catch (err) {
     console.error("Error al parsear comentarios:", err);
@@ -85,28 +135,4 @@ export function parseCommentsResponse(
   }
 }
 
-/**
- * Formatea un timestamp a formato relativo (ej: "Hace 2 horas")
- */
-function formatTimestamp(timestamp: string): string {
-  try {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return "Ahora";
-    if (diffMins < 60) return `Hace ${diffMins} min`;
-    if (diffHours < 24) return `Hace ${diffHours}h`;
-    if (diffDays < 7) return `Hace ${diffDays}d`;
-
-    return date.toLocaleDateString("es-ES", {
-      day: "numeric",
-      month: "short",
-    });
-  } catch (err) {
-    return "Ahora";
-  }
-}

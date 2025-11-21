@@ -288,18 +288,34 @@ export default function CommunityConsultas() {
 
   // Cargar comentarios cuando el fetcher trae data
   useEffect(() => {
-    if (!getByIdFetcher.data) return;
+    if (!getByIdFetcher.data) {
+      console.log("[CONSULTAS] No data from fetcher yet");
+      return;
+    }
+    
     const maybeData: any = getByIdFetcher.data;
+    console.log("[CONSULTAS] Fetcher data received:", maybeData);
+    
     const fetchedComments = maybeData?.comments ?? maybeData;
 
-    if (!Array.isArray(fetchedComments)) return;
+    if (!Array.isArray(fetchedComments)) {
+      console.warn("[CONSULTAS] Fetched comments is not an array:", fetchedComments);
+      return;
+    }
 
     const postId = lastRequestedCommentsPostId.current;
-    if (!postId) return;
+    if (!postId) {
+      console.warn("[CONSULTAS] No postId set");
+      return;
+    }
 
     console.log(
-      `[CONSULTAS] Loaded ${fetchedComments.length} comments for consulta ${postId}`
+      `[CONSULTAS] ✅ Loaded ${fetchedComments.length} comments for consulta ${postId}`
     );
+    
+    if (fetchedComments.length > 0) {
+      console.log("[CONSULTAS] First comment:", fetchedComments[0]);
+    }
 
     // Sincronizar comentarios con likes de localStorage
     const userCommentLikes = getUserCommentLikes();
@@ -308,10 +324,16 @@ export default function CommunityConsultas() {
       isLiked: userCommentLikes.has(parseInt(comment.id)),
     }));
 
-    setCommentsMap((prev) => ({
-      ...(prev ?? {}),
-      [postId]: commentsWithLikes,
-    }));
+    console.log(`[CONSULTAS] Setting ${commentsWithLikes.length} comments for postId: ${postId}`);
+    
+    setCommentsMap((prev) => {
+      const updated = {
+        ...(prev ?? {}),
+        [postId]: commentsWithLikes,
+      };
+      console.log("[CONSULTAS] Updated commentsMap:", Object.keys(updated));
+      return updated;
+    });
 
     lastRequestedCommentsPostId.current = null;
   }, [getByIdFetcher.data]);

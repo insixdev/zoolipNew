@@ -1,4 +1,6 @@
 import { LoaderFunctionArgs } from "react-router";
+import { getCommentsByPublicationService } from "~/features/post/comments/commentService";
+import { parseCommentsResponse } from "~/features/post/comments/commentResponseParse";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const cookie = request.headers.get("Cookie");
@@ -27,11 +29,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
       );
     }
 
-    // TODO: Implementar servicio para obtener comentarios por publicación
-    // const comments = await getCommentsByPublicationService(id_publicacion, cookie);
+    console.log(`[API] Obteniendo comentarios para publicación ${id_publicacion}`);
 
-    // Por ahora, retornar array vacío
-    const comments: any[] = [];
+    const commentsFromBackend = await getCommentsByPublicationService(
+      parseInt(id_publicacion),
+      cookie
+    );
+
+    console.log(`[API] Comentarios obtenidos: ${commentsFromBackend.length}`);
+
+    // Parsear los comentarios al formato del frontend
+    const comments = parseCommentsResponse(commentsFromBackend);
+
+    console.log(`[API] Comentarios parseados: ${comments.length}`);
 
     return Response.json(
       {
@@ -45,7 +55,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return Response.json(
       {
         status: "error",
-        message: "Error al obtener comentarios",
+        message: "Error al obtener comentarios: " + (err instanceof Error ? err.message : String(err)),
+        comments: [],
       },
       { status: 500 }
     );

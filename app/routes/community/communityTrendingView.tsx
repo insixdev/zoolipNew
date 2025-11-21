@@ -12,7 +12,7 @@ import PostsList from "~/components/community/indexCommunity/PostsList";
 import type { Post } from "~/components/community/indexCommunity/PostCard";
 import type { Comment } from "~/components/community/comentarios/CommentItem";
 import { getAllPublicPublicationsService } from "~/features/post/postService";
-import { postParseResponse } from "~/features/post/postResponseParse";
+import { postParseResponse, postParseResponseWithUserImages } from "~/features/post/postResponseParse";
 import {
   getUserLikes,
   getUserCommentLikes,
@@ -44,7 +44,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
 
     const fetchedPost = await getPublicationsWithPaginationService(1, cookie);
-    const allPosts: Post[] = postParseResponse(fetchedPost);
+    const allPosts: Post[] = await postParseResponseWithUserImages(fetchedPost, cookie);
 
     console.log(`[HASHTAG LOADER] Total posts fetched: ${allPosts.length}`);
 

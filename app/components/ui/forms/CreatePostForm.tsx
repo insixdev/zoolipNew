@@ -76,8 +76,11 @@ export default function CreatePostForm({
       <div className="bg-gradient-to-br from-white to-orange-50 border-2 border-orange-100 rounded-xl p-4">
         <div className="flex items-start gap-3">
           <Avatar className="w-10 h-10">
-            <AvatarImage src="https://i.pravatar.cc/150?img=33" alt="Tu" />
-            <AvatarFallback>TU</AvatarFallback>
+            {user?.imagen_url ? (
+              <AvatarImage src={user.imagen_url} alt={user.username || "Tu"} />
+            ) : (
+              <AvatarFallback>{user?.username?.substring(0, 2).toUpperCase() || "TU"}</AvatarFallback>
+            )}
           </Avatar>
           <div className="flex-1">
             <textarea
@@ -118,8 +121,11 @@ export default function CreatePostForm({
       <div className="p-6 border-b border-gray-100">
         <div className="flex items-center gap-3">
           <Avatar className="w-12 h-12">
-            <AvatarImage src="https://i.pravatar.cc/150?img=33" alt="Tu" />
-            <AvatarFallback>TU</AvatarFallback>
+            {user?.imagen_url ? (
+              <AvatarImage src={user.imagen_url} alt={user.username || "Tu"} />
+            ) : (
+              <AvatarFallback>{user?.username?.substring(0, 2).toUpperCase() || "TU"}</AvatarFallback>
+            )}
           </Avatar>
           <div>
             <p className="font-semibold text-gray-900">Tu Usuario</p>

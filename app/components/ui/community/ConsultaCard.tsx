@@ -1,4 +1,5 @@
 import { MessageCircle, ThumbsUp, Clock } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/Avatar";
 
 export type Consulta = {
   id: string;
@@ -23,12 +24,16 @@ export default function ConsultaCard({ consulta, onClick }: ConsultaCardProps) {
       className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-300 cursor-pointer hover:-translate-y-1"
     >
       <div className="flex items-start gap-6">
-        <div className="relative">
-          <img
-            src={consulta.avatar}
-            alt={consulta.author}
-            className="w-14 h-14 rounded-full ring-4 ring-rose-100"
-          />
+        <div className="relative flex-shrink-0">
+          {consulta.avatar ? (
+            <Avatar className="w-14 h-14">
+              <AvatarImage src={consulta.avatar} alt={consulta.author} />
+            </Avatar>
+          ) : (
+            <Avatar className="w-14 h-14">
+              <AvatarFallback>{consulta.author?.charAt(0) ?? "U"}</AvatarFallback>
+            </Avatar>
+          )}
           <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-4 border-white"></div>
         </div>
 

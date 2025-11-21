@@ -1,6 +1,7 @@
 import { Heart, MessageCircle, Bookmark, BadgeCheck } from "lucide-react";
 import { Link } from "react-router";
 import { ADMIN_ROLES } from "~/lib/constants";
+import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/Avatar";
 
 interface UserResult {
   type: "user";
@@ -67,11 +68,15 @@ export function ResultadoBusqueda({
       >
         <div className="p-6">
           <div className="flex items-center gap-4">
-            <img
-              src={result.avatar}
-              alt={result.name}
-              className="w-16 h-16 rounded-full ring-4 ring-gray-100 hover:ring-rose-200 transition-all"
-            />
+            {result.avatar ? (
+              <Avatar className="w-16 h-16">
+                <AvatarImage src={result.avatar} alt={result.name} />
+              </Avatar>
+            ) : (
+              <Avatar className="w-16 h-16">
+                <AvatarFallback>{result.name?.charAt(0) ?? "U"}</AvatarFallback>
+              </Avatar>
+            )}
             <div className="flex-1">
               <div className="flex items-center gap-2">
                 <h3 className="text-lg font-bold text-gray-900 hover:text-rose-600 transition-colors">
@@ -140,23 +145,14 @@ export function ResultadoBusqueda({
     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">
       <div className="p-6 pb-4">
         <div className="flex items-center gap-3 mb-4">
-          {result.authorId ? (
-            <Link
-              to={`/community/profile/${result.authorId}`}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <img
-                src={result.avatar}
-                alt={result.author}
-                className="w-10 h-10 rounded-full hover:ring-2 hover:ring-rose-300 transition-all cursor-pointer"
-              />
-            </Link>
+          {result.avatar ? (
+            <Avatar className="w-10 h-10 flex-shrink-0">
+              <AvatarImage src={result.avatar} alt={result.author} />
+            </Avatar>
           ) : (
-            <img
-              src={result.avatar}
-              alt={result.author}
-              className="w-10 h-10 rounded-full"
-            />
+            <Avatar className="w-10 h-10 flex-shrink-0">
+              <AvatarFallback>{result.author?.charAt(0) ?? "U"}</AvatarFallback>
+            </Avatar>
           )}
           <div className="flex-1">
             <div className="flex items-center gap-2 flex-wrap">
@@ -212,55 +208,21 @@ export function ResultadoBusqueda({
         </div>
       )}
 
-      <div className="p-6 pt-4">
-        <div className="flex items-center gap-6">
-          <button
-            onClick={() => onLike?.(result.id)}
-            className={`flex items-center gap-2 transition-colors ${
-              (result as any).isLiked
-                ? "text-rose-600"
-                : "text-gray-600 hover:text-rose-600"
-            }`}
-          >
-            <Heart
-              size={20}
-              className={(result as any).isLiked ? "fill-rose-600" : ""}
-            />
-            <span className="font-medium">{result.likes}</span>
-          </button>
-          <button
-            onClick={() => onComment?.(result.id)}
-            className="flex items-center gap-2 text-gray-600 hover:text-rose-600 transition-colors"
-          >
-            <MessageCircle size={20} />
-            <span className="font-medium">{result.comments}</span>
-          </button>
-          <button
-            onClick={() => onBookmark?.(result.id)}
-            className={`flex items-center gap-2 transition-colors ml-auto ${
-              (result as any).isSaved
-                ? "text-rose-600"
-                : "text-gray-600 hover:text-rose-600"
-            }`}
-          >
-            <Bookmark
-              size={20}
-              className={(result as any).isSaved ? "fill-rose-600" : ""}
-            />
-          </button>
-        </div>
-
-        {/* Sección de comentarios */}
+      {/* Sección de comentarios */}
         {comments && comments.length > 0 && (
           <div className="mt-4 pt-4 border-t border-gray-100">
             <div className="space-y-3">
               {comments.map((comment: any) => (
-                <div key={comment.id} className="flex gap-3">
-                  <img
-                    src={`https://i.pravatar.cc/150?img=${comment.id}`}
-                    alt={comment.nombreUsuario}
-                    className="w-8 h-8 rounded-full"
-                  />
+                  <div key={comment.id} className="flex gap-3">
+                    {(comment.imagenUrl || comment.imagen_url) ? (
+                      <Avatar className="w-8 h-8 flex-shrink-0">
+                        <AvatarImage src={comment.imagenUrl || comment.imagen_url} alt={comment.nombreUsuario} />
+                      </Avatar>
+                    ) : (
+                      <Avatar className="w-8 h-8 flex-shrink-0">
+                        <AvatarFallback>{comment.nombreUsuario?.charAt(0) ?? "U"}</AvatarFallback>
+                      </Avatar>
+                    )}
                   <div className="flex-1">
                     <div className="bg-gray-50 rounded-lg p-3">
                       <p className="font-semibold text-sm text-gray-900">
@@ -276,7 +238,6 @@ export function ResultadoBusqueda({
             </div>
           </div>
         )}
-      </div>
     </div>
   );
 }

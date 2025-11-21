@@ -51,9 +51,14 @@ export type CommentGetResponse = {
   contenido: string;
   fecha_comentario?: string;
   nombreUsuario?: string; // Nombre del usuario que comentó
+  nombre_usuario?: string; // Variante snake_case
   idPublicacion?: number; // ID de la publicación
   id_usuario?: number; // ID del usuario que comentó
   idUsuario?: number; // Variante camelCase
   rolUsuario?: string; // Rol del usuario que comentó
   rol_usuario?: string; // Variante snake_case
+  imagen_usuario?: string; // Avatar del usuario que comentó
+  imagenUsuario?: string; // Variante camelCase
+  imagen_url?: string; // URL de imagen alternativa
+  imagenUrl?: string; // Variante camelCase
 };

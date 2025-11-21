@@ -13,7 +13,7 @@ import LoadMoreButton from "~/components/community/indexCommunity/LoadMoreButton
 import type { Post } from "~/components/community/indexCommunity/PostCard";
 import type { Comment } from "~/components/community/comentarios/CommentItem";
 import { getAllPublicPublicationsService } from "~/features/post/postService";
-import { postParseResponse } from "~/features/post/postResponseParse";
+import { postParseResponse, postParseResponseWithUserImages } from "~/features/post/postResponseParse";
 import { AuthRoleComponent } from "~/components/auth/AuthRoleComponent";
 import { USER_ROLES } from "~/lib/constants";
 import {
@@ -48,7 +48,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       cookie || undefined
     );
 
-    const posts: Post[] = postParseResponse(fetchedPost);
+    let posts: Post[] = await postParseResponseWithUserImages(fetchedPost, cookie || undefined);
 
     console.log(
       "LER Posts types:",
@@ -66,6 +66,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const publicacionesOnly = posts.filter(
       (post) => post.publicationType !== "CONSULTA"
     );
+    
+    // Mezclar publicaciones de forma aleatoria
+    const shuffledPosts = publicacionesOnly.sort(() => Math.random() - 0.5);
 
     console.log("[COMMUNITY LOADER] Total posts:", posts.length);
     console.log(
@@ -116,6 +119,9 @@ export default function CommunityIndex() {
 
   const posts = loaderData?.posts ?? [];
   const isPublic = loaderData?.isPublic ?? false;
+
+  // Fetcher para recargar posts después de crear uno
+  const revalidateFetcher = useFetcher();
 
   // Helper para sincronizar posts con localStorage
   const syncPostsWithLikes = (postsToSync: Post[]): Post[] => {
@@ -468,10 +474,10 @@ export default function CommunityIndex() {
       }
 
       if (response.status === "success" && response.posts) {
-        // Parsear las publicaciones si es necesario
-        const parsedPosts = Array.isArray(response.posts)
-          ? response.posts
-          : postParseResponse(response.posts);
+         // Parsear las publicaciones si es necesario
+         const parsedPosts = Array.isArray(response.posts)
+           ? postParseResponse(response.posts)
+           : postParseResponse(response.posts);
 
         // Filtrar solo publicaciones (no consultas)
         const newPosts = parsedPosts.filter(
@@ -590,11 +596,38 @@ export default function CommunityIndex() {
   };
 
   const handlePostCreated = (newPost: Partial<Post>) => {
-    console.log("[POST CREATED] Recargando publicaciones desde el servidor...");
+    console.log("[POST CREATED] Nuevo post creado, revalidando publicaciones...");
 
-    // Recargar desde el principio para obtener la nueva publicación
-    loadMoreFetcher.load("/api/post/obtenerTodas?lastId=1");
+    // Recargar posts usando el endpoint especializado
+    revalidateFetcher.load("/api/community/postsRefresh");
   };
+
+  // Sincronizar posts cuando el revalidateFetcher trae datos
+  useEffect(() => {
+    if (revalidateFetcher.state === "idle" && revalidateFetcher.data) {
+      const response = revalidateFetcher.data;
+      if (response?.posts && Array.isArray(response.posts)) {
+        console.log(
+          "[POST CREATED] Posts revalidados:",
+          response.posts.length,
+          "posts"
+        );
+
+        // Log de posts con imagen
+        const withImages = response.posts.filter((p: any) => p.image);
+        console.log(
+          "[POST CREATED] Posts con imagen:",
+          withImages.length,
+          withImages.map((p: any) => ({ id: p.id, image: p.image }))
+        );
+
+        // Reemplazar la lista de posts con los nuevos
+        const syncedNewPosts = syncPostsWithLikes(response.posts);
+        setPostsList(syncedNewPosts);
+        setVisiblePostsCount(Math.min(POSTS_PER_PAGE, syncedNewPosts.length));
+      }
+    }
+  }, [revalidateFetcher.data, revalidateFetcher.state]);
 
   return (
     <div className="w-full mx-auto md:pl-72 px-6 pt-6 pb-10 pr-12">

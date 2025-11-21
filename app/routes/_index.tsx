@@ -1,25 +1,22 @@
-import { redirect, useLoaderData } from "react-router";
-import type { LoaderFunctionArgs } from "react-router";
-import { optionalAuth } from "~/lib/authGuard";
-import { UserResponseHandler } from "~/features/entities/User";
+import { useEffect } from "react";
+import { useNavigate } from "react-router";
+import { useSmartAuth } from "~/features/auth/useSmartAuth";
 import { getDashboardRouteByRole } from "~/lib/routeUtils";
 
-// Loader que redirige automáticamente según el rol del usuario
-export async function loader({ request }: LoaderFunctionArgs) {
-  const userResult = await optionalAuth(request);
-
-  // Si el usuario está autenticado, redirigir a su dashboard correspondiente
-  if (userResult && !("succes" in userResult)) {
-    const user = userResult as UserResponseHandler;
-    const dashboardRoute = getDashboardRouteByRole(user.user.role);
-    throw redirect(dashboardRoute);
-  }
-
-  // Si no está autenticado, redirigir a landing
-  throw redirect("/landing");
-}
-
 export default function Index() {
-  // Esta página nunca se renderiza porque siempre redirige
+  const navigate = useNavigate();
+  const { user } = useSmartAuth();
+
+  useEffect(() => {
+    if (user) {
+      // Si el usuario está autenticado, redirigir a su dashboard correspondiente
+      const dashboardRoute = getDashboardRouteByRole(user.role);
+      navigate(dashboardRoute);
+    } else {
+      // Si no está autenticado, redirigir a landing
+      navigate("/landing");
+    }
+  }, [user, navigate]);
+
   return null;
 }

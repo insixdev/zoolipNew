@@ -6,7 +6,7 @@ import path from "path";
 const UPLOAD_DIR = path.join(process.cwd(), "public", "upload");
 
 /**
- * Loader para servir imágenes estáticas desde /upload/{filename}
+ * Loader para servir imágenes desde /upload_files/{filename}
  */
 export async function loader({ params }: LoaderFunctionArgs) {
   const { filename } = params;
@@ -16,25 +16,12 @@ export async function loader({ params }: LoaderFunctionArgs) {
   }
 
   try {
-    let filePath = path.join(UPLOAD_DIR, filename);
+    const filePath = path.join(UPLOAD_DIR, filename);
 
     // Verificar que el archivo existe
     if (!existsSync(filePath)) {
-      // Si no existe y no tiene extensión, buscar archivo con extensión
-      console.log(`[UPLOAD STATIC] Archivo no encontrado: ${filePath}, buscando con extensiones...`);
-      
-      // Buscar archivos que comiencen con el nombre
-      const fs = require('fs');
-      const files = fs.readdirSync(UPLOAD_DIR);
-      const foundFile = files.find((f: string) => f.startsWith(filename + ".") || f === filename);
-      
-      if (foundFile) {
-        filePath = path.join(UPLOAD_DIR, foundFile);
-        console.log(`[UPLOAD STATIC] Archivo encontrado con búsqueda: ${foundFile}`);
-      } else {
-        console.warn(`[UPLOAD STATIC] Archivo no encontrado: ${filename}`);
-        return new Response("Archivo no encontrado", { status: 404 });
-      }
+      console.warn(`[UPLOAD LOADER] Archivo no encontrado: ${filePath}`);
+      return new Response("Archivo no encontrado", { status: 404 });
     }
 
     // Leer el archivo
@@ -56,7 +43,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
     const contentType = mimeTypes[extension || ""] || "application/octet-stream";
 
     console.log(
-      `[UPLOAD STATIC] Sirviendo: ${filename} (${contentType}) - ${(fileBuffer.length / 1024).toFixed(2)} KB`
+      `[UPLOAD LOADER] Sirviendo: ${filename} (${contentType}) - ${(fileBuffer.length / 1024).toFixed(2)} KB`
     );
 
     // Retornar el archivo con el tipo MIME correcto y cache headers
@@ -69,7 +56,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
       },
     });
   } catch (error) {
-    console.error(`[UPLOAD STATIC] Error al leer archivo ${filename}:`, error);
+    console.error(`[UPLOAD LOADER] Error al leer archivo ${filename}:`, error);
     return new Response("Error al leer el archivo", { status: 500 });
   }
 }

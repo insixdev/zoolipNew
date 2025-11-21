@@ -84,6 +84,7 @@ export async function getUserFromRequest(
       "[CACHE] Usando cache - No llamada al servidor, usuario:",
       username
     );
+    console.log("[CACHE] imagen_url en cache:", cached.data.user?.imagen_url);
 
     return cached.data;
   } else if (cached) {
@@ -189,25 +190,70 @@ export async function getUserFromRequest(
         }
       }
 
+      // Extraer biografia e imagen_url de la respuesta del endpoint /me
+      // El backend devuelve imagenUrl (camelCase), no imagen_url (snake_case)
+      const responseObj = response as any;
+      
+      console.log("[me.ts] RESPONSE OBJ:", responseObj);
+      
+      const biografia = responseObj.biografia || null;
+      let imagen_url = responseObj.imagenUrl || null;
+
+      console.log("[me.ts] EXTRACCION COMPLETA:", {
+        biografia,
+        imagen_url,
+      });
+
+      // Las imágenes se guardan en public/upload
+      // Usar solo rutas relativas /upload/
+      let fullImageUrl = imagen_url;
+      if (imagen_url) {
+        if (!imagen_url.startsWith("/upload/")) {
+          fullImageUrl = `/upload/${imagen_url}`;
+        }
+        // Si no tiene extensión, agregar .png por defecto
+        if (fullImageUrl && !fullImageUrl.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)) {
+          fullImageUrl += ".png";
+        }
+      }
+      console.log("[me.ts] imagen_url final:", fullImageUrl);
+
       // en caso de que sea valido el token
       const user = {
         id: jwtPayload.payload.id_usuario.toString(),
         email: jwtPayload.payload.email,
         username: jwtPayload.payload.sub,
         role: role,
+        biografia: biografia,
+        imagen_url: fullImageUrl,
       } as User;
+      
+      console.log("[me.ts] Usuario construido con campos:", {
+        id: user.id,
+        username: user.username,
+        biografia: user.biografia,
+        imagen_url: user.imagen_url,
+      });
 
-      console.log("result que se guardara en cache", user);
+      console.log("result que se guardara en cache", {
+        userBiografia: user.biografia,
+        userImagenUrl: user.imagen_url,
+      });
+      
       const result = {
         user: {
           id: jwtPayload.payload.id_usuario.toString(),
           email: jwtPayload.payload.email,
           username: jwtPayload.payload.sub,
           role: role,
+          biografia: biografia,
+          imagen_url: fullImageUrl,
         },
         status: "ok",
         message: "User found on SSR",
       } as UserResponseHandler;
+
+      console.log("[me.ts] Result a guardar en cache:", result.user);
 
       // Guardar en caché
       if (cookieHeader) {
@@ -215,7 +261,10 @@ export async function getUserFromRequest(
           data: result,
           timestamp: Date.now(),
         });
-        console.log("GUARDADO EN CACHE para authProvider");
+        console.log("✓ GUARDADO EN CACHE para authProvider", {
+          biografia: result.user.biografia,
+          imagen_url: result.user.imagen_url,
+        });
       }
       console.log(
         "NOOOOOOOOO USNADOCACHE - CON LLAMADA data:" + JSON.stringify(result)

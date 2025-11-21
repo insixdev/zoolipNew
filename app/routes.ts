@@ -1,17 +1,12 @@
 import type { RouteConfig } from "@react-router/dev/routes";
 import { index, route } from "@react-router/dev/routes";
-
 export default [
   // Index route is now community (social feed)
   //
   //
   index("routes/_index.tsx"),
 
-  route("admin-register/invite/:token", "routes/admin/adminRegisterInvite.tsx"),
-
-  route("admin", "routes/admin/_layout.tsx", [
-    index("routes/admin/dashboard.tsx"), // /admin - dashboard principal
-    route("chat", "routes/admin/chat.tsx"), // /admin/chat
+  route("admin-register/invite/:token", "routes/admin/adminRegisterInvite.tsx"), route("admin", "routes/admin/_layout.tsx", [ index("routes/admin/dashboard.tsx"), // /admin - dashboard principal route("chat", "routes/admin/chat.tsx"), // /admin/chat
     route("system", "routes/admin/system/system.tsx"), // /admin/system
     route(
       "system/institutionSolicitudes",
@@ -131,7 +126,9 @@ export default [
 
   // Adoption API routes
   route("api/adoption/solicitar", "routes/api/adoption/solicitar.ts"),
-  route("api/adoption/completar", "routes/api/adoption/completar.ts"),
+  
+  // Community API routes
+  route("api/community/postsRefresh", "routes/api/community/postsRefresh.ts"),
 
   // User API routes
   route("api/user/update", "routes/api/user/update.ts"),

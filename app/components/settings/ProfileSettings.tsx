@@ -1,18 +1,43 @@
 import { Save, Camera } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
-import { LoaderFunctionArgs, useFetcher, useNavigate } from "react-router";
+import { useFetcher, useNavigate } from "react-router";
 import { useSmartAuth } from "~/features/auth/useSmartAuth";
+import ImageUploader from "~/components/upload/ImageUploader";
+import type { User } from "~/features/entities/User";
 
-// opcional, si después querés cargar algo del backend
-export async function loader({ request }: LoaderFunctionArgs) {}
+interface ProfileSettingsProps {
+  user?: User | null;
+}
 
-export default function ProfileSettings() {
-  const { user } = useSmartAuth();
+export default function ProfileSettings({ user: propUser }: ProfileSettingsProps) {
+  const { user: authUser } = useSmartAuth();
+  const user = propUser || authUser;
   const fetcher = useFetcher();
   const navigate = useNavigate();
   const formRef = useRef<HTMLFormElement>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [result, setResult] = useState<string | null>(null);
+  const [imagenUrl, setImagenUrl] = useState<string>("");
+  const [biografia, setBiografia] = useState<string>("");
+
+  console.log("[ProfileSettings] Usuario recibido:", {
+    username: user?.username,
+    email: user?.email,
+    imagen_url: user?.imagen_url,
+    biografia: user?.biografia,
+  });
+
+  // Actualizar states cuando el usuario cambia (cuando llega del loader)
+  useEffect(() => {
+    if (user) {
+      console.log("[ProfileSettings] Actualizando states con usuario:", {
+        imagen_url: user.imagen_url,
+        biografia: user.biografia,
+      });
+      setImagenUrl(user.imagen_url || "");
+      setBiografia(user.biografia || "");
+    }
+  }, [user?.id]); // Usar ID como dependencia para evitar loops infinitos
 
   const isSaving = fetcher.state === "submitting";
 
@@ -20,12 +45,19 @@ export default function ProfileSettings() {
   useEffect(() => {
     if (fetcher.data?.status === "success" && fetcher.state === "idle") {
       // Mostrar mensaje brevemente antes de redirigir
-      setResult("✓ Cambios guardados. Redirigiendo al login...");
+      const message = imagenUrl 
+        ? `✓ Cambios guardados. Imagen actualizada: ${imagenUrl}. Redirigiendo al login...`
+        : "✓ Cambios guardados. Redirigiendo al login...";
+      setResult(message);
+      console.log("[ProfileSettings] ✓ Update success:", {
+        imagen_url: imagenUrl,
+        response: fetcher.data,
+      });
       setTimeout(() => {
         navigate("/auth/login");
-      }, 1500);
+      }, 2000);
     }
-  }, [fetcher.data, fetcher.state, navigate]);
+  }, [fetcher.data, fetcher.state, navigate, imagenUrl]);
 
   const handleGuardar = (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,14 +73,24 @@ export default function ProfileSettings() {
 
     const formData = new FormData(formRef.current);
 
-    // Crear un nuevo FormData solo con los campos que tienen valor
-    const cleanFormData = new FormData();
+      // Crear un nuevo FormData solo con los campos que tienen valor
+      const cleanFormData = new FormData();
 
-    // Solo agregar campos que tienen valor y son diferentes del original
-    const nombre = formData.get("nombre") as string;
-    const email = formData.get("email") as string;
-    const imagen_url = formData.get("imagen_url") as string;
-    const biografia = formData.get("biografia") as string;
+      // Leer del DOM
+      const nombre = formData.get("nombre") as string;
+      const email = formData.get("email") as string;
+      
+      // Usar el state para biografia e imagen_url que se actualizaron
+      const biografiaValue = biografia;
+      const imagen_url = imagenUrl;
+
+      console.log("[confirmSave] Valores extraídos:", {
+        nombre,
+        email,
+        biografia: biografiaValue,
+        imagen_url,
+        imagenUrlState: imagenUrl,
+      });
 
     if (nombre && nombre.trim()) {
       cleanFormData.append("nombre", nombre.trim());
@@ -58,13 +100,29 @@ export default function ProfileSettings() {
       cleanFormData.append("email", email.trim());
     }
 
-    // Solo enviar imagen_url si tiene valor
+    // Enviar imagen_url del state (se actualiza en onUploadSuccess)
     if (imagen_url && imagen_url.trim()) {
       cleanFormData.append("imagen_url", imagen_url.trim());
+      console.log("[confirmSave] ✓ Agregando imagen_url:", imagen_url);
+    } else {
+      console.log("[confirmSave] ⚠️ Sin imagen_url");
     }
 
     // Siempre enviar biografía (puede estar vacía para borrarla)
-    cleanFormData.append("biografia", biografia ? biografia.trim() : "");
+    cleanFormData.append("biografia", biografiaValue ? biografiaValue.trim() : "");
+
+    console.log("[confirmSave] FormData a enviar - campos:", 
+      Array.from(cleanFormData.entries()).map(([k, v]) => k)
+    );
+    
+    // Debug: mostrar toda la formData
+    console.log("[confirmSave] FormData COMPLETA:", {
+      nombre,
+      email,
+      biografia: biografiaValue,
+      imagen_url,
+      allEntries: Array.from(cleanFormData.entries()),
+    });
 
     fetcher.submit(cleanFormData, {
       method: "post",
@@ -88,15 +146,22 @@ export default function ProfileSettings() {
       <div className="px-4 py-5 sm:p-6">
         <h3 className="text-lg leading-6 font-medium text-gray-900 mb-6">
           Información del Perfil
-
         </h3>
 
         {/* Avatar */}
         <div className="flex items-center space-x-6 mb-6">
           <div className="relative">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-rose-100 to-rose-200 flex items-center justify-center text-rose-700 font-bold text-2xl">
-              TU
-            </div>
+            {imagenUrl ? (
+              <img
+                src={imagenUrl}
+                alt="Avatar"
+                className="w-20 h-20 rounded-full object-cover border-2 border-rose-500"
+              />
+            ) : (
+              <div className="w-20 h-20 rounded-full bg-gradient-to-br from-rose-100 to-rose-200 flex items-center justify-center text-rose-700 font-bold text-2xl">
+                TU
+              </div>
+            )}
             <button
               type="button"
               className="absolute -bottom-1 -right-1 w-8 h-8 bg-rose-500 rounded-full flex items-center justify-center text-white hover:bg-rose-600 transition-colors"
@@ -125,8 +190,8 @@ export default function ProfileSettings() {
                 type="text"
                 name="nombre"
                 defaultValue={user?.username || ""}
-                required
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-rose-500 focus:border-rose-500 sm:text-sm text-gray-900"
+                disabled
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-rose-500 focus:border-rose-500 sm:text-sm text-gray-900 bg-gray-50"
               />
             </div>
 
@@ -144,8 +209,8 @@ export default function ProfileSettings() {
                 type="email"
                 name="email"
                 defaultValue={user?.email || ""}
-                required
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-rose-500 focus:border-rose-500 sm:text-sm text-gray-900"
+                disabled
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-rose-500 focus:border-rose-500 sm:text-sm text-gray-900 bg-gray-50"
               />
             </div>
 
@@ -176,26 +241,38 @@ export default function ProfileSettings() {
             <textarea
               name="biografia"
               rows={3}
-              defaultValue={user?.biografia || ""}
+              value={biografia}
+              onChange={(e) => setBiografia(e.target.value)}
               placeholder="Cuéntanos sobre ti..."
               className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-rose-500 focus:border-rose-500 sm:text-sm text-gray-900"
             />
           </div>
 
-          {/* URL de imagen (opcional) */}
+          {/* Subir imagen de perfil */}
           <div className="mt-6 col-span-2">
-
-            <label className="block text-sm font-medium text-gray-700">
-              URL de imagen de perfil (opcional)
-            </label>
-            <input
-              type="url"
-              name="imagen_url"
-              defaultValue=""
-              placeholder="https://ejemplo.com/mi-foto.jpg"
-              className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-rose-500 focus:border-rose-500 sm:text-sm text-gray-900"
+            <ImageUploader
+                onUploadSuccess={(fileUrl) => {
+                 // Usar directamente /upload/ sin conversión
+                 console.log("[ProfileSettings] Imagen subida exitosamente:", fileUrl);
+                 setImagenUrl(fileUrl);
+                }}
+              currentImage={imagenUrl}
+              label="Foto de perfil"
+              maxSizeMB={5}
             />
-
+            {/* Input oculto para enviar la URL en el formulario */}
+            <input
+              type="hidden"
+              name="imagen_url"
+              value={imagenUrl}
+              onChange={() => {}}
+            />
+            {/* Debug: mostrar el valor */}
+            {imagenUrl && (
+              <div className="text-xs text-gray-500 mt-2">
+                URL guardada: {imagenUrl}
+              </div>
+            )}
           </div>
 
           {/* Botón Guardar */}

@@ -16,8 +16,15 @@ async function ensureUploadDir() {
 }
 
 // Procesar upload de imagen localmente
-async function uploadImageFile(imagenFile: File): Promise<string | null> {
+async function uploadImageFile(imagenFile: File, request: Request): Promise<string | null> {
+  console.log("[UPLOAD] uploadImageFile llamado con:", {
+    nombre: imagenFile?.name,
+    tamaño: imagenFile?.size,
+    tipo: imagenFile?.type,
+  });
+
   if (!imagenFile || imagenFile.size === 0) {
+    console.log("[UPLOAD] Imagen file vacía o null");
     return null;
   }
 
@@ -25,14 +32,14 @@ async function uploadImageFile(imagenFile: File): Promise<string | null> {
     await ensureUploadDir();
 
     console.log(
-      "[CREATE POST] Procesando imagen localmente:",
+      "[UPLOAD] Procesando imagen localmente:",
       imagenFile.name,
       `(${(imagenFile.size / 1024).toFixed(2)} KB)`
     );
 
     // Validar tamaño (máximo 5MB)
     if (imagenFile.size > 5 * 1024 * 1024) {
-      console.error("[CREATE POST] Archivo muy grande");
+      console.error("[UPLOAD] Archivo muy grande");
       return null;
     }
 
@@ -43,16 +50,20 @@ async function uploadImageFile(imagenFile: File): Promise<string | null> {
     const fileName = `${timestamp}-${randomString}.${extension}`;
     const filePath = path.join(UPLOAD_DIR, fileName);
 
+    console.log("[UPLOAD] Guardando en:", filePath);
+
     // Guardar archivo
     const arrayBuffer = await imagenFile.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     await writeFile(filePath, buffer);
 
-    const fileUrl = `/upload/${fileName}`;
-    console.log("[CREATE POST] Imagen guardada localmente:", fileUrl);
+    // Construir URL completa
+    const origin = request.headers.get("origin") || request.headers.get("referer")?.split("/").slice(0, 3).join("/") || "http://localhost:5173";
+    const fileUrl = `${origin}/upload/${fileName}`;
+    console.log("[UPLOAD] ✅ Imagen guardada localmente:", fileUrl);
     return fileUrl;
   } catch (err) {
-    console.error("[CREATE POST] Error al guardar imagen:", err);
+    console.error("[UPLOAD] ❌ Error al guardar imagen:", err);
     return null;
   }
 }
@@ -74,17 +85,31 @@ export async function action({ request }) {
 
   const formData = await request.formData();
   
+  console.log("[CREATE POST] FormData keys:", Array.from(formData.keys()));
+
   // Procesar imagen_file si existe (archivo en multipart del cliente)
   let imagenUrl = formData.get("imagen_url")?.toString() || "";
   const imagenFile = formData.get("imagen_file") as File | null;
 
+  console.log("[CREATE POST] imagen_file:", {
+    existe: !!imagenFile,
+    tipo: imagenFile?.constructor.name,
+    nombre: imagenFile?.name,
+    tamaño: imagenFile?.size,
+  });
+
   // Si hay archivo imagen_file, procesar localmente
   if (imagenFile && imagenFile.size > 0) {
-    const uploadedUrl = await uploadImageFile(imagenFile);
+    console.log("[CREATE POST] Procesando imagen...");
+    const uploadedUrl = await uploadImageFile(imagenFile, request);
+    console.log("[CREATE POST] uploadImageFile retornó:", uploadedUrl);
     if (uploadedUrl) {
       imagenUrl = uploadedUrl;
+      console.log("[CREATE POST] imagenUrl actualizada a:", imagenUrl);
     }
     // Si falla el upload, continuar sin imagen (no bloquear el post)
+  } else {
+    console.log("[CREATE POST] No hay imagen_file o está vacía");
   }
 
   // Crear objeto de datos para validación

@@ -10,6 +10,7 @@ import { Loader2 } from "lucide-react";
 import { getUserLikes, addLike, removeLike } from "~/lib/likeStorage";
 import { getAllPublicPublicationsService } from "~/features/post/postService";
 import { postParseResponse } from "~/features/post/postResponseParse";
+import { formatTimestamp, formatTimestampLong, formatTimestampTime } from "~/lib/formatTimestamp";
 import type { Post } from "~/components/community/indexCommunity/PostCard";
 
 // Loader para verificar autenticacion y obtener token y posts para tendencias
@@ -71,7 +72,7 @@ export default function CommunityBuscar() {
       type: "user" as const,
       name: user.nombre || user.username,
       username: `@${user.username}`,
-      avatar: `https://i.pravatar.cc/150?img=${user.id || 1}`,
+      avatar: user.imagen_url || user.imagenUrl || "",
       bio: user.email || "",
       role: user.role || user.rol,
     }));
@@ -85,7 +86,7 @@ export default function CommunityBuscar() {
       author: post.nombreUsuario || "Usuario",
       authorId: post.id|| post.idUsuario,
       username: `@${post.nombreUsuario || "usuario"}`,
-      avatar: `https://i.pravatar.cc/150?img=${post.id_publicacion || post.idPublicacion || 1}`,
+      avatar: post.imagenUrl || post.imagen_url || post.imagen_usuario || post.imagenUsuario || "",
       content: post.contenido,
       topico: post.topico,
       publicationType: post.tipo as "CONSULTA" | "PUBLICACION",
@@ -347,46 +348,6 @@ export default function CommunityBuscar() {
 }
 
 // Helper para formatear timestamp
-export function formatTimestamp(dateString: string): string {
-  if (!dateString) return "Hace un momento";
-
-  try {
-    // Validar que sea string
-    if (typeof dateString !== "string") {
-      return "Hace un momento";
-    }
-
-    // Si no tiene Z ni zona horaria, agregamos Z
-    // Pero primero validar que sea un formato ISO válido
-    const hasTimezone = /Z$|[+-]\d\d:\d\d$/.test(dateString);
-    const normalized = hasTimezone ? dateString : dateString + "Z";
-
-    const date = new Date(normalized);
-    
-    // Validar que la fecha sea válida
-    if (isNaN(date.getTime())) {
-      return "Hace un momento";
-    }
-
-    const now = new Date();
-    const diffMs = now.getTime() - date.getTime();
-    
-    // Si la diferencia es negativa (fecha en el futuro), devolver "Ahora"
-    if (diffMs < 0) return "Ahora";
-    
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return "Ahora";
-    if (diffMins < 60) return `${diffMins}m`;
-    if (diffHours < 24) return `${diffHours}h`;
-    if (diffDays < 7) return `${diffDays}d`;
-
-    return date.toLocaleDateString();
-  } catch (error) {
-    console.warn("[formatTimestamp] Error parsing date:", dateString, error);
-    return "Hace un momento";
-  }
-}
+// Re-export from centralized location
+export { formatTimestamp, formatTimestampLong, formatTimestampTime } from "~/lib/formatTimestamp";
 

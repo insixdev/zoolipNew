@@ -73,8 +73,9 @@ export async function action({ request }: ActionFunctionArgs) {
     const buffer = Buffer.from(arrayBuffer);
     await writeFile(filePath, buffer);
 
-    // URL pública del archivo
-    const fileUrl = `/upload/${fileName}`;
+    // URL pública completa del archivo
+    const origin = request.headers.get("origin") || request.headers.get("referer")?.split("/").slice(0, 3).join("/") || "http://localhost:5173";
+    const fileUrl = `${origin}/upload/${fileName}`;
 
     console.log("[UPLOAD API] File saved successfully:", fileUrl);
 

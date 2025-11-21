@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/Avatar";
 import { ImageIcon, Loader2, X } from "lucide-react";
 import { AuthRoleComponent } from "~/components/auth/AuthRoleComponent";
 import { USER_ROLES } from "~/lib/constants";
+import { useSmartAuth } from "~/features/auth/useSmartAuth";
 
 type CreatePostCardProps = {
   onPostCreated?: (data: { content: string; topico: string }) => void;
@@ -14,20 +15,22 @@ type CreatePostCardProps = {
  * Flujo: Elegir imagen (preview en memoria) → Publicar (sube imagen + crea post en servidor)
  */
 export default function CreatePostCard({ onPostCreated }: CreatePostCardProps) {
-  // Archivo seleccionado (en memoria, sin subir)
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  // Preview local del archivo (blob URL)
-  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+   const { user } = useSmartAuth();
+   
+   // Archivo seleccionado (en memoria, sin subir)
+   const [imageFile, setImageFile] = useState<File | null>(null);
+   // Preview local del archivo (blob URL)
+   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
 
-  // Estado del formulario
-  const [content, setContent] = useState("");
-  const [topico, setTopico] = useState("");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [onFocusCrear, setFocusCrear] = useState<boolean>(false);
+   // Estado del formulario
+   const [content, setContent] = useState("");
+   const [topico, setTopico] = useState("");
+   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+   const [onFocusCrear, setFocusCrear] = useState<boolean>(false);
 
-  // Fetcher para crear el post (que incluirá la imagen)
-  const postFetcher = useFetcher();
-  const hasCleared = useRef(false);
+   // Fetcher para crear el post (que incluirá la imagen)
+   const postFetcher = useFetcher();
+   const hasCleared = useRef(false);
 
   const isSubmitting = postFetcher.state === "submitting";
 
@@ -195,10 +198,15 @@ export default function CreatePostCard({ onPostCreated }: CreatePostCardProps) {
       >
         <form onSubmit={handleSubmit}>
           <div className="flex items-start gap-4">
-            <Avatar className="w-12 h-12">
-              <AvatarImage src="https://i.pravatar.cc/150?img=33" alt="Tu" />
-              <AvatarFallback>TU</AvatarFallback>
-            </Avatar>
+            {user?.imagen_url ? (
+              <Avatar className="w-12 h-12">
+                <AvatarImage src={user.imagen_url} alt={user?.username || "Tu"} />
+              </Avatar>
+            ) : (
+              <Avatar className="w-12 h-12">
+                <AvatarFallback>{user?.username?.substring(0, 2).toUpperCase() || "TU"}</AvatarFallback>
+              </Avatar>
+            )}
 
             <div className="flex-1">
               {/* Input de tópico */}

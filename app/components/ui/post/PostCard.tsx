@@ -13,6 +13,7 @@ import {
   CardFooter,
   CardHeader,
 } from "~/components/ui/card";
+import { formatTimestamp } from "~/lib/formatTimestamp";
 
 export type Post = {
   id: string;
@@ -49,27 +50,36 @@ export default function PostCard({
   onShare,
   onSave,
 }: PostCardProps) {
+  // Usar la fecha de creación o edición
+  const displayDate = post.fecha_edicion || post.fecha_creacion;
+  const formattedDate = formatTimestamp(displayDate);
+
   return (
     <Card className="bg-gradient-to-br from-white to-orange-50 border-2 border-orange-100 hover:border-orange-200 transition-all duration-200 hover:shadow-sm">
       {/* Post Header */}
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Avatar className="w-11 h-11">
-              <AvatarImage
-                src={post.author.avatar}
-                alt={post.author.username /*name*/}
-              />
-              <AvatarFallback>
-                {post.author.username /*name[0]*/}
-              </AvatarFallback>
-            </Avatar>
+            {post.author.avatar ? (
+              <Avatar className="w-11 h-11">
+                <AvatarImage
+                  src={post.author.avatar}
+                  alt={post.author.username}
+                />
+              </Avatar>
+            ) : (
+              <Avatar className="w-11 h-11">
+                <AvatarFallback>
+                  {post.author.username[0]}
+                </AvatarFallback>
+              </Avatar>
+            )}
             <div>
               <p className="font-semibold text-gray-900">
-                {post.author.username /*name*/}
+                {post.author.username}
               </p>
               <p className="text-sm text-gray-500">
-                {post.author.username} · {post.fecha_creacion}
+                {post.author.username} · {formattedDate}
               </p>
             </div>
           </div>
@@ -163,6 +173,12 @@ export default function PostCard({
           </div>
 
           {/* Bookmark Button */}
+          <button
+            onClick={() => onSave?.(post.id)}
+            className="text-gray-600 hover:text-rose-600 transition-colors"
+          >
+            <Bookmark size={22} />
+          </button>
         </div>
       </CardFooter>
     </Card>

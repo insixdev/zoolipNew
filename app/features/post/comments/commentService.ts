@@ -227,7 +227,20 @@ export async function getCommentsByPublicationService(
 
     const data = await res.json();
     console.log(`[COMMENT] Comments received:`, data);
-    return data;
+    
+    // Asegurar que siempre retornamos un array
+    if (Array.isArray(data)) {
+      return data;
+    }
+    if (Array.isArray(data.data)) {
+      return data.data;
+    }
+    if (Array.isArray(data.comments)) {
+      return data.comments;
+    }
+    
+    console.warn("[COMMENT] Unexpected response format:", data);
+    return [];
   } catch (err) {
     console.error(" Get comments by publication error:", err);
     throw err;

@@ -6,6 +6,7 @@ type CommentInputProps = {
   onSubmit: (content: string) => void;
   placeholder?: string;
   userAvatar?: string;
+  userName?: string;
   isSubmitting?: boolean;
 };
 
@@ -13,7 +14,8 @@ export default function CommentInput({
   postId,
   onSubmit,
   placeholder = "Escribe un comentario...",
-  userAvatar = "https://i.pravatar.cc/150?img=33",
+  userAvatar = "",
+  userName = "Usuario",
   isSubmitting = false,
 }: CommentInputProps) {
   const [content, setContent] = useState("");
@@ -48,8 +50,11 @@ export default function CommentInput({
       className="flex gap-3 p-4 border-t border-gray-100"
     >
       <Avatar className="w-8 h-8 flex-shrink-0">
-        <AvatarImage src={userAvatar} alt="Tu" />
-        <AvatarFallback>TU</AvatarFallback>
+        {userAvatar ? (
+          <AvatarImage src={userAvatar} alt={userName} />
+        ) : (
+          <AvatarFallback>{userName.substring(0, 2).toUpperCase()}</AvatarFallback>
+        )}
       </Avatar>
 
       <div className="flex-1 flex gap-2">

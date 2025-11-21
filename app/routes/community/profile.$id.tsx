@@ -4,6 +4,7 @@ import {
   
 } from "~/features/user/userService";
 import type { UserGetResponse } from "~/features/user/types";
+import { useSmartAuth } from "~/features/auth/useSmartAuth";
 import { getUserFieldFromCookie, field } from "~/lib/authUtil";
 import { Settings, ArrowDownUpIcon as Adopt,Grid, Bookmark, Heart, Dog, ShieldCheck} from "lucide-react";
 import { useState } from "react";
@@ -19,7 +20,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const cookie = request.headers.get("Cookie");
 
   if (!cookie) {
-    return Response.redirect("/auth/login");
+    const url = new URL(request.url);
+    return Response.redirect(new URL("/auth/login", url.origin).toString());
   }
 
   const userId = params.id;
@@ -131,7 +133,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function UserProfile() {
-   const { user, isOwnProfile,  mascotas, userPosts, userConsultas, isRole} =
+   const { user: loaderUser, isOwnProfile,  mascotas, userPosts, userConsultas, isRole} =
      useLoaderData<{
        user: UserGetResponse;
        isOwnProfile: boolean;
@@ -140,20 +142,27 @@ export default function UserProfile() {
        userConsultas: Post[];
        isRole:string | null; 
      }>();
+   
+   // Si es el perfil propio, usar los datos del contexto de autenticación que incluye la imagen
+   const { user: authUser } = useSmartAuth();
+   const user = isOwnProfile && authUser?.imagen_url ? {
+     ...loaderUser,
+     imagen_url: authUser.imagen_url
+   } : loaderUser;
 
-  const [activeTab, setActiveTab] = useState<
-    "posts" | "consultas" | "saved" | "mascotas"
-  >("posts");
+   const [activeTab, setActiveTab] = useState<
+     "posts" | "consultas" | "saved" | "mascotas"
+   >("posts");
 
-  // Número de publicaciones y consultas del usuario
-  const publicaciones = userPosts?.length || 0;
-  const consultas = userConsultas?.length || 0;
+   // Número de publicaciones y consultas del usuario
+   const publicaciones = userPosts?.length || 0;
+   const consultas = userConsultas?.length || 0;
 
-  // Verificar si es un refugio o adoptante
-  const isAdoptante = isRole === "ADOPTANTE"; 
-  const isRefugio = isRole === "ADMIN";
+   // Verificar si es un refugio o adoptante
+   const isAdoptante = isRole === "ADOPTANTE"; 
+   const isRefugio = isRole === "ADMIN";
 
-  const showMascotas = isRefugio || (isAdoptante && isOwnProfile);
+   const showMascotas = isRefugio || (isAdoptante && isOwnProfile);
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -171,7 +180,7 @@ export default function UserProfile() {
               viewBox="0 0 24 24"
             >
               <path
-                strokeLinecap="round"o adoptado
+                strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth={2}
                 d="M15 19l-7-7 7-7"
@@ -188,18 +197,27 @@ export default function UserProfile() {
             <div className="flex items-start gap-8">
               {/* Avatar principal */}
               <div className="flex-shrink-0">
-                <div className="w-32 h-32 rounded-full bg-gradient-to-br from-orange-400 to-pink-400 p-1">
-                  <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
-                    <img
-                      src={
-                        user.imagen_url ||
-                        `https://i.pravatar.cc/150?u=${user.nombre}`
-                      }
-                      alt={user.nombre}
-                      className="w-28 h-28 rounded-full object-cover"
-                    />
+                {user.imagen_url ? (
+                  <div className="w-32 h-32 rounded-full bg-gradient-to-br from-orange-400 to-pink-400 p-1">
+                    <div className="w-full h-full rounded-full bg-white flex items-center justify-center overflow-hidden">
+                      <img
+                        src={
+                          user.imagen_url.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)
+                            ? user.imagen_url
+                            : `${user.imagen_url}.png`
+                        }
+                        alt={user.nombre}
+                        className="w-28 h-28 rounded-full object-cover"
+                      />
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="w-32 h-32 rounded-full bg-gradient-to-br from-orange-400 to-pink-400 p-1">
+                    <div className="w-full h-full rounded-full bg-white flex items-center justify-center">
+                      <div className="text-center text-gray-400">Sin foto</div>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Información del usuario */}
@@ -370,11 +388,17 @@ export default function UserProfile() {
                         className="bg-white rounded-xl shadow-md border border-gray-100 p-6 hover:shadow-lg transition-all"
                       >
                         <div className="flex items-start gap-4">
+                          {user.imagen_url && (
                           <img
-                             src={user.imagen_url || `https://i.pravatar.cc/48?u=${user.nombre}`}
+                             src={
+                               user.imagen_url.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)
+                                 ? user.imagen_url
+                                 : `${user.imagen_url}.png`
+                             }
                              alt={user.nombre}
-                             className="w-12 h-12 rounded-full"
+                             className="w-12 h-12 rounded-full object-cover"
                            />
+                          )}
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
                               <h3 className="font-semibold text-gray-900">
@@ -436,15 +460,21 @@ export default function UserProfile() {
                   <div className="space-y-6">
                     {userConsultas.map((consulta) => (
                       <div
-                        key={consulta.id}
-                        className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl shadow-md border border-purple-100 p-6 hover:shadow-lg transition-all"
+                       key={consulta.id}
+                       className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl shadow-md border border-purple-100 p-6 hover:shadow-lg transition-all"
                       >
-                        <div className="flex items-start gap-4">
-                           <img
-                             src={user.imagen_url || `https://i.pravatar.cc/48?u=${user.nombre}`}
-                             alt={user.nombre}
-                             className="w-12 h-12 rounded-full"
-                           />
+                       <div className="flex items-start gap-4">
+                          {user.imagen_url && (
+                          <img
+                            src={
+                              user.imagen_url.match(/\.(jpg|jpeg|png|gif|webp|svg)$/i)
+                                ? user.imagen_url
+                                : `${user.imagen_url}.png`
+                            }
+                            alt={user.nombre}
+                            className="w-12 h-12 rounded-full object-cover"
+                          />
+                          )}
                            <div className="flex-1">
                              <div className="flex items-center gap-2 mb-2">
                                <h3 className="font-semibold text-gray-900">

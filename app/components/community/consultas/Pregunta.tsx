@@ -1,8 +1,10 @@
 import { MessageCircle, ThumbsUp, Clock, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Link } from "react-router";
+import { formatTimestamp } from "~/lib/formatTimestamp";
 import CommentsSection from "../comentarios/CommentsSection";
 import type { Comment } from "../comentarios/CommentItem";
+import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/Avatar";
 
 interface PreguntaProps {
   id: string;
@@ -59,10 +61,12 @@ export function Pregunta({
 
   // Actualizar contador cuando cambian los comentarios
   useEffect(() => {
+    console.log(`[PREGUNTA] Comments updated for ${id}:`, comments.length);
     if (comments.length > 0) {
       setCommentCount(comments.length);
+      console.log(`[PREGUNTA] First comment:`, comments[0]);
     }
-  }, [comments]);
+  }, [comments, id]);
 
   const handleCommentClick = () => {
     const newShowState = !showComments;
@@ -80,30 +84,6 @@ export function Pregunta({
 
   const handleLike = () => {
     onLike?.(id);
-  };
-
-  // Formatear fecha de forma relativa
-  const formatTimestamp = (dateString: string): string => {
-    try {
-      const date = new Date(dateString);
-      const now = new Date();
-      const diffMs = now.getTime() - date.getTime();
-      const diffMins = Math.floor(diffMs / 60000);
-      const diffHours = Math.floor(diffMs / 3600000);
-      const diffDays = Math.floor(diffMs / 86400000);
-
-      if (diffMins < 1) return "Ahora";
-      if (diffMins < 60) return `Hace ${diffMins} min`;
-      if (diffHours < 24) return `Hace ${diffHours}h`;
-      if (diffDays < 7) return `Hace ${diffDays}d`;
-
-      return date.toLocaleDateString("es-ES", {
-        day: "numeric",
-        month: "short",
-      });
-    } catch (err) {
-      return dateString;
-    }
   };
 
   const formattedTimestamp = formatTimestamp(timestamp);
@@ -156,29 +136,18 @@ export function Pregunta({
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-8 hover:shadow-xl transition-all duration-300 cursor-pointer hover:-translate-y-1">
       <div className="flex items-start gap-6">
-        {authorId ? (
-          <Link
-            to={`/community/profile/${authorId}`}
-            className="relative flex-shrink-0"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <img
-              src={avatar}
-              alt={author}
-              className="w-14 h-14 rounded-full ring-4 ring-rose-100 hover:ring-rose-300 transition-all cursor-pointer"
-            />
-            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-4 border-white"></div>
-          </Link>
-        ) : (
-          <div className="relative flex-shrink-0">
-            <img
-              src={avatar}
-              alt={author}
-              className="w-14 h-14 rounded-full ring-4 ring-rose-100"
-            />
-            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-4 border-white"></div>
-          </div>
-        )}
+        <div className="relative flex-shrink-0">
+          {avatar ? (
+            <Avatar className="w-14 h-14">
+              <AvatarImage src={avatar} alt={author} />
+            </Avatar>
+          ) : (
+            <Avatar className="w-14 h-14">
+              <AvatarFallback>{author?.charAt(0) ?? "U"}</AvatarFallback>
+            </Avatar>
+          )}
+          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-4 border-white"></div>
+        </div>
 
         <div className="flex-1">
           <div className="flex items-start justify-between mb-3 gap-4">

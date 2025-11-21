@@ -116,7 +116,7 @@ export default function RefugioDetails() {
             <div className="flex-shrink-0">
               <img
                 className="h-32 w-32 rounded-full ring-4 ring-white"
-                src={`https://i.pravatar.cc/150?img=${institution.id_institucion % 60}`}
+                src={institution.imagen_url || institution.imagenUrl || ""}
                 alt={institution.nombre}
               />
             </div>

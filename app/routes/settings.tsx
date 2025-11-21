@@ -11,6 +11,7 @@ import {
   SettingsNavigation,
 } from "~/components/settings";
 import { requireAuth } from "~/lib/authGuard";
+import type { User } from "~/features/entities/User";
 
 // Loader para proteger la ruta de settings
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -56,7 +57,7 @@ export default function Settings() {
           {/* Main content */}
           <div className="space-y-6 sm:px-6 lg:px-0 lg:col-span-9">
             {activeTab === "accounts" && <AccountsSettings />}
-            {activeTab === "profile" && <ProfileSettings />}
+            {activeTab === "profile" && <ProfileSettings user={user} />}
             {activeTab === "notifications" && <NotificationSettings />}
             {activeTab === "privacy" && <PrivacySettings />}
             {activeTab === "account" && <AccountSettings />}
