@@ -1,15 +1,19 @@
-import { useActionData, type LoaderFunctionArgs } from "react-router";
+import { redirect, useActionData, type LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useFetcher } from "react-router";
 import { useAuth } from "~/features/auth/useAuth";
 import { Link } from "react-router";
 import CommunityNavbar from "~/components/layout/community/CommunityNavbar";
 import SidebarContainer from "~/components/layout/sidebar/SidebarContainer";
-import { Settings, Grid, Bookmark, UserPlus } from "lucide-react";
+import { Settings, Grid, Bookmark, UserPlus, Dog, Heart } from "lucide-react";
 import { useState, useEffect } from "react";
 import { requireAuth } from "~/lib/authGuard";
 
 import { logoutService } from "~/features/auth/authServiceCurrent";
 import { getHeaderCookie } from "~/server/cookies";
+import { getMascotasByInstitucionService, getMisMascotasService } from "~/features/adoption/adoptionService";
+import type { MascotaDTO } from "~/features/adoption/types";
+import { getInstitutionByIdUsuarioService } from "~/features/entities/institucion/institutionService";
+import { getUserFieldFromCookie, field } from "~/lib/authUtil";
 
 export async function action({ request }: LoaderFunctionArgs) {
   const formData = await request.formData();
@@ -64,6 +68,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // Verificar autenticación (redirige automáticamente si no está autenticado)
   const userResponse = await requireAuth(request);
   const cookie = request.headers.get("Cookie");
+  if(!cookie){
+    return redirect("/auth/login", {
+      headers: {
+        "Cookie":
+          "AUTH_TOKEN=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly",
+      },
+    });
+  }
+
+  // Obtener el rol desde la cookie
+  const rolFromCookie = getUserFieldFromCookie(cookie, field.role);
+  let isRole: string | null = null;
+
+  if (rolFromCookie === "ROLE_ADMINISTRADOR") {
+    isRole = "ADMIN";
+  } else if (rolFromCookie === "ROLE_ADOPTANTE") {
+    isRole = "ADOPTANTE";
+  }
 
   // Obtener publicaciones del usuario actual
   let publications = [];
@@ -91,6 +113,29 @@ export async function loader({ request }: LoaderFunctionArgs) {
     (post: any) => post.publicationType === "CONSULTA"
   );
 
+  // Obtener mascotas basado en el rol desde la cookie
+  let mascotas: MascotaDTO[] = [];
+
+  // Cargar mascotas según el rol
+  if (rolFromCookie === "ROLE_ADMINISTRADOR" && cookie) {
+    try {
+      const userId = getUserFieldFromCookie(cookie, field.id);
+      const institutionId = await getInstitutionByIdUsuarioService(userId, cookie);
+      mascotas = await getMascotasByInstitucionService(
+        institutionId.id_institucion,
+        cookie
+      );
+    } catch (error) {
+      console.error("Error loading institution pets:", error);
+    }
+  } else if (rolFromCookie === "ROLE_ADOPTANTE" && cookie) {
+    try {
+      mascotas = await getMisMascotasService(cookie);
+    } catch (error) {
+      console.error("Error loading my pets:", error);
+    }
+  }
+
   const user = {
     id: userResponse.user.id,
     username: userResponse.user.username,
@@ -98,23 +143,28 @@ export async function loader({ request }: LoaderFunctionArgs) {
     nombre: userResponse.user.username,
     biografia: userResponse.user.biografia || null,
     fechaRegistro: userResponse.user.fecha_registro || "2024-01-15",
-    mascotas: 2,
+    mascotas: mascotas.length,
     publicaciones: userPosts.length,
     consultas: userConsultas.length,
     role: userResponse.user.role,
   };
 
-  return { user, userPosts, userConsultas };
+  return { user, userPosts, userConsultas, mascotas, isRole };
 }
 
 export default function Profile() {
-  const { user, userPosts, userConsultas } = useLoaderData<typeof loader>();
+  const { user, userPosts, userConsultas, mascotas, isRole } = useLoaderData<typeof loader>();
   const { logout, setIsLoading } = useAuth();
   const navigate = useNavigate();
   const fetcher = useFetcher<{ status: string; message: string }>();
-  const [activeTab, setActiveTab] = useState<"posts" | "consultas" | "saved">(
+  const [activeTab, setActiveTab] = useState<"posts" | "consultas" | "saved" | "mascotas">(
     "posts"
   );
+
+  // Verificar si es un refugio o adoptante
+  const isAdoptante = isRole === "ADOPTANTE";
+  const isRefugio = isRole === "ADMIN";
+  const showMascotas = isRefugio || isAdoptante;
 
   const isLoggingOut = fetcher.state === "submitting";
 
@@ -249,9 +299,22 @@ export default function Profile() {
                   <Bookmark size={16} />
                   GUARDADO
                 </button>
-              </div>
-            </div>
-          </div>
+                {showMascotas && (
+                  <button
+                    onClick={() => setActiveTab("mascotas")}
+                    className={`flex items-center gap-2 py-4 text-sm font-medium transition-colors ${
+                      activeTab === "mascotas"
+                        ? "text-gray-900 border-b-2 border-gray-900"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
+                  >
+                    <Dog size={16} />
+                    MIS MASCOTAS
+                  </button>
+                )}
+                </div>
+                </div>
+                </div>
 
           {/* Contenido de tabs */}
           <div className="p-6">
@@ -392,6 +455,128 @@ export default function Profile() {
                 <p className="text-sm text-gray-500">
                   Cuando guardes publicaciones, aparecerán aquí.
                 </p>
+              </div>
+            )}
+
+            {activeTab === "mascotas" && showMascotas && (
+              <div>
+                {mascotas && mascotas.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {mascotas.map((mascota) => (
+                      <div key={mascota.id}>
+                        {isRefugio ? (
+                          <Link
+                            to={`/admin/editarMascota/${mascota.id_Mascota}`}
+                            className="group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg 
+                            transition-all duration-300 hover:-translate-y-1"
+                          >
+                            <div className="aspect-square overflow-hidden bg-gray-100">
+                              <img
+                                src={
+                                  mascota.imagen_url ||
+                                  `https://images.unsplash.com/photo-1560807707-8cc77767d783?w=400&h=400&fit=crop`
+                                }
+                                alt={mascota.nombre}
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                              />
+                            </div>
+
+                            <div className="p-4">
+                              <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                                {mascota.nombre}
+                              </h3>
+                              <p className="text-sm text-gray-600 mb-2">
+                                {mascota.raza} • {mascota.edad} {mascota.edad === 1 ? "año" : "años"}
+                              </p>
+                              {mascota.estadoSalud && (
+                                <p className="text-sm text-gray-500 line-clamp-2">
+                                  {mascota.estadoSalud}
+                                </p>
+                              )}
+                              {mascota.descripcion && (
+                                <p className="text-sm text-gray-500 line-clamp-2">
+                                  {mascota.descripcion}
+                                </p>
+                              )}
+
+                              <div className="mt-3 flex items-center gap-2">
+                                <span className="text-sm text-gray-600">
+                                  {mascota.estadoAdopcion === "ADOPTADO"
+                                    ? "Mascota adoptada"
+                                    : "Mascota disponible"}
+                                </span>
+                              </div>
+
+                              <p className="text-sm pt-4 text-black transition-all cursor-auto ">ir a editar a tu mascota {mascota.nombre || mascota.especie}</p>
+                            </div>
+                          </Link>
+                        ) : (
+                          <Link
+                            to={`/adopt/mis-mascotas/`}
+                            className="group bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg 
+                            transition-all duration-300 hover:-translate-y-1"
+                          >
+                            <div className="aspect-square overflow-hidden bg-gray-100">
+                              <img
+                                src={
+                                  mascota.imagen_url ||
+                                  `https://images.unsplash.com/photo-1560807707-8cc77767d783?w=400&h=400&fit=crop`
+                                }
+                                alt={mascota.nombre}
+                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                              />
+                            </div>
+
+                            <div className="p-4">
+                              <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                                {mascota.nombre}
+                              </h3>
+                              <p className="text-sm text-gray-600 mb-2">
+                                {mascota.raza} • {mascota.edad} {mascota.edad === 1 ? "año" : "años"}
+                              </p>
+                              {mascota.descripcion && (
+                                <p className="text-sm text-gray-500 line-clamp-2">
+                                  {mascota.descripcion}
+                                </p>
+                              )}
+                              <div className="mt-3 flex items-center gap-2">
+                                <span className="text-sm text-gray-600">
+                                  {mascota.estadoAdopcion === "ADOPTADO"
+                                    ? "Mascota adoptada"
+                                    : "Mascota disponible"}
+                                </span>
+                              </div>
+                            </div>
+                          </Link>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-16">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full border-2 border-gray-300 flex items-center justify-center">
+                      <Dog size={24} className="text-gray-400" />
+                    </div>
+                    <h3 className="text-xl font-light text-gray-900 mb-2">
+                      {isRefugio
+                        ? "Aún no has registrado mascotas"
+                        : "Aún no ha adoptado ninguna mascota"}
+                    </h3>
+                    <p className="text-sm text-gray-500">
+                      {isRefugio
+                        ? "Las mascotas que registres aparecerán aquí."
+                        : "Cuando adoptes una mascota, aparecerá aquí."}
+                    </p>
+                    {isRefugio && (
+                      <Link
+                        to="/admin/mascotas"
+                        className="mt-4 inline-block px-6 py-3 bg-gradient-to-r from-rose-500 to-pink-600 text-white rounded-xl hover:from-rose-600 hover:to-pink-700 transition-all shadow-md hover:shadow-lg font-semibold"
+                      >
+                        Registrar mascota
+                      </Link>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>

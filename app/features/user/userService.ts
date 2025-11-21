@@ -55,9 +55,10 @@ export async function getUserByIdService(
   try {
     const headers = new Headers();
     headers.append("Content-Type", "application/json");
+    console.log("IDD", id);
     headers.append("Cookie", cookie);
 
-    const response = await fetch(`${BASE_URL}/user/${id}`, {
+    const response = await fetch(`http://localhost:3050/api/usuario/getUsuarioById?id_usuario=${id}`, {
       method: "GET",
       headers,
     });
@@ -150,37 +151,6 @@ export async function deleteUserService(
   }
 }
 
-/**
- * Obtiene información pública de un usuario por ID
- * Este endpoint es público y no requiere autenticación
- * @param userId - ID del usuario
- * @returns Promise con los datos del usuario
- */
-export async function getPublicUserByIdService(
-  userId: number
-): Promise<UsuarioDTO> {
-  try {
-    const headers = new Headers();
-    headers.append("Content-Type", "application/json");
-
-    const url = `http://localhost:3050/api/usuario/getUsuarioById?id_usuario=${userId}`;
-
-    const response = await fetch(url, {
-      method: "GET",
-      headers,
-    });
-
-    if (!response.ok) {
-      throw new Error(`Error ${response.status}: ${response.statusText}`);
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error("Error fetching public user by id:", error);
-    throw error;
-  }
-}
 
 /**
  * Obtiene los primeros 5 usuarios

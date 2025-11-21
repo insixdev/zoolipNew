@@ -172,7 +172,7 @@ export enum field {
 // y lo decodificamos
 // y obtenemos el payload
 // y obtenemos el campo que queremos
-export function getUserFieldFromCookie(cookie: string, fieldName: string) {
+export function getUserFieldFromCookie(cookie: string, fieldName: string): number | null {
   if (cookie) {
     const token = getTokenFromCookie(cookie);
     if (token) {

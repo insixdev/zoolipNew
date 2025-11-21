@@ -394,12 +394,14 @@ export async function deleteMascotaService(
  * Obtiene las mascotas del usuario autenticado (adoptadas)
  */
 export async function getMisMascotasService(
-  cookie: string
+  cookie?: string
 ): Promise<MascotaDTO[]> {
   try {
     const headers = new Headers();
     headers.append("Content-Type", "application/json");
-    headers.append("Cookie", cookie);
+    if(cookie){
+      headers.append("Cookie", cookie);
+    }
 
     const response = await fetch(`${BASE_URL}/misMascotas`, {
       method: "GET",
