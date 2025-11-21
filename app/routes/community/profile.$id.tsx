@@ -5,7 +5,7 @@ import {
 } from "~/features/user/userService";
 import type { UserGetResponse } from "~/features/user/types";
 import { getUserFieldFromCookie, field } from "~/lib/authUtil";
-import { Settings, Grid, Bookmark, Heart, Dog } from "lucide-react";
+import { Settings, ArrowDownUpIcon as Adopt,Grid, Bookmark, Heart, Dog, ShieldCheck} from "lucide-react";
 import { useState } from "react";
 import { getMascotasByInstitucionService } from "~/features/adoption/adoptionService";
 import type { MascotaDTO } from "~/features/adoption/types";
@@ -171,7 +171,7 @@ export default function UserProfile() {
               viewBox="0 0 24 24"
             >
               <path
-                strokeLinecap="round"
+                strokeLinecap="round"o adoptado
                 strokeLinejoin="round"
                 strokeWidth={2}
                 d="M15 19l-7-7 7-7"
@@ -205,14 +205,41 @@ export default function UserProfile() {
               {/* Información del usuario */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-4 mb-4">
-                  <h1 className="text-2xl font-light text-gray-900">
+                  <h1 className="text-2xl font-light text-gray-900 ">
                     {user.nombre}
+                  
+
+
+                  {isRefugio && (
+                  <h2 className="text-violet-600  py-2 text-lg flex">
+
+                  Insitutcion
+                    <span className="items-center gap-1 pl-2">
+                    <ShieldCheck size={32} />
+                  </span>
+
+                  </h2>
+
+                  )}
+                  {isAdoptante && (
+                    <h2 className="text-rose-500 py-2 text-lg flex">
+
+                    Adoptante
+                    <span className="items-center gap-1 pl-2">
+                    <Adopt/>
+                    </span>
+                    </h2>
+                    
+                  )}
+
+
                   </h1>
+                
+
+
                   {isOwnProfile && (
+
                     <>
-                      <button className="px-6 py-2 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-900 text-sm font-medium rounded-xl hover:from-gray-200 hover:to-gray-300 transition-all shadow-sm hover:shadow-md">
-                        Editar perfil
-                      </button>
                       <Link
                         to="/settings"
                         className="p-2 hover:bg-gray-100 rounded-xl transition-all hover:shadow-sm"

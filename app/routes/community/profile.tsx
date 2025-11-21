@@ -14,6 +14,7 @@ import { getMascotasByInstitucionService, getMisMascotasService } from "~/featur
 import type { MascotaDTO } from "~/features/adoption/types";
 import { getInstitutionByIdUsuarioService } from "~/features/entities/institucion/institutionService";
 import { getUserFieldFromCookie, field } from "~/lib/authUtil";
+import { useSmartAuth } from "~/features/auth/useSmartAuth";
 
 export async function action({ request }: LoaderFunctionArgs) {
   const formData = await request.formData();
@@ -157,7 +158,10 @@ export default function Profile() {
   const { logout, setIsLoading } = useAuth();
   const navigate = useNavigate();
   const fetcher = useFetcher<{ status: string; message: string }>();
+
+  const { logout: clientLogout } = useSmartAuth();
   const [activeTab, setActiveTab] = useState<"posts" | "consultas" | "saved" | "mascotas">(
+    
     "posts"
   );
 
@@ -177,10 +181,22 @@ export default function Profile() {
       }
     }
   }, [fetcher.data, logout, navigate]);
+ // Manejar respuesta del logout
+  useEffect(() => {
+    if (fetcher.data && fetcher.data.status === "success") {
+      // Limpiar estado del cliente
+      clientLogout();
+      // Redirigir al login
+      window.location.href = "/login";
+
+    }
+
+      redirect("/login");
+  }, [fetcher.data, clientLogout]);
 
   const handleLogout = () => {
     setIsLoading(true);
-    fetcher.submit({ intent: "logout" }, { method: "post" });
+    fetcher.submit({}, { method: "post", action: "/api/auth/logout" });
   };
 
   return (

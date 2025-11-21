@@ -57,24 +57,6 @@ export default function CommunityNavbar({
   const { user } = useSmartAuth();
 
   // Cerrar menús cuando se hace click fuera
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        notificationsRef.current &&
-        !notificationsRef.current.contains(event.target as Node)
-      ) {
-        setIsNotificationsOpen(false);
-      }
-    };
-
-    if (isNotificationsOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isNotificationsOpen]);
 
   const isActive = (path: string) => {
     if (path === "/") {

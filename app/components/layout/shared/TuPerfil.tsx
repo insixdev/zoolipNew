@@ -1,4 +1,4 @@
-import { Link, useFetcher } from "react-router";
+import { Link, redirect, useFetcher } from "react-router";
 import { useEffect, useRef, useState } from "react";
 import { useSmartAuth } from "~/features/auth/useSmartAuth";
 
@@ -36,12 +36,16 @@ export function TuPerfil() {
       clientLogout();
       // Redirigir al login
       window.location.href = "/login";
+
     }
+
+      redirect("/login");
   }, [fetcher.data, clientLogout]);
 
   const handleLogout = () => {
     setIsProfileMenuOpen(false);
     fetcher.submit({}, { method: "post", action: "/api/auth/logout" });
+
   };
 
   // Obtener iniciales del usuario

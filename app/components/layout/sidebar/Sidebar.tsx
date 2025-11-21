@@ -36,12 +36,7 @@ const menuItems = [
     path: "/community/consultas",
     icon: FileText,
   },
-  {
-    label: "Mensajes",
-    path: "/adopt/chatAdopt",
-    icon: MessageCircle,
-  },
-  {
+   {
     label: "Refugios",
     path: "/community/refugios",
     icon: Heart,
@@ -50,6 +45,11 @@ const menuItems = [
     label: "Donaciones",
     path: "/community/donaciones",
     icon: Gift,
+  },
+ {
+    label: "Mensajes",
+    path: "/adopt/chatAdopt",
+    icon: MessageCircle,
   },
 
   // Admin-only: solicitudes institucionales
